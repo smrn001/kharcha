@@ -35,7 +35,7 @@ export default function NewTransactionScreen() {
   const colors = THEME[colorScheme ?? 'light'];
   const { settings } = useSettings();
 
-  const [type, setType] = useState<TransactionType>('expense');
+  const [type, setType] = useState<TransactionType>(settings.defaultTransactionType);
   const [amountInput, setAmountInput] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [title, setTitle] = useState('');

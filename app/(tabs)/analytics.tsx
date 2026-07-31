@@ -1,4 +1,5 @@
 import { BarChart } from '@/components/bar-chart';
+import { PageHeader } from '@/components/page-header';
 import { SegmentedControl } from '@/components/segmented-control';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -28,17 +29,15 @@ export default function AnalyticsScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <View className="px-5 pb-2 pt-4">
-        <Text className="text-2xl font-bold">Analytics</Text>
-      </View>
-      <AnalyticsContent currency={settings.currency} />
+      <PageHeader title="Analytics" />
+      <AnalyticsContent currency={settings.currency} startOfWeek={settings.startOfWeek} />
     </View>
   );
 }
 
-function AnalyticsContent({ currency }: { currency: string }) {
+function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOfWeek: number }) {
   const [period, setPeriod] = useState<AnalyticsPeriod>('month');
-  const { summary, categories, trend, loading, refresh } = useAnalytics(period);
+  const { summary, categories, trend, loading, refresh } = useAnalytics(period, startOfWeek);
 
   useFocusEffect(
     useCallback(() => {
@@ -91,7 +90,7 @@ function PeriodCards({
 }) {
   if (loading && summary.income === 0 && summary.expense === 0) {
     return (
-      <View className="border-border rounded-xl border p-5">
+      <View className="border-border rounded-xl border bg-card p-5">
         <Text variant="muted">Loading…</Text>
       </View>
     );

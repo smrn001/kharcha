@@ -245,12 +245,12 @@ export async function getSpendingTrend(
   to: string
 ): Promise<SpendingTrendPoint[]> {
   const rows = await db.getAllAsync<{ date: string; income: number; expense: number }>(
-    `SELECT substr(date, 1, 10) AS date,
+    `SELECT substr(datetime(date, 'localtime'), 1, 10) AS date,
             COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
             COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
      FROM transactions
      WHERE date >= ? AND date <= ?
-     GROUP BY substr(date, 1, 10)
+     GROUP BY substr(datetime(date, 'localtime'), 1, 10)
      ORDER BY date`,
     from,
     to
@@ -258,9 +258,12 @@ export async function getSpendingTrend(
   return rows.map((row) => ({ date: row.date, income: row.income, expense: row.expense }));
 }
 
-export async function getDashboardSummary(db: SQLiteDatabase): Promise<DashboardSummary> {
+export async function getDashboardSummary(
+  db: SQLiteDatabase,
+  startOfWeekDay = 1
+): Promise<DashboardSummary> {
   const today = startOfDay(new Date()).toISOString();
-  const week = startOfWeek(new Date()).toISOString();
+  const week = startOfWeek(new Date(), startOfWeekDay).toISOString();
   const month = startOfMonth(new Date()).toISOString();
 
   const row =

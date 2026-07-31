@@ -48,7 +48,7 @@ export function DateTimeField({
     <View className={className}>
       <Pressable
         onPress={openPicker}
-        className="border-border h-12 justify-center rounded-md border px-3"
+        className="border-input h-12 justify-center rounded-md border px-3"
       >
         {label ? (
           <Text variant="muted" className="text-xs">

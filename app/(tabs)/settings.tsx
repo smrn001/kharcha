@@ -1,4 +1,5 @@
 import { SegmentedControl } from '@/components/segmented-control';
+import { PageHeader } from '@/components/page-header';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,15 +18,31 @@ import { SUPPORTED_CURRENCIES } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { Check, ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import type { ThemePreference } from '@/types';
+import type { ThemePreference, TransactionType } from '@/types';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
+];
+
+const TYPE_OPTIONS: { value: TransactionType; label: string }[] = [
+  { value: 'expense', label: 'Expense' },
+  { value: 'income', label: 'Income' },
+];
+
+const WEEKDAY_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: 'Sunday' },
+  { value: 1, label: 'Monday' },
+  { value: 2, label: 'Tuesday' },
+  { value: 3, label: 'Wednesday' },
+  { value: 4, label: 'Thursday' },
+  { value: 5, label: 'Friday' },
+  { value: 6, label: 'Saturday' },
 ];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -73,6 +90,7 @@ export default function SettingsScreen() {
   const db = useSQLiteContext();
   const { settings, updateSetting } = useSettings();
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [startOfWeekOpen, setStartOfWeekOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -80,8 +98,15 @@ export default function SettingsScreen() {
     SUPPORTED_CURRENCIES.find((currency) => currency.code === settings.currency) ??
     SUPPORTED_CURRENCIES[0];
 
+  const selectedStartOfWeek =
+    WEEKDAY_OPTIONS.find((option) => option.value === settings.startOfWeek) ?? WEEKDAY_OPTIONS[0];
+
   const handleThemeChange = async (theme: ThemePreference) => {
     await updateSetting('theme', theme);
+  };
+
+  const handleTypeChange = async (type: TransactionType) => {
+    await updateSetting('defaultTransactionType', type);
   };
 
   const handleReset = async () => {
@@ -96,9 +121,7 @@ export default function SettingsScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <View className="px-5 pb-2 pt-4">
-        <Text className="text-2xl font-bold">Settings</Text>
-      </View>
+      <PageHeader title="Settings" />
 
       <ScrollView contentContainerClassName="gap-6 pb-28" showsVerticalScrollIndicator={false}>
         <Section title="General">
@@ -112,6 +135,31 @@ export default function SettingsScreen() {
             <Text className="text-sm">Theme</Text>
             <SegmentedControl options={THEME_OPTIONS} value={settings.theme} onChange={handleThemeChange} />
           </View>
+        </Section>
+
+        <Section title="Preferences">
+          <View className="gap-2 px-4 py-3.5">
+            <Text className="text-sm">Default transaction type</Text>
+            <SegmentedControl
+              options={TYPE_OPTIONS}
+              value={settings.defaultTransactionType}
+              onChange={handleTypeChange}
+            />
+          </View>
+          <View className="bg-border mx-4 h-px" />
+          <Row
+            label="Start of week"
+            value={selectedStartOfWeek.label}
+            onPress={() => setStartOfWeekOpen(true)}
+          />
+        </Section>
+
+        <Section title="Categories">
+          <Row
+            label="Manage categories"
+            value="Add, edit, or delete"
+            onPress={() => router.push('/categories')}
+          />
         </Section>
 
         <Section title="Data">
@@ -160,6 +208,40 @@ export default function SettingsScreen() {
                   {selected ? (
                     <Icon as={Check} size={16} className="text-primary" />
                   ) : null}
+                </Pressable>
+              </View>
+            );
+          })}
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Text>Cancel</Text>
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={startOfWeekOpen} onOpenChange={setStartOfWeekOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start of week</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choose which day begins the week for weekly totals and analytics.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {WEEKDAY_OPTIONS.map((option, index) => {
+            const selected = option.value === settings.startOfWeek;
+            return (
+              <View key={option.value}>
+                {index > 0 ? <View className="bg-border h-px" /> : null}
+                <Pressable
+                  onPress={async () => {
+                    await updateSetting('startOfWeek', option.value);
+                    setStartOfWeekOpen(false);
+                  }}
+                  className="flex-row items-center justify-between py-3"
+                >
+                  <Text className="text-sm font-medium">{option.label}</Text>
+                  {selected ? <Icon as={Check} size={16} className="text-primary" /> : null}
                 </Pressable>
               </View>
             );

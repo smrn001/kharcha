@@ -1,6 +1,7 @@
 import { FilterChip } from '@/components/filter-chip';
 import { DateTimeField } from '@/components/date-time-field';
 import { FloatingAddButton } from '@/components/floating-add-button';
+import { PageHeader } from '@/components/page-header';
 import { SegmentedControl } from '@/components/segmented-control';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ export default function TransactionsScreen() {
     if (dateFilter === 'today') {
       next.from = startOfDay(new Date()).toISOString();
     } else if (dateFilter === 'week') {
-      next.from = startOfWeek(new Date()).toISOString();
+      next.from = startOfWeek(new Date(), settings.startOfWeek).toISOString();
     } else if (dateFilter === 'month') {
       next.from = startOfMonth(new Date()).toISOString();
     } else if (dateFilter === 'custom') {
@@ -72,7 +73,7 @@ export default function TransactionsScreen() {
     }
     if (categoryIds.length > 0) next.categoryIds = categoryIds;
     return next;
-  }, [query, type, dateFilter, customFrom, customTo, categoryIds]);
+  }, [query, type, dateFilter, customFrom, customTo, categoryIds, settings.startOfWeek]);
 
   const { transactions, loading, refresh } = useTransactions(filters);
 
@@ -125,9 +126,7 @@ export default function TransactionsScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <View className="px-5 pb-2 pt-4">
-        <Text className="text-2xl font-bold">Transactions</Text>
-      </View>
+      <PageHeader title="Transactions" />
 
       <View className="gap-3 px-5 pb-3">
         <View className="border-border bg-card h-10 flex-row items-center gap-2 rounded-md border px-3">
@@ -235,7 +234,7 @@ export default function TransactionsScreen() {
             </Pressable>
           </View>
         )}
-        ItemSeparatorComponent={() => <View className="bg-border px-5 h-px" />}
+        ItemSeparatorComponent={() => <View className="bg-border mx-5 h-px" />}
         ListEmptyComponent={
           loading ? (
             <Text variant="muted" className="px-5 py-16 text-center">

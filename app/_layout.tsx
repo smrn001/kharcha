@@ -6,9 +6,11 @@ import { DatabaseProvider } from '@/lib/db/database';
 import { NAV_THEME } from '@/lib/theme';
 import { ThemeProvider } from 'expo-router/react-navigation';
 import { PortalHost } from '@rn-primitives/portal';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
+import { useEffect } from 'react';
+import { Platform, View } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -29,12 +31,25 @@ function ThemedRoot() {
   const { settings, loading } = useSettings();
   const { colorScheme } = useColorScheme();
   useAppliedTheme(loading ? 'system' : settings.theme);
+  useBlurOnNavigation();
 
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
+      <View className="web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:bg-background web:shadow-2xl">
+        <Stack screenOptions={{ headerShown: false }} />
+      </View>
       <PortalHost />
     </ThemeProvider>
   );
+}
+
+function useBlurOnNavigation() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [pathname]);
 }

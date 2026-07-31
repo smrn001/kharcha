@@ -50,7 +50,7 @@ interface AnalyticsState {
 
 const EMPTY_SUMMARY: AnalyticsSummary = { income: 0, expense: 0, saved: 0 };
 
-export function useAnalytics(period: AnalyticsPeriod) {
+export function useAnalytics(period: AnalyticsPeriod, startOfWeekDay = 1) {
   const db = useSQLiteContext();
   const [state, setState] = useState<AnalyticsState>({
     summary: EMPTY_SUMMARY,
@@ -63,12 +63,12 @@ export function useAnalytics(period: AnalyticsPeriod) {
     const now = new Date();
     const from =
       period === 'week'
-        ? startOfWeek(now)
+        ? startOfWeek(now, startOfWeekDay)
         : period === 'month'
           ? startOfMonth(now)
           : startOfYear(now);
     return { from: startOfDay(from), to: endOfDay(now) };
-  }, [period]);
+  }, [period, startOfWeekDay]);
 
   useEffect(() => {
     let active = true;
@@ -97,7 +97,7 @@ export function useAnalytics(period: AnalyticsPeriod) {
     return () => {
       active = false;
     };
-  }, [db, range, period]);
+  }, [db, range, period, startOfWeekDay]);
 
   const refresh = useCallback(async () => {
     try {

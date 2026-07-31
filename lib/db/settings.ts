@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import type { Settings, ThemePreference } from '@/types';
+import type { Settings, ThemePreference, TransactionType } from '@/types';
 
 interface SettingsRow {
   key: string;
@@ -9,7 +9,14 @@ interface SettingsRow {
 export const DEFAULT_SETTINGS: Settings = {
   currency: 'NPR',
   theme: 'system',
+  defaultTransactionType: 'expense',
+  startOfWeek: 1,
 };
+
+function parseStartOfWeek(value: string | null | undefined): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 6 ? parsed : DEFAULT_SETTINGS.startOfWeek;
+}
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
   const rows = await db.getAllAsync<SettingsRow>('SELECT key, value FROM settings');
@@ -20,6 +27,8 @@ export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
   return {
     currency: map.currency ?? DEFAULT_SETTINGS.currency,
     theme: (map.theme as ThemePreference | null) ?? DEFAULT_SETTINGS.theme,
+    defaultTransactionType: (map.defaultTransactionType as TransactionType | null) ?? DEFAULT_SETTINGS.defaultTransactionType,
+    startOfWeek: parseStartOfWeek(map.startOfWeek),
   };
 }
 

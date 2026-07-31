@@ -7,7 +7,7 @@ interface SettingsContextValue {
   settings: Settings;
   loading: boolean;
   refresh: () => Promise<void>;
-  updateSetting: (key: keyof Settings, value: string) => Promise<void>;
+  updateSetting: (key: keyof Settings, value: string | number) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -47,9 +47,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [db]);
 
   const updateSetting = useCallback(
-    async (key: keyof Settings, value: string) => {
-      await setSetting(db, key, value);
-      setState((prev) => ({ ...prev, settings: { ...prev.settings, [key]: value as never } }));
+    async (key: keyof Settings, value: string | number) => {
+      const stored = String(value);
+      await setSetting(db, key, stored);
+      const parsed = key === 'startOfWeek' ? Number(stored) : stored;
+      setState((prev) => ({ ...prev, settings: { ...prev.settings, [key]: parsed as never } }));
     },
     [db]
   );

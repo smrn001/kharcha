@@ -1,73 +1,104 @@
-# Minimal Template
+# Kharcha
 
-This is a [React Native](https://reactnative.dev/) project built with [Expo](https://expo.dev/) and [React Native Reusables](https://reactnativereusables.com).
+**Kharcha** is a simple, fast, privacy-focused personal expense and income tracker.
 
-It was initialized using the following command, then the `Minimal (Nativewind)` template was selected when prompted:
+> Open the app → record the expense → continue with your day.
 
-```bash
-npx @react-native-reusables/cli@latest init
-```
+It is built with [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/), fully **offline-first** — all financial data is stored locally on your device using SQLite. No account, no internet, no cloud, no backend server.
+
+## Features
+
+- 💰 **Quick transaction entry** — expense/income, amount, category, optional title & note, date & time in a few taps
+- 🗂️ **Categories** — sensible defaults plus full management: create, rename, choose an icon, and safely delete (blocked while a category is still in use)
+- 📊 **Analytics** — income vs. spending trend charts, period summaries, and spending by category (week / month / year)
+- 📋 **Transactions list** — search, type/date/category filters, and date-grouped sections
+- ⚙️ **Settings** — currency (NPR, USD, INR, EUR, GBP), System/Light/Dark appearance (persisted), default transaction type, and start-of-week preference
+- 🌙 **Themes** — custom Indigo/Periwinkle design system with semantic tokens for light and dark
+- 📱 **Cross-platform** — iOS, Android, and Web
+- 🧠 **Layer separation** — Screen → Hook → Repository → SQLite, no raw SQL in UI components
+
+## Tech Stack
+
+- **Framework**: Expo SDK 56 + React Native + React
+- **Routing**: Expo Router (file-based, `app/` directory)
+- **Styling**: NativeWind v4 (Tailwind CSS, `className` prop)
+- **UI Library**: React Native Reusables (shadcn-style components in `components/ui/`)
+- **Icons**: Lucide React Native
+- **Database**: Expo SQLite (offline, local)
+- **Animations**: React Native Reanimated
+- **Language**: TypeScript
+- **Path aliases**: `@/` → project root
 
 ## Getting Started
 
-To run the development server:
-
 ```bash
-    npm run dev
-    # or
-    yarn dev
-    # or
-    pnpm dev
-    # or
-    bun dev
+npm install
+npm run dev
 ```
 
-This will start the Expo Dev Server. Open the app in:
+This starts the Expo Dev Server. Open the app in:
 
 - **iOS**: press `i` to launch in the iOS simulator _(Mac only)_
 - **Android**: press `a` to launch in the Android emulator
 - **Web**: press `w` to run in a browser
 
-You can also scan the QR code using the [Expo Go](https://expo.dev/go) app on your device. This project fully supports running in Expo Go for quick testing on physical devices.
+You can also scan the QR code with the [Expo Go](https://expo.dev/go) app to test on a physical device.
 
-## Adding components
+## Scripts
 
-You can add more reusable components using the CLI:
+| Command              | Description                        |
+| -------------------- | ---------------------------------- |
+| `npm run dev`        | Start the Expo dev server          |
+| `npm run android`    | Start dev server for Android       |
+| `npm run ios`        | Start dev server for iOS           |
+| `npm run web`        | Start dev server for Web           |
+| `npm run ts:check`   | Type-check with `tsc --noEmit`     |
+| `npm run lint`       | Run ESLint                         |
+| `npm run clean`      | Remove `.expo` and `node_modules`  |
 
-```bash
-npx react-native-reusables/cli@latest add [...components]
+## Project Structure
+
+```text
+app/                  # Expo Router file-based routes
+├── _layout.tsx       # Root layout (database, settings, theme providers)
+├── (tabs)/           # Home, Transactions, Analytics, Settings
+├── transaction/      # Add / edit and transaction detail screens
+└── categories/       # Category list, create, and edit screens
+components/           # Reusable components (form fields, charts, rows, etc.)
+├── ui/               # React Native Reusables primitives (button, text, dialogs)
+hooks/                # Data hooks: transactions, categories, analytics, settings
+lib/
+├── db/               # SQLite layer: schema migrations, repositories
+└── dates.ts, format.ts, theme.ts, category-icons.ts
+docs/prd.md           # Product Requirements Document
 ```
 
-> e.g. `npx react-native-reusables/cli@latest add input textarea`
+## Verification
 
-If you don't specify any component names, you'll be prompted to select which components to add interactively. Use the `--all` flag to install all available components at once.
+After significant changes run:
 
-## Project Features
+```bash
+npm run ts:check
+npm run lint
+npx expo-doctor
+```
 
-- ⚛️ Built with [Expo Router](https://expo.dev/router)
-- 🎨 Styled with [Tailwind CSS](https://tailwindcss.com/) via [Nativewind](https://www.nativewind.dev/)
-- 📦 UI powered by [React Native Reusables](https://github.com/founded-labs/react-native-reusables)
-- 🚀 New Architecture enabled
-- 🔥 Edge to Edge enabled
-- 📱 Runs on iOS, Android, and Web
+When debugging runtime issues, inspect Metro output and fix the root cause. After changing dependency versions or native config, clear the Metro cache with `npx expo start --clear`.
 
-## Learn More
+## Documentation
 
-To dive deeper into the technologies used:
-
+- [Product Requirements Document](./docs/prd.md)
 - [React Native Docs](https://reactnative.dev/docs/getting-started)
 - [Expo Docs](https://docs.expo.dev/)
-- [Nativewind Docs](https://www.nativewind.dev/)
+- [NativeWind Docs](https://www.nativewind.dev/)
 - [React Native Reusables](https://reactnativereusables.com)
 
 ## Deploy with EAS
 
-The easiest way to deploy your app is with [Expo Application Services (EAS)](https://expo.dev/eas).
+The easiest way to deploy the app is with [Expo Application Services (EAS)](https://expo.dev/eas).
 
 - [EAS Build](https://docs.expo.dev/build/introduction/)
 - [EAS Updates](https://docs.expo.dev/eas-update/introduction/)
 - [EAS Submit](https://docs.expo.dev/submit/introduction/)
 
----
-
-If you enjoy using React Native Reusables, please consider giving it a ⭐ on [GitHub](https://github.com/founded-labs/react-native-reusables). Your support means a lot!
+The Web build is also deployable as a static site (configured for Vercel SPA rewrites via `vercel.json`).

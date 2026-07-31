@@ -1,5 +1,5 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getCategories } from '@/lib/db/categories';
 import type { Category, TransactionType } from '@/types';
 
@@ -28,5 +28,14 @@ export function useCategories(type?: TransactionType) {
     };
   }, [db, type]);
 
-  return state;
+  const refresh = useCallback(async () => {
+    try {
+      const rows = await getCategories(db, type);
+      setState({ categories: rows, loading: false });
+    } catch {
+      setState((prev) => ({ ...prev, loading: false }));
+    }
+  }, [db, type]);
+
+  return { ...state, refresh };
 }

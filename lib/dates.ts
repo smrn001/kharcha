@@ -32,11 +32,11 @@ export function endOfDay(date: Date): Date {
   return d;
 }
 
-export function startOfWeek(date: Date): Date {
+export function startOfWeek(date: Date, startDay = 1): Date {
   const d = startOfDay(date);
   const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
+  const diff = (day - startDay + 7) % 7;
+  d.setDate(d.getDate() - diff);
   return d;
 }
 

@@ -11,7 +11,7 @@ const EMPTY_SUMMARY: DashboardSummary = {
   spentMonth: 0,
 };
 
-export function useDashboardSummary() {
+export function useDashboardSummary(startOfWeekDay = 1) {
   const db = useSQLiteContext();
   const [state, setState] = useState<{ summary: DashboardSummary; loading: boolean }>({
     summary: EMPTY_SUMMARY,
@@ -20,7 +20,7 @@ export function useDashboardSummary() {
 
   useEffect(() => {
     let active = true;
-    getDashboardSummary(db)
+    getDashboardSummary(db, startOfWeekDay)
       .then((summary) => {
         if (active) {
           setState({ summary, loading: false });
@@ -34,16 +34,16 @@ export function useDashboardSummary() {
     return () => {
       active = false;
     };
-  }, [db]);
+  }, [db, startOfWeekDay]);
 
   const refresh = useCallback(async () => {
     try {
-      const summary = await getDashboardSummary(db);
+      const summary = await getDashboardSummary(db, startOfWeekDay);
       setState({ summary, loading: false });
     } catch {
       setState((prev) => ({ ...prev, loading: false }));
     }
-  }, [db]);
+  }, [db, startOfWeekDay]);
 
   return { ...state, refresh };
 }

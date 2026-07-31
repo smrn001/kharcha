@@ -1,4 +1,5 @@
 import { FloatingAddButton } from '@/components/floating-add-button';
+import { PageHeader } from '@/components/page-header';
 import { TransactionRow } from '@/components/transaction-row';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -23,10 +24,10 @@ function greeting(): string {
 }
 
 export default function HomeScreen() {
-  const { summary, refresh: refreshSummary } = useDashboardSummary();
+  const { settings } = useSettings();
+  const { summary, refresh: refreshSummary } = useDashboardSummary(settings.startOfWeek);
   const { transactions, refresh: refreshTransactions } = useTransactions(RECENT_FILTERS);
   const { categories } = useCategories();
-  const { settings } = useSettings();
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
@@ -43,13 +44,10 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-background">
       <ScrollView contentContainerClassName="pb-28">
-        <View className="px-5 pt-6">
-          <Text className="text-2xl font-bold">{greeting()}</Text>
-          <Text variant="muted">Here is your spending overview.</Text>
-        </View>
+        <PageHeader title={greeting()} subtitle="Here is your spending overview." />
 
         <View className="px-5 pt-5">
-          <View className="rounded-xl border-border bg-card p-5">
+          <View className="rounded-xl border border-border bg-card p-5">
             <Text variant="muted" className="text-sm">
               Current Balance
             </Text>
@@ -79,7 +77,7 @@ export default function HomeScreen() {
         </View>
 
         <View className="flex-row gap-3 px-5 pt-4">
-          <View className="flex-1 rounded-xl border-border bg-card p-3">
+          <View className="flex-1 rounded-xl border border-border bg-card p-3">
             <Text variant="muted" className="text-xs">
               Today
             </Text>
@@ -87,7 +85,7 @@ export default function HomeScreen() {
               {formatAmount(summary.spentToday, settings.currency)}
             </Text>
           </View>
-          <View className="flex-1 rounded-xl border-border bg-card p-3">
+          <View className="flex-1 rounded-xl border border-border bg-card p-3">
             <Text variant="muted" className="text-xs">
               This Week
             </Text>
@@ -95,7 +93,7 @@ export default function HomeScreen() {
               {formatAmount(summary.spentWeek, settings.currency)}
             </Text>
           </View>
-          <View className="flex-1 rounded-xl border-border bg-card p-3">
+          <View className="flex-1 rounded-xl border border-border bg-card p-3">
             <Text variant="muted" className="text-xs">
               This Month
             </Text>
@@ -139,7 +137,7 @@ export default function HomeScreen() {
                     currency={settings.currency}
                   />
                 </View>
-                <View className="bg-border h-px" />
+                <View className="bg-border mx-5 h-px" />
               </Pressable>
             ))}
           </View>

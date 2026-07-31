@@ -100,13 +100,13 @@ export default function TransactionDetailScreen() {
           {isIncome ? 'Income' : 'Expense'}
         </Text>
 
-        <View className="mt-8 w-full rounded-xl border-border bg-card px-4">
+        <View className="mt-8 w-full rounded-xl border border-border bg-card px-4">
           <DetailRow label="Category" value={category?.name ?? 'Unknown'} />
-          <View className="border-border h-px bg-border" />
+          <View className="bg-border mx-4 h-px" />
           <DetailRow label="Title" value={transaction.title || '—'} />
-          <View className="border-border h-px bg-border" />
+          <View className="bg-border mx-4 h-px" />
           <DetailRow label="Note" value={transaction.note || '—'} />
-          <View className="border-border h-px bg-border" />
+          <View className="bg-border mx-4 h-px" />
           <DetailRow label="Date & Time" value={formatDateTime(transaction.date)} />
         </View>
 

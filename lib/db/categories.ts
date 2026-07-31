@@ -160,3 +160,29 @@ export async function createCategory(db: SQLiteDatabase, input: NewCategory): Pr
   );
   return { id, ...input, createdAt };
 }
+
+export async function updateCategory(
+  db: SQLiteDatabase,
+  id: string,
+  input: NewCategory
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE categories SET name = ?, icon = ?, type = ? WHERE id = ?',
+    input.name,
+    input.icon ?? null,
+    input.type,
+    id
+  );
+}
+
+export async function deleteCategory(db: SQLiteDatabase, id: string): Promise<void> {
+  await db.runAsync('DELETE FROM categories WHERE id = ?', id);
+}
+
+export async function countCategoryUsage(db: SQLiteDatabase, id: string): Promise<number> {
+  const row = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) AS count FROM transactions WHERE category_id = ?',
+    id
+  );
+  return row?.count ?? 0;
+}

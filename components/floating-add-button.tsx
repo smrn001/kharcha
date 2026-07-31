@@ -10,10 +10,7 @@ export function FloatingAddButton() {
       accessibilityLabel="Add transaction"
       className="bg-primary absolute bottom-6 right-6 z-10 h-14 w-14 items-center justify-center rounded-full active:bg-primary/90"
       style={{
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.2)',
         elevation: 4,
       }}
     >
