@@ -26,6 +26,12 @@ export function startOfDay(date: Date): Date {
   return d;
 }
 
+export function endOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
 export function startOfWeek(date: Date): Date {
   const d = startOfDay(date);
   const day = d.getDay();

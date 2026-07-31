@@ -31,7 +31,7 @@ function mapTransaction(row: TransactionRow): Transaction {
 
 export interface TransactionFilters {
   type?: TransactionType;
-  categoryId?: string;
+  categoryIds?: string[];
   from?: string;
   to?: string;
   search?: string;
@@ -49,9 +49,10 @@ export async function getTransactions(
     conditions.push('type = ?');
     params.push(filters.type);
   }
-  if (filters.categoryId) {
-    conditions.push('category_id = ?');
-    params.push(filters.categoryId);
+  if (filters.categoryIds?.length) {
+    const placeholders = filters.categoryIds.map(() => '?').join(', ');
+    conditions.push(`category_id IN (${placeholders})`);
+    params.push(...filters.categoryIds);
   }
   if (filters.from) {
     conditions.push('date >= ?');
@@ -62,15 +63,17 @@ export async function getTransactions(
     params.push(filters.to);
   }
   if (filters.search) {
-    conditions.push('(title LIKE ? OR note LIKE ?)');
-    params.push(`%${filters.search}%`, `%${filters.search}%`);
+    conditions.push('(title LIKE ? OR note LIKE ? OR c.name LIKE ?)');
+    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const limit = filters.limit ? ` LIMIT ${filters.limit}` : '';
 
   const rows = await db.getAllAsync<TransactionRow>(
-    `SELECT * FROM transactions ${where} ORDER BY date DESC, created_at DESC${limit}`,
+    `SELECT t.* FROM transactions t
+     LEFT JOIN categories c ON c.id = t.category_id
+     ${where} ORDER BY date DESC, created_at DESC${limit}`,
     ...params
   );
   return rows.map(mapTransaction);
