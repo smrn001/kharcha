@@ -130,11 +130,14 @@ export async function getCategories(
 ): Promise<Category[]> {
   const rows = type
     ? await db.getAllAsync<CategoryRow>(
-        'SELECT * FROM categories WHERE type = ? ORDER BY name COLLATE NOCASE',
+        `SELECT * FROM categories
+         WHERE type = ?
+         ORDER BY (name = 'Other') COLLATE NOCASE, name COLLATE NOCASE`,
         type
       )
     : await db.getAllAsync<CategoryRow>(
-        'SELECT * FROM categories ORDER BY type, name COLLATE NOCASE'
+        `SELECT * FROM categories
+         ORDER BY type, (name = 'Other') COLLATE NOCASE, name COLLATE NOCASE`
       );
   return rows.map(mapCategory);
 }

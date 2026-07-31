@@ -168,7 +168,6 @@ export default function NewTransactionScreen() {
         <View className="flex-row items-center gap-2">
           <Text className="text-3xl font-bold">{settings.currency}</Text>
           <TextInput
-            autoFocus
             keyboardType="decimal-pad"
             value={amountInput}
             onChangeText={handleAmountChange}

@@ -49,7 +49,7 @@ export default function TransactionsScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <View className="px-4 pb-2 pt-4">
+      <View className="px-5 pb-2 pt-4">
         <Text className="text-2xl font-bold">Transactions</Text>
       </View>
 
@@ -57,30 +57,32 @@ export default function TransactionsScreen() {
         sections={sections}
         keyExtractor={(item) => item.id}
         className="flex-1"
-        contentContainerClassName="px-4 pb-28"
+        contentContainerClassName="pb-28"
         stickySectionHeadersEnabled={false}
         renderSectionHeader={({ section }) => (
-          <Text variant="muted" className="bg-background pb-1 pt-4 text-xs font-semibold uppercase">
+          <Text variant="muted" className="bg-background px-5 pb-2 pt-6 text-xs font-semibold uppercase">
             {section.title}
           </Text>
         )}
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/transaction/${item.id}`)}>
-            <TransactionRow
-              transaction={item}
-              category={categoryMap.get(item.categoryId)}
-              currency={settings.currency}
-            />
-          </Pressable>
+          <View className="px-5">
+            <Pressable onPress={() => router.push(`/transaction/${item.id}`)}>
+              <TransactionRow
+                transaction={item}
+                category={categoryMap.get(item.categoryId)}
+                currency={settings.currency}
+              />
+            </Pressable>
+          </View>
         )}
-        ItemSeparatorComponent={() => <View className="bg-border h-px" />}
+        ItemSeparatorComponent={() => <View className="bg-border px-5 h-px" />}
         ListEmptyComponent={
           loading ? (
-            <Text variant="muted" className="py-16 text-center">
+            <Text variant="muted" className="px-5 py-16 text-center">
               Loading…
             </Text>
           ) : (
-            <View className="items-center gap-2 py-16">
+            <View className="items-center gap-2 px-5 py-16">
               <Icon as={ReceiptText} size={40} className="text-muted-foreground" />
               <Text className="text-base font-semibold">No transactions yet</Text>
               <Text variant="muted" className="text-center">
