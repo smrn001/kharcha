@@ -8,16 +8,16 @@ Read `docs/prd.md` before implementing major features.
 
 ## Tech Stack
 
-- **Framework**: Expo SDK 57 + React Native 0.86 + React 19
+- **Framework**: Expo SDK 56 + React Native 0.85 + React 19
 - **Routing**: Expo Router (file-based, `app/` directory)
 - **Styling**: NativeWind v4 (Tailwind CSS v3, `className` prop)
 - **UI Library**: React Native Reusables (shadcn-style components in `components/ui/`)
 - **Icons**: Lucide React Native
-- **Database**: Expo SQLite
+- **Database**: Expo SQLite (SDK 56: `expo-sqlite@~56.0.5`)
 - **Animations**: React Native Reanimated v4
-- **TypeScript**: 7.0 (native Go port); `npx tsc` = TS 7, `npx tsc6` = TS 6 for eslint compatibility
-- **Linting**: ESLint 9 with `eslint-config-expo`
-- **Path aliases**: `@/` → project root (configured in `tsconfig.json`)
+- **TypeScript**: 6.0 (`npx tsc --noEmit` for type-checking; no TS 7 split)
+- **Linting**: ESLint 9 with `eslint-config-expo@~56.0.4`
+- **Path aliases**: `@/` → project root (configured in `tsconfig.json`; no `baseUrl`)
 
 ## Documentation
 
@@ -131,13 +131,13 @@ When debugging runtime problems, inspect Metro output and fix the root cause ins
 
 ## Running the App
 - `npm start` — start Expo dev server
-- `npm run ts:check` — run TypeScript 7 type-checking
+- `npm run ts:check` — run TypeScript type-checking
 - `npm run lint` — run ESLint
 
 ## Do NOT
 - Use `StyleSheet.create` — use NativeWind `className` instead
 - Import from `react-native` for styling — use `@/lib/utils` `cn()` helper
-- Add dependencies without reading their official Expo SDK 57 compatible docs first
+- Add dependencies without reading their official Expo SDK 56 compatible docs first
 - Use React Navigation directly — use Expo Router
 - Call `verifyInstallation()` from `nativewind` globally — must be inside a component
 - Mix `dp` and `px` units in `calc()` — use consistent unit types

@@ -7,7 +7,9 @@
     "android": "expo start -c --android",
     "ios": "expo start -c --ios",
     "web": "expo start -c --web",
-    "clean": "rm -rf .expo node_modules"
+    "clean": "rm -rf .expo node_modules",
+    "ts:check": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@rn-primitives/portal": "~1.4.0",
@@ -19,6 +21,7 @@
     "expo-linking": "~56.0.14",
     "expo-router": "~56.2.12",
     "expo-splash-screen": "~56.0.11",
+    "expo-sqlite": "~56.0.5",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
     "lucide-react-native": "^1.21.0",
@@ -39,6 +42,8 @@
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@types/react": "~19.2.10",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~56.0.4",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "typescript": "~6.0.3"
