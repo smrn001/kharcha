@@ -1,4 +1,14 @@
 import { ScreenHeader } from '@/components/screen-header';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -12,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import type { Transaction } from '@/types';
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -32,6 +42,7 @@ export default function TransactionDetailScreen() {
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -64,22 +75,13 @@ export default function TransactionDetailScreen() {
   const isIncome = transaction.type === 'income';
   const IconComponent = categoryIcon(category?.icon);
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete transaction?',
-      'This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteTransaction(db, transaction.id);
-            router.back();
-          },
-        },
-      ]
-    );
+  const handleDelete = async () => {
+    try {
+      await deleteTransaction(db, transaction.id);
+      router.back();
+    } catch {
+      setConfirmDelete(false);
+    }
   };
 
   return (
@@ -115,11 +117,33 @@ export default function TransactionDetailScreen() {
           >
             <Text className="text-primary-foreground font-medium">Edit</Text>
           </Button>
-          <Pressable onPress={handleDelete}>
+          <Pressable onPress={() => setConfirmDelete(true)}>
             <Text className="text-destructive py-3 text-center text-sm font-medium">Delete</Text>
           </Pressable>
         </View>
       </View>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The transaction will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Text>Cancel</Text>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onPress={handleDelete}
+              className="bg-destructive dark:bg-destructive/60"
+            >
+              <Text className="text-white font-medium">Delete</Text>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </View>
   );
 }

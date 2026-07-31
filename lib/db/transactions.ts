@@ -1,4 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { startOfDay, startOfMonth, startOfWeek } from '@/lib/dates';
 import { generateId } from '@/lib/id';
 import type { NewTransaction, Transaction, TransactionType, UpdateTransaction } from '@/types';
 
@@ -152,4 +153,54 @@ export async function updateTransaction(
 
 export async function deleteTransaction(db: SQLiteDatabase, id: string): Promise<void> {
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
+}
+
+export interface DashboardSummary {
+  balance: number;
+  income: number;
+  expense: number;
+  spentToday: number;
+  spentWeek: number;
+  spentMonth: number;
+}
+
+export async function getDashboardSummary(db: SQLiteDatabase): Promise<DashboardSummary> {
+  const today = startOfDay(new Date()).toISOString();
+  const week = startOfWeek(new Date()).toISOString();
+  const month = startOfMonth(new Date()).toISOString();
+
+  const row =
+    (await db.getFirstAsync<{
+      income: number;
+      expense: number;
+      spentToday: number;
+      spentWeek: number;
+      spentMonth: number;
+    }>(
+      `SELECT
+         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense,
+         COALESCE(SUM(CASE WHEN type = 'expense' AND date >= ? THEN amount ELSE 0 END), 0) AS spentToday,
+         COALESCE(SUM(CASE WHEN type = 'expense' AND date >= ? THEN amount ELSE 0 END), 0) AS spentWeek,
+         COALESCE(SUM(CASE WHEN type = 'expense' AND date >= ? THEN amount ELSE 0 END), 0) AS spentMonth
+       FROM transactions`,
+      today,
+      week,
+      month
+    )) ?? {
+      income: 0,
+      expense: 0,
+      spentToday: 0,
+      spentWeek: 0,
+      spentMonth: 0,
+    };
+
+  return {
+    balance: row.income - row.expense,
+    income: row.income,
+    expense: row.expense,
+    spentToday: row.spentToday,
+    spentWeek: row.spentWeek,
+    spentMonth: row.spentMonth,
+  };
 }
