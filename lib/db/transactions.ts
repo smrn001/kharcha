@@ -158,6 +158,26 @@ export async function deleteTransaction(db: SQLiteDatabase, id: string): Promise
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
 }
 
+export interface AnalyticsSummary {
+  income: number;
+  expense: number;
+  saved: number;
+}
+
+export interface CategorySpending {
+  categoryId: string;
+  name: string;
+  icon: string | undefined;
+  amount: number;
+  percentage: number;
+}
+
+export interface SpendingTrendPoint {
+  date: string;
+  income: number;
+  expense: number;
+}
+
 export interface DashboardSummary {
   balance: number;
   income: number;
@@ -165,6 +185,73 @@ export interface DashboardSummary {
   spentToday: number;
   spentWeek: number;
   spentMonth: number;
+}
+
+export async function getAnalyticsSummary(
+  db: SQLiteDatabase,
+  from: string,
+  to: string
+): Promise<AnalyticsSummary> {
+  const row =
+    (await db.getFirstAsync<{ income: number; expense: number }>(
+      `SELECT
+         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
+       FROM transactions
+       WHERE date >= ? AND date <= ?`,
+      from,
+      to
+    )) ?? { income: 0, expense: 0 };
+  return { income: row.income, expense: row.expense, saved: row.income - row.expense };
+}
+
+export async function getCategorySpending(
+  db: SQLiteDatabase,
+  from: string,
+  to: string
+): Promise<CategorySpending[]> {
+  const rows = await db.getAllAsync<{
+    category_id: string;
+    name: string | null;
+    icon: string | null;
+    amount: number;
+  }>(
+    `SELECT t.category_id, c.name, c.icon, SUM(t.amount) AS amount
+     FROM transactions t
+     LEFT JOIN categories c ON c.id = t.category_id
+     WHERE t.type = 'expense' AND t.date >= ? AND t.date <= ?
+     GROUP BY t.category_id
+     ORDER BY amount DESC`,
+    from,
+    to
+  );
+  const total = rows.reduce((sum, row) => sum + row.amount, 0) || 1;
+  return rows.map((row) => ({
+    categoryId: row.category_id,
+    name: row.name ?? 'Other',
+    icon: row.icon ?? undefined,
+    amount: row.amount,
+    percentage: Math.round((row.amount / total) * 100),
+  }));
+}
+
+export async function getSpendingTrend(
+  db: SQLiteDatabase,
+  from: string,
+  to: string
+): Promise<SpendingTrendPoint[]> {
+  const rows = await db.getAllAsync<{ date: string; income: number; expense: number }>(
+    `SELECT substr(date, 1, 10) AS date,
+            COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+            COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
+     FROM transactions
+     WHERE date >= ? AND date <= ?
+     GROUP BY substr(date, 1, 10)
+     ORDER BY date`,
+    from,
+    to
+  );
+  return rows.map((row) => ({ date: row.date, income: row.income, expense: row.expense }));
 }
 
 export async function getDashboardSummary(db: SQLiteDatabase): Promise<DashboardSummary> {

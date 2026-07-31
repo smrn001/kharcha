@@ -29,6 +29,19 @@ export function formatAmount(minorUnits: number, currency = 'NPR'): string {
   return `${negative ? '-' : ''}${symbol}${value}`;
 }
 
+export function formatAmountCompact(minorUnits: number, currency = 'NPR'): string {
+  const symbol = CURRENCY_SYMBOLS[currency] ?? `${currency} `;
+  const digits = digitsForCurrency(currency);
+  const abs = Math.abs(minorUnits);
+  const major = Math.floor(abs / 10 ** digits);
+  const fraction = abs % 10 ** digits;
+  if (major === 0) return `${symbol}${major}`;
+  if (fraction === 0) return `${symbol}${groupThousands(major.toString())}`;
+  return `${symbol}${groupThousands(major.toString())}.${fraction
+    .toString()
+    .padStart(digits, '0')}`;
+}
+
 export function minorUnitsToInput(minorUnits: number): string {
   return (minorUnits / 100).toFixed(2).replace(/\.00$/, '');
 }
