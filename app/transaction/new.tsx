@@ -1,4 +1,5 @@
 import { CategoryPicker } from '@/components/category-picker';
+import { DateTimeField } from '@/components/date-time-field';
 import { Field } from '@/components/form-field';
 import { ScreenHeader } from '@/components/screen-header';
 import { SegmentedControl } from '@/components/segmented-control';
@@ -7,10 +8,8 @@ import { Text } from '@/components/ui/text';
 import { useCategories } from '@/hooks/use-categories';
 import { useSettings } from '@/hooks/use-settings';
 import { getTransactionById, createTransaction, updateTransaction } from '@/lib/db/transactions';
-import { formatFullDate, formatTime } from '@/lib/dates';
 import { minorUnitsToInput, parseAmountToMinorUnits } from '@/lib/format';
 import { THEME } from '@/lib/theme';
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -18,7 +17,6 @@ import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   TextInput,
   View,
@@ -44,8 +42,6 @@ export default function NewTransactionScreen() {
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date());
   const [loadingEdit, setLoadingEdit] = useState(Boolean(editingId));
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,38 +73,6 @@ export default function NewTransactionScreen() {
   const handleAmountChange = (input: string) => {
     const sanitized = input.replace(/[^0-9.]/g, '');
     setAmountInput(sanitized);
-  };
-
-  const openDatePicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: date,
-        mode: 'date',
-        onValueChange: (_event, selected) => {
-          const next = new Date(date);
-          next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
-          setDate(next);
-        },
-      });
-    } else {
-      setShowDatePicker(true);
-    }
-  };
-
-  const openTimePicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: date,
-        mode: 'time',
-        onValueChange: (_event, selected) => {
-          const next = new Date(date);
-          next.setHours(selected.getHours(), selected.getMinutes());
-          setDate(next);
-        },
-      });
-    } else {
-      setShowTimePicker(true);
-    }
   };
 
   const handleSave = async () => {
@@ -189,21 +153,11 @@ export default function NewTransactionScreen() {
         </Field>
 
         <View className="flex-row gap-3">
-          <Field label="Date">
-            <Pressable
-              onPress={openDatePicker}
-              className="border-border h-12 justify-center rounded-md border px-3"
-            >
-              <Text>{formatFullDate(date.toISOString())}</Text>
-            </Pressable>
+          <Field label="Date" className="flex-1">
+            <DateTimeField mode="date" value={date} onChange={setDate} />
           </Field>
-          <Field label="Time">
-            <Pressable
-              onPress={openTimePicker}
-              className="border-border h-12 justify-center rounded-md border px-3"
-            >
-              <Text>{formatTime(date.toISOString())}</Text>
-            </Pressable>
+          <Field label="Time" className="flex-1">
+            <DateTimeField mode="time" value={date} onChange={setDate} />
           </Field>
         </View>
 
@@ -235,34 +189,6 @@ export default function NewTransactionScreen() {
           </Text>
         </Button>
       </ScrollView>
-
-      {showDatePicker && Platform.OS === 'ios' ? (
-        <View className="border-border bg-card rounded-t-xl border p-4">
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="spinner"
-            onValueChange={(_event, selected) => setDate(selected)}
-          />
-          <Button onPress={() => setShowDatePicker(false)}>
-            <Text className="text-primary-foreground font-medium">Done</Text>
-          </Button>
-        </View>
-      ) : null}
-
-      {showTimePicker && Platform.OS === 'ios' ? (
-        <View className="border-border bg-card rounded-t-xl border p-4">
-          <DateTimePicker
-            value={date}
-            mode="time"
-            display="spinner"
-            onValueChange={(_event, selected) => setDate(selected)}
-          />
-          <Button onPress={() => setShowTimePicker(false)}>
-            <Text className="text-primary-foreground font-medium">Done</Text>
-          </Button>
-        </View>
-      ) : null}
     </KeyboardAvoidingView>
   );
 }

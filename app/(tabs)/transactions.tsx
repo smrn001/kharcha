@@ -1,4 +1,5 @@
 import { FilterChip } from '@/components/filter-chip';
+import { DateTimeField } from '@/components/date-time-field';
 import { FloatingAddButton } from '@/components/floating-add-button';
 import { SegmentedControl } from '@/components/segmented-control';
 import { TransactionRow } from '@/components/transaction-row';
@@ -8,14 +9,13 @@ import { Text } from '@/components/ui/text';
 import { useCategories } from '@/hooks/use-categories';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
-import { endOfDay, formatDateLabel, formatFullDate, startOfDay, startOfMonth, startOfWeek, toDateKey } from '@/lib/dates';
+import { endOfDay, formatDateLabel, startOfDay, startOfMonth, startOfWeek, toDateKey } from '@/lib/dates';
 import { THEME } from '@/lib/theme';
 import { useColorScheme } from 'nativewind';
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { router, useFocusEffect } from 'expo-router';
 import { Search, X } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, SectionList, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, TextInput, View } from 'react-native';
 import type { Transaction, TransactionType } from '@/types';
 import type { TransactionFilters } from '@/lib/db/transactions';
 
@@ -53,8 +53,6 @@ export default function TransactionsScreen() {
   const [customFrom, setCustomFrom] = useState<Date | null>(null);
   const [customTo, setCustomTo] = useState<Date | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
-  const [showFromPicker, setShowFromPicker] = useState(false);
-  const [showToPicker, setShowToPicker] = useState(false);
 
   const { categories } = useCategories(type === 'all' ? undefined : type);
   const filters = useMemo<TransactionFilters>(() => {
@@ -125,34 +123,6 @@ export default function TransactionsScreen() {
     setCategoryIds([]);
   };
 
-  const openFromPicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: customFrom ?? new Date(),
-        mode: 'date',
-        onValueChange: (_event, selected) => {
-          if (selected) setCustomFrom(selected);
-        },
-      });
-    } else {
-      setShowFromPicker(true);
-    }
-  };
-
-  const openToPicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: customTo ?? new Date(),
-        mode: 'date',
-        onValueChange: (_event, selected) => {
-          if (selected) setCustomTo(selected);
-        },
-      });
-    } else {
-      setShowToPicker(true);
-    }
-  };
-
   return (
     <View className="bg-background flex-1">
       <View className="px-5 pb-2 pt-4">
@@ -196,28 +166,22 @@ export default function TransactionsScreen() {
 
         {dateFilter === 'custom' ? (
           <View className="flex-row gap-3">
-            <Pressable
-              onPress={openFromPicker}
-              className="border-border h-12 flex-1 justify-center rounded-md border px-3"
-            >
-              <Text variant="muted" className="text-xs">
-                From
-              </Text>
-              <Text className="text-sm">
-                {customFrom ? formatFullDate(customFrom.toISOString()) : 'Select date'}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={openToPicker}
-              className="border-border h-12 flex-1 justify-center rounded-md border px-3"
-            >
-              <Text variant="muted" className="text-xs">
-                To
-              </Text>
-              <Text className="text-sm">
-                {customTo ? formatFullDate(customTo.toISOString()) : 'Select date'}
-              </Text>
-            </Pressable>
+            <DateTimeField
+              mode="date"
+              value={customFrom}
+              onChange={setCustomFrom}
+              label="From"
+              placeholder="Select date"
+              className="flex-1"
+            />
+            <DateTimeField
+              mode="date"
+              value={customTo}
+              onChange={setCustomTo}
+              label="To"
+              placeholder="Select date"
+              className="flex-1"
+            />
           </View>
         ) : null}
 
@@ -299,34 +263,6 @@ export default function TransactionsScreen() {
           )
         }
       />
-
-      {showFromPicker && Platform.OS === 'ios' ? (
-        <View className="border-border bg-card rounded-t-xl border p-4">
-          <DateTimePicker
-            value={customFrom ?? new Date()}
-            mode="date"
-            display="spinner"
-            onValueChange={(_event, selected) => setCustomFrom(selected)}
-          />
-          <Button onPress={() => setShowFromPicker(false)}>
-            <Text className="text-primary-foreground font-medium">Done</Text>
-          </Button>
-        </View>
-      ) : null}
-
-      {showToPicker && Platform.OS === 'ios' ? (
-        <View className="border-border bg-card rounded-t-xl border p-4">
-          <DateTimePicker
-            value={customTo ?? new Date()}
-            mode="date"
-            display="spinner"
-            onValueChange={(_event, selected) => setCustomTo(selected)}
-          />
-          <Button onPress={() => setShowToPicker(false)}>
-            <Text className="text-primary-foreground font-medium">Done</Text>
-          </Button>
-        </View>
-      ) : null}
 
       <FloatingAddButton />
     </View>
