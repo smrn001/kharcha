@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": ".",
-    "slug": ".",
+    "name": "Kharcha",
+    "slug": "kharcha",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": ".",
+    "scheme": "kharcha",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
       "**/*"
