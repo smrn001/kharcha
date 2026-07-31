@@ -62,7 +62,7 @@ export default function HomeScreen() {
                 <Text variant="muted" className="text-xs">
                   Income
                 </Text>
-                <Text className="text-sm font-semibold text-green-600 dark:text-green-400">
+                <Text className="text-sm font-semibold text-positive">
                   {formatAmount(summary.income, settings.currency)}
                 </Text>
               </View>

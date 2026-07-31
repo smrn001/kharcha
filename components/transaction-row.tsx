@@ -36,7 +36,7 @@ export function TransactionRow({
       <Text
         className={cn(
           'text-sm font-semibold',
-          isIncome ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+          isIncome ? 'text-positive' : 'text-foreground'
         )}
       >
         {isIncome ? '+' : '-'}

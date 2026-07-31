@@ -37,7 +37,7 @@ export function BarChart({
       {hasIncome ? (
         <View className="mb-2 flex-row justify-end gap-4">
           <View className="flex-row items-center gap-1.5">
-            <View className="bg-green-600 dark:bg-green-400 h-2.5 w-2.5 rounded-sm" />
+            <View className="bg-positive h-2.5 w-2.5 rounded-sm" />
             <Text variant="muted" className="text-xs">
               Income
             </Text>
@@ -109,7 +109,7 @@ export function BarChart({
                   {hasIncome ? (
                     <>
                       <View
-                        className="bg-green-600 dark:bg-green-400 w-1/2 rounded-tl-sm"
+                        className="bg-positive w-1/2 rounded-tl-sm"
                         style={{ height: barHeight(datum.income) }}
                       />
                       <View

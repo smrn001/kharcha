@@ -99,7 +99,7 @@ function PeriodCards({
 
   const savedColor =
     summary.saved > 0
-      ? 'text-green-600 dark:text-green-400'
+      ? 'text-positive'
       : summary.saved < 0
         ? 'text-destructive'
         : 'text-foreground';
@@ -115,7 +115,7 @@ function PeriodCards({
           <Text variant="muted" className="text-xs">
             Income
           </Text>
-          <Text className="text-green-600 dark:text-green-400 mt-1 text-lg font-semibold">
+          <Text className="text-positive mt-1 text-lg font-semibold">
             {formatAmount(summary.income, currency)}
           </Text>
         </View>

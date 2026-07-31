@@ -96,7 +96,7 @@ export default function TransactionDetailScreen() {
           {isIncome ? '+' : '-'}
           {formatAmount(transaction.amount, settings.currency)}
         </Text>
-        <Text className={cn('mt-1 text-sm font-medium', isIncome ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground')}>
+        <Text className={cn('mt-1 text-sm font-medium', isIncome ? 'text-positive' : 'text-muted-foreground')}>
           {isIncome ? 'Income' : 'Expense'}
         </Text>
 

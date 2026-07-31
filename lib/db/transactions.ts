@@ -158,6 +158,10 @@ export async function deleteTransaction(db: SQLiteDatabase, id: string): Promise
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
 }
 
+export async function resetAllTransactions(db: SQLiteDatabase): Promise<void> {
+  await db.runAsync('DELETE FROM transactions');
+}
+
 export interface AnalyticsSummary {
   income: number;
   expense: number;

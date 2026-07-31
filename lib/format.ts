@@ -1,10 +1,20 @@
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  NPR: 'Rs.',
-  INR: '₹',
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-};
+export interface CurrencyInfo {
+  code: string;
+  symbol: string;
+  name: string;
+}
+
+export const SUPPORTED_CURRENCIES: CurrencyInfo[] = [
+  { code: 'NPR', symbol: 'Rs.', name: 'Nepalese Rupee' },
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+];
+
+const CURRENCY_SYMBOLS: Record<string, string> = Object.fromEntries(
+  SUPPORTED_CURRENCIES.map((currency) => [currency.code, currency.symbol])
+);
 
 const MINOR_DIGITS: Record<string, number> = {};
 

@@ -1,9 +1,18 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_SETTINGS, getSettings, setSetting } from '@/lib/db/settings';
 import type { Settings } from '@/types';
 
-export function useSettings() {
+interface SettingsContextValue {
+  settings: Settings;
+  loading: boolean;
+  refresh: () => Promise<void>;
+  updateSetting: (key: keyof Settings, value: string) => Promise<void>;
+}
+
+const SettingsContext = createContext<SettingsContextValue | null>(null);
+
+export function SettingsProvider({ children }: { children: ReactNode }) {
   const db = useSQLiteContext();
   const [state, setState] = useState<{ settings: Settings; loading: boolean }>({
     settings: DEFAULT_SETTINGS,
@@ -45,5 +54,17 @@ export function useSettings() {
     [db]
   );
 
-  return { ...state, refresh, updateSetting };
+  return (
+    <SettingsContext.Provider value={{ ...state, refresh, updateSetting }}>
+      {children}
+    </SettingsContext.Provider>
+  );
+}
+
+export function useSettings(): SettingsContextValue {
+  const context = useContext(SettingsContext);
+  if (!context) {
+    throw new Error('useSettings must be used within a SettingsProvider');
+  }
+  return context;
 }
