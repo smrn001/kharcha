@@ -1,0 +1,83 @@
+name: Android Release APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Verify Expo project
+        run: |
+          npx expo-doctor
+          npx tsc --noEmit
+          npm run lint
+
+      - name: Authenticate with EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas whoami
+
+      - name: Build release APK
+        id: build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          eas build \
+            --platform android \
+            --profile release-apk \
+            --non-interactive \
+            --wait \
+            --json > build.json
+          BUILD_ID=$(jq -r '.id' build.json)
+          echo "build-id=$BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "Built APK (build ID: $BUILD_ID)"
+
+      - name: Download APK
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          eas build:download "${{ steps.build.outputs.build-id }}" \
+            --platform android \
+            --output "${{ github.workspace }}/kharcha.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kharcha-release-apk
+          path: kharcha.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" kharcha.apk \
+            --repo "${{ github.repository }}" \
+            --title "Kharcha ${{ github.ref_name }}" \
+            --generate-notes

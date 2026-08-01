@@ -14,6 +14,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.samir.kharcha",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -40,6 +42,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "be89b4ef-9a39-49c4-b277-a7b84b127109"
+      }
+    },
+    "owner": "samirniroula"
   }
 }
