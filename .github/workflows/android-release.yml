@@ -97,16 +97,45 @@ jobs:
           echo "apk-url=$APK_URL" >> "$GITHUB_OUTPUT"
           echo "Built APK (build ID: $BUILD_ID)"
 
-      - name: Download APK
+      - name: Download and extract APKs
         run: |
           set -euo pipefail
-          curl -fL "${{ steps.build.outputs.apk-url }}" -o kharcha.apk
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p apks
+          curl -fL "${{ steps.build.outputs.apk-url }}" -o apks/archive
 
-      - name: Upload APK artifact
+          if file apks/archive | grep -q 'gzip compressed'; then
+            tar -xzf apks/archive -C apks
+          else
+            cp apks/archive apks/app.apk
+          fi
+
+          find apks -type f \( -name '*.apk' -o -name '*.aab' \) | sort
+
+          ARM64=$(find apks -type f -name '*arm64*.apk' | head -n1 || true)
+          UNIVERSAL=$(find apks -type f -name '*universal*.apk' | head -n1 || true)
+          FALLBACK=$(find apks -type f -name '*.apk' ! -name '*arm64*' ! -name '*universal*' | head -n1 || true)
+
+          if [ -n "$ARM64" ]; then
+            mv "$ARM64" "Kharcha-v${VERSION}-arm64-v8a.apk"
+            echo "Prepared arm64 APK"
+          fi
+          if [ -n "$UNIVERSAL" ]; then
+            mv "$UNIVERSAL" "Kharcha-v${VERSION}-universal.apk"
+            echo "Prepared universal APK"
+          elif [ -n "$FALLBACK" ]; then
+            mv "$FALLBACK" "Kharcha-v${VERSION}-universal.apk"
+            echo "Prepared universal APK (fallback)"
+          fi
+
+          ls -lh Kharcha-v${VERSION}-*.apk
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: kharcha-release-apk
-          path: kharcha.apk
+          name: kharcha-release-apks
+          path: Kharcha-v*.apk
           if-no-files-found: error
 
       - name: Create GitHub Release
@@ -114,7 +143,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" kharcha.apk \
+          gh release create "${{ github.ref_name }}" Kharcha-v*.apk \
             --repo "${{ github.repository }}" \
             --title "Kharcha ${{ github.ref_name }}" \
             --generate-notes
