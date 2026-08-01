@@ -9,6 +9,10 @@ concurrency:
   group: android-release-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   verify:
     name: Verify project
