@@ -1,5 +1,6 @@
 import '@/global.css';
 
+import { UpdateChecker } from '@/components/update-checker';
 import { useAppliedTheme } from '@/hooks/use-applied-theme';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import { DatabaseProvider } from '@/lib/db/database';
@@ -53,6 +54,7 @@ function ThemedRoot() {
         <Stack screenOptions={{ headerShown: false }} />
       </View>
       <PortalHost />
+      <UpdateChecker />
     </ThemeProvider>
   );
 }
