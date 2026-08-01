@@ -61,9 +61,10 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           set -euo pipefail
+          cd /tmp
           eas build:download "${{ steps.build.outputs.build-id }}" \
-            --platform android \
-            --output "${{ github.workspace }}/kharcha.apk"
+            --platform android
+          mv ./*.apk "${{ github.workspace }}/kharcha.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
