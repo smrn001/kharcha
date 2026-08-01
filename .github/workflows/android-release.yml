@@ -59,6 +59,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Sync version from git tag
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            jq --arg v "$VERSION" '.expo.version = $v' app.json > app.json.tmp && mv app.json.tmp app.json
+            npm version "$VERSION" --no-git-tag-version --allow-same-version
+            echo "Synced app version to $VERSION"
+          else
+            echo "No tag; keeping existing version"
+          fi
+
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
