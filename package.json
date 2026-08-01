@@ -12,6 +12,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@dietrichgebert/ponytail": "^4.8.4",
     "@react-native-community/datetimepicker": "9.1.0",
     "@rn-primitives/alert-dialog": "^1.5.2",
     "@rn-primitives/dialog": "^1.5.2",
