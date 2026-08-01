@@ -36,7 +36,7 @@ function ThemedRoot() {
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <View className="web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:bg-background web:shadow-2xl">
+      <View className="flex-1 web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:bg-background web:shadow-2xl">
         <Stack screenOptions={{ headerShown: false }} />
       </View>
       <PortalHost />
