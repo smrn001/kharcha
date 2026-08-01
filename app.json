@@ -15,7 +15,6 @@
     },
     "android": {
       "package": "com.samir.kharcha",
-      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

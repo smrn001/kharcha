@@ -52,7 +52,7 @@ jobs:
             --non-interactive \
             --wait \
             --json > build.json
-          BUILD_ID=$(jq -r '.id' build.json)
+          BUILD_ID=$(jq -r '.[0].id' build.json)
           echo "build-id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "Built APK (build ID: $BUILD_ID)"
 
