@@ -62,7 +62,8 @@ jobs:
         run: |
           set -euo pipefail
           cd /tmp
-          eas build:download "${{ steps.build.outputs.build-id }}" \
+          eas build:download \
+            --build-id "${{ steps.build.outputs.build-id }}" \
             --platform android
           mv ./*.apk "${{ github.workspace }}/kharcha.apk"
 
