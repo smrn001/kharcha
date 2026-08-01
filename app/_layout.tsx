@@ -6,6 +6,7 @@ import { DatabaseProvider } from '@/lib/db/database';
 import { NAV_THEME } from '@/lib/theme';
 import { ThemeProvider } from 'expo-router/react-navigation';
 import { PortalHost } from '@rn-primitives/portal';
+import { NavigationBar } from 'expo-navigation-bar';
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
@@ -40,8 +41,11 @@ function ThemedRoot() {
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      {Platform.OS === 'android' && (
+        <NavigationBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      )}
       <View
-        className="flex-1 web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:bg-background web:shadow-2xl"
+        className="flex-1 bg-background web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:shadow-2xl"
         style={{
           paddingTop: Platform.OS === 'web' ? 0 : insets.top,
         }}
