@@ -49,6 +49,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -143,7 +145,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          PREV_TAG=$(git describe --tags --abbrev=0 --match 'v*' HEAD^ 2>/dev/null || true)
+
+          if [ -n "$PREV_TAG" ]; then
+            CHANGES=$(git log --no-merges --pretty=format:'%s' "$PREV_TAG"..HEAD | sed 's/^/- /')
+          else
+            CHANGES=""
+          fi
+
+          if [ -z "$CHANGES" ]; then
+            CHANGES="- Release $VERSION"
+          fi
+
+          if [ -n "$PREV_TAG" ]; then
+            COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${GITHUB_REF_NAME}"
+          else
+            COMPARE_URL=""
+          fi
+
+          BODY="## What's Changed
+$CHANGES
+
+**Full Changelog**: $COMPARE_URL"
+
           gh release create "${{ github.ref_name }}" Kharcha-v*.apk \
             --repo "${{ github.repository }}" \
             --title "Kharcha ${{ github.ref_name }}" \
-            --generate-notes
+            --notes "$BODY"

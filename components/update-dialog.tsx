@@ -29,11 +29,8 @@ function parseReleaseNotes(notes: string): { bullets: string[]; changelogUrl: st
       changelogUrl = url;
       continue;
     }
-    if (/^[-*]\s/.test(line) || /^#{1,6}\s/.test(line)) {
-      const text = line
-        .replace(/^[-*]\s+/, '')
-        .replace(/^#+\s+/, '')
-        .replace(/\*\*/g, '');
+    if (/^[-*]\s/.test(line)) {
+      const text = line.replace(/^[-*]\s+/, '').replace(/\*\*/g, '');
       if (text) {
         bullets.push(text);
       }
