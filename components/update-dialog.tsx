@@ -45,7 +45,7 @@ export function UpdateDialog({ state, onDownload, onLater, onSkip }: UpdateDialo
           </View>
 
           <View className="gap-1.5">
-            <Text className="text-sm font-medium">What&apos;s new</Text>
+            <Text className="text-sm font-medium">Whats new</Text>
             <ScrollView
               className="border-border bg-muted/30 max-h-40 rounded-lg border p-3"
               showsVerticalScrollIndicator={false}

@@ -11,11 +11,10 @@ const DB_LOCK_NAME = 'kharcha-db-lock';
  * expo-sqlite on web stores the database in the Origin Private File System
  * through a dedicated worker per tab. OPFS sync access handles are exclusive
  * per file, so a second tab opening the same database throws
- * `NoModificationAllowedError`. This hook uses the Web Locks API to elect a
- * single owning tab; the lock is held for the lifetime of the component.
+ * `NoModificationAllowedError`. This hook uses the Web Locks API to elect
+ * a single owning tab; the lock is held for the lifetime of the component.
  *
- * On native platforms (or when the Web Locks API is unavailable) it always
- * reports `acquired`, leaving error handling to the database error boundary.
+ * On native platforms it always reports `acquired`.
  */
 export function useWebDatabaseLock(): WebDatabaseLockStatus {
   const [status, setStatus] = useState<WebDatabaseLockStatus>(() => {

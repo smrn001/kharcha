@@ -1,34 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { useAppliedTheme } from '@/hooks/use-applied-theme';
 import { PanelsTopLeft, TriangleAlert } from 'lucide-react-native';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 
 type DatabaseUnavailableScreenProps = {
   kind: 'other-tab' | 'error';
   onRetry?: () => void;
 };
 
-export function DatabaseUnavailableScreen(props: DatabaseUnavailableScreenProps) {
-  // The screen can render outside the themed layout tree (e.g. when the
-  // database gate blocks the app before settings are loaded), so ensure the
-  // web color scheme is applied. Native keeps the user's saved preference.
-  if (Platform.OS === 'web') {
-    return (
-      <WebTheme>
-        <DatabaseUnavailableContent {...props} />
-      </WebTheme>
-    );
-  }
-  return <DatabaseUnavailableContent {...props} />;
-}
-
-function WebTheme({ children }: { children: React.ReactNode }) {
-  useAppliedTheme('system');
-  return <>{children}</>;
-}
-
-function DatabaseUnavailableContent({ kind, onRetry }: DatabaseUnavailableScreenProps) {
+export function DatabaseUnavailableScreen({ kind, onRetry }: DatabaseUnavailableScreenProps) {
   const isOtherTab = kind === 'other-tab';
   const title = isOtherTab ? 'Already open in another tab' : "Kharcha couldn't be opened";
   const message = isOtherTab

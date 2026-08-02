@@ -1,8 +1,9 @@
 import '@/global.css';
 
-import { UpdateChecker } from '@/components/update-checker';
+import { UpdateDialog } from '@/components/update-dialog';
 import { useAppliedTheme } from '@/hooks/use-applied-theme';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
+import { useUpdateChecker } from '@/hooks/use-update-checker';
 import { DatabaseProvider } from '@/lib/db/database';
 import { NAV_THEME } from '@/lib/theme';
 import { ThemeProvider } from 'expo-router/react-navigation';
@@ -12,7 +13,7 @@ import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { useEffect } from 'react';
-import { Platform, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export {
@@ -54,8 +55,25 @@ function ThemedRoot() {
         <Stack screenOptions={{ headerShown: false }} />
       </View>
       <PortalHost />
-      <UpdateChecker />
+      <AndroidUpdateChecker />
     </ThemeProvider>
+  );
+}
+
+function AndroidUpdateChecker() {
+  const { state, dismiss, skipVersion } = useUpdateChecker();
+
+  if (Platform.OS !== 'android' || state.status !== 'available') {
+    return null;
+  }
+
+  return (
+    <UpdateDialog
+      state={state}
+      onDownload={(url) => Linking.openURL(url).catch(() => {})}
+      onLater={dismiss}
+      onSkip={skipVersion}
+    />
   );
 }
 
