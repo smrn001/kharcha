@@ -6,5 +6,6 @@
       "url": "https://mcp.context7.com/mcp/oauth",
       "enabled": true
     }
-  }
+  },
+  "plugin": ["./.opencode/plugins/ponytail.mjs"]
 }
