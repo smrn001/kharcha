@@ -13,15 +13,16 @@ import {
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useSettings } from '@/hooks/use-settings';
+import { useUpdateChecker } from '@/hooks/use-update-checker';
 import { resetAllTransactions } from '@/lib/db/transactions';
 import { SUPPORTED_CURRENCIES } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Check, ChevronRight } from 'lucide-react-native';
+import { Check, ChevronRight, RefreshCw } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
 import type { ThemePreference, TransactionType } from '@/types';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
@@ -89,6 +90,7 @@ function Row({
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const { settings, updateSetting } = useSettings();
+  const { state: updateState, isChecking, checkNow } = useUpdateChecker();
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [startOfWeekOpen, setStartOfWeekOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -176,6 +178,38 @@ export default function SettingsScreen() {
               Version {Constants.expoConfig?.version ?? '1.0.0'}
             </Text>
           </View>
+          {Platform.OS === 'android' ? (
+            <>
+              <View className="bg-border mx-4 h-px" />
+              <Row label="Check for updates" onPress={checkNow}>
+                {isChecking ? (
+                  <View className="flex-row items-center gap-2">
+                    <ActivityIndicator size="small" />
+                    <Text variant="muted" className="text-sm">
+                      Checking…
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="flex-row items-center gap-1">
+                    {updateState.status === 'available' ? (
+                      <Text className="text-primary text-sm font-medium">
+                        v{updateState.latestVersion} available
+                      </Text>
+                    ) : updateState.status === 'error' ? (
+                      <Text variant="muted" className="text-sm">
+                        Check failed
+                      </Text>
+                    ) : (
+                      <Text variant="muted" className="text-sm">
+                        Up to date
+                      </Text>
+                    )}
+                    <Icon as={RefreshCw} size={16} className="text-muted-foreground" />
+                  </View>
+                )}
+              </Row>
+            </>
+          ) : null}
         </Section>
       </ScrollView>
 

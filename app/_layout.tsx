@@ -3,7 +3,7 @@ import '@/global.css';
 import { UpdateDialog } from '@/components/update-dialog';
 import { useAppliedTheme } from '@/hooks/use-applied-theme';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
-import { useUpdateChecker } from '@/hooks/use-update-checker';
+import { UpdateCheckerProvider, useUpdateChecker } from '@/hooks/use-update-checker';
 import { DatabaseProvider } from '@/lib/db/database';
 import { NAV_THEME } from '@/lib/theme';
 import { ThemeProvider } from 'expo-router/react-navigation';
@@ -26,7 +26,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <DatabaseProvider>
         <SettingsProvider>
-          <ThemedRoot />
+          <UpdateCheckerProvider>
+            <ThemedRoot />
+          </UpdateCheckerProvider>
         </SettingsProvider>
       </DatabaseProvider>
     </SafeAreaProvider>
@@ -71,6 +73,7 @@ function AndroidUpdateChecker() {
     <UpdateDialog
       state={state}
       onDownload={(url) => Linking.openURL(url).catch(() => {})}
+      onOpenLink={(url) => Linking.openURL(url).catch(() => {})}
       onLater={dismiss}
       onSkip={skipVersion}
     />
