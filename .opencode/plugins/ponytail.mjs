@@ -1,0 +1,1 @@
+../../node_modules/@dietrichgebert/ponytail/.opencode/plugins/ponytail.mjs
