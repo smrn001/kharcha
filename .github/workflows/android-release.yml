@@ -151,26 +151,19 @@ jobs:
 
           if [ -n "$PREV_TAG" ]; then
             CHANGES=$(git log --no-merges --pretty=format:'%s' "$PREV_TAG"..HEAD | sed 's/^/- /')
-          else
-            CHANGES=""
-          fi
-
-          if [ -z "$CHANGES" ]; then
-            CHANGES="- Release $VERSION"
-          fi
-
-          if [ -n "$PREV_TAG" ]; then
             COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${GITHUB_REF_NAME}"
           else
+            CHANGES="- Release $VERSION"
             COMPARE_URL=""
           fi
 
-          BODY="## What's Changed
-$CHANGES
-
-**Full Changelog**: $COMPARE_URL"
+          printf '%s\n' \
+            "## What's Changed" \
+            "$CHANGES" \
+            "" \
+            "**Full Changelog**: $COMPARE_URL" > /tmp/release-body.md
 
           gh release create "${{ github.ref_name }}" Kharcha-v*.apk \
             --repo "${{ github.repository }}" \
             --title "Kharcha ${{ github.ref_name }}" \
-            --notes "$BODY"
+            --notes-file /tmp/release-body.md
