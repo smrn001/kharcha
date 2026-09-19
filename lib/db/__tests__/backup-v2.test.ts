@@ -105,5 +105,88 @@ describe('backup round-trip (v2)', () => {
     expect(result.imported).toBe(1);
     const txs = await getTransactions(dst);
     expect(txs[0].accountId).toBe('account-cash');
+    // v1 amounts are already minor units; import must not rescale them.
+    expect(txs[0].amount).toBe(999);
+  });
+
+  it('imports a full legacy v1 export without rescaling amounts', async () => {
+    const dst = await setup();
+    const legacy = {
+      version: 1,
+      app: 'kharcha',
+      exportedAt: '2026-09-19T05:00:58.754Z',
+      categories: [
+        {
+          id: 'expense-education',
+          name: 'Education',
+          icon: 'GraduationCap',
+          type: 'expense',
+          createdAt: '1970-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'expense-transport',
+          name: 'Transport',
+          icon: 'Bus',
+          type: 'expense',
+          createdAt: '1970-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'income-salary',
+          name: 'Salary',
+          icon: 'BriefcaseBusiness',
+          type: 'income',
+          createdAt: '1970-01-01T00:00:00.000Z',
+        },
+      ],
+      transactions: [
+        {
+          id: 'id-old-1',
+          type: 'expense',
+          amount: 10000,
+          categoryId: 'expense-transport',
+          date: '2026-09-18T03:20:00.000Z',
+          createdAt: '2026-09-19T03:20:16.967Z',
+          updatedAt: '2026-09-19T03:20:16.967Z',
+        },
+        {
+          id: 'id-old-2',
+          type: 'expense',
+          amount: 43000,
+          categoryId: 'expense-food',
+          title: 'Kta haru',
+          date: '2026-08-01T14:17:36.076Z',
+          createdAt: '2026-08-01T14:17:53.949Z',
+          updatedAt: '2026-08-01T14:17:53.949Z',
+        },
+        {
+          id: 'id-old-3',
+          type: 'income',
+          amount: 100000,
+          categoryId: 'income-salary',
+          title: 'Mummy le',
+          date: '2026-08-01T04:13:00.000Z',
+          createdAt: '2026-08-01T10:14:22.384Z',
+          updatedAt: '2026-08-01T10:14:22.384Z',
+        },
+      ],
+    };
+    const validated = validateBackup(legacy);
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) throw new Error('unreachable');
+    const result = await importBackup(dst, validated.data);
+    // The missing expense-other category is created as a fallback for
+    // expense-food; all three transactions land.
+    expect(result.imported).toBe(3);
+
+    const txs = await getTransactions(dst);
+    expect(txs).toHaveLength(3);
+    expect(txs.find((tx) => tx.id === 'id-old-1')?.amount).toBe(10000);
+    expect(txs.find((tx) => tx.id === 'id-old-2')?.amount).toBe(43000);
+    expect(txs.find((tx) => tx.id === 'id-old-3')?.amount).toBe(100000);
+    expect(txs.find((tx) => tx.id === 'id-old-1')?.accountId).toBe('account-cash');
+
+    const categories = await import('../categories').then((m) => m.getCategories(dst));
+    expect(categories.find((c) => c.id === 'expense-transport')?.icon).toBe('Bus');
+    expect(categories.find((c) => c.id === 'income-salary')?.icon).toBe('BriefcaseBusiness');
   });
 });

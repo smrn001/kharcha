@@ -19,7 +19,7 @@ import { getTransactions } from './transactions';
  *   device preferences (currency, theme, …) are never overwritten.
  */
 
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 export const BACKUP_APP = 'kharcha';
 
 const MAX_TRANSACTIONS = 50_000;
@@ -63,6 +63,14 @@ export interface BackupData {
   categories: BackupCategory[];
   transactions: BackupTransaction[];
 }
+
+/**
+ * Backup formats:
+ * - v2 (current): amounts in minor units; accounts and transfers supported.
+ * - v1 (legacy): the pre-accounts export — same minor-unit amounts, but no
+ *   accounts exist, so transactions import against the default Cash account.
+ */
+const LEGACY_BACKUP_VERSION = 1;
 
 export async function collectBackup(db: SQLiteDatabase): Promise<BackupData> {
   const [accounts, categories, transactions] = await Promise.all([
@@ -139,17 +147,19 @@ function isValidDate(value: unknown): value is string {
 }
 
 /**
- * Validate an unknown parsed value as backup data. Returns a
+ * Validate an unknown parsed value as backup data. Accepts the current v2
+ * format and legacy v1 exports (which predate accounts). Returns a
  * user-friendly error message instead of throwing.
  */
 export function validateBackup(parsed: unknown): ValidationResult {
   if (!isRecord(parsed)) {
     return { ok: false, error: 'This file does not look like a Kharcha backup.' };
   }
-  if (parsed.version !== BACKUP_VERSION) {
+  const legacy = parsed.version === LEGACY_BACKUP_VERSION;
+  if (parsed.version !== BACKUP_VERSION && !legacy) {
     return {
       ok: false,
-      error: `Unsupported backup version (${String(parsed.version)}). Expected version ${BACKUP_VERSION}.`,
+      error: `Unsupported backup version (${String(parsed.version)}). Expected version ${BACKUP_VERSION} or ${LEGACY_BACKUP_VERSION}.`,
     };
   }
   if (!Array.isArray(parsed.categories) || !Array.isArray(parsed.transactions)) {
@@ -165,8 +175,9 @@ export function validateBackup(parsed: unknown): ValidationResult {
     return { ok: false, error: 'Backup contains invalid accounts.' };
   }
 
+  // Legacy v1 exports predate accounts entirely.
   const accounts: BackupAccount[] = [];
-  for (const raw of parsed.accounts ?? []) {
+  for (const raw of legacy ? [] : (parsed.accounts ?? [])) {
     if (
       !isRecord(raw) ||
       typeof raw.id !== 'string' ||

@@ -1,4 +1,5 @@
 import * as DocumentPicker from 'expo-document-picker';
+import { File, Paths } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
@@ -69,7 +70,10 @@ export interface PickedBackupFile {
 export async function pickBackupFile(): Promise<PickedBackupFile | null> {
   const result = await DocumentPicker.getDocumentAsync({
     type: ['application/json', 'text/csv', 'text/comma-separated-values', 'text/plain'],
-    copyToCacheDirectory: true,
+    // Letting the picker copy into its cache would land the file in Expo Go's
+    // host cache, which the filesystem module refuses to read. Without a copy
+    // Android returns the granted `content://` URI instead, which is readable.
+    copyToCacheDirectory: false,
   });
   if (result.canceled || !result.assets || result.assets.length === 0) {
     return null;
@@ -83,7 +87,19 @@ async function readAssetText(asset: DocumentPicker.DocumentPickerAsset): Promise
   if (Platform.OS === 'web' && asset.file) {
     return asset.file.text();
   }
-  return FileSystem.readAsStringAsync(asset.uri);
+  // The returned URI is a SAF `content://` URI on Android (read-granted) and a
+  // readable `file://` in the app tmp dir on iOS. The new `File` API bridges
+  // both; stage a copy in our own cache if a particular provider refuses a
+  // direct read.
+  const uri = asset.uri;
+  try {
+    return await new File(uri).text();
+  } catch {
+    // fall through to staging a copy
+  }
+  const staging = `${Paths.cache.uri}kharcha-import-${Date.now()}`;
+  await new File(uri).copy(new File(staging));
+  return new File(staging).text();
 }
 
 export function detectBackupKind(fileName: string, text: string): BackupFileKind {
