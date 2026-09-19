@@ -7,7 +7,7 @@ export function PageHeader({ title, subtitle }: { title: string; subtitle?: stri
   return (
     <NativeBlock matchContents={false}>
       <Column style={{ paddingTop: 16, paddingBottom: 8, paddingHorizontal: 20 }} spacing={2}>
-        <Text textStyle={{ fontSize: 24, fontWeight: 'bold' }}>{title}</Text>
+        <Text textStyle={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}>{title}</Text>
         {subtitle ? (
           <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>{subtitle}</Text>
         ) : null}
