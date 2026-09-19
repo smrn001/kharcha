@@ -4,78 +4,74 @@
 
 > Open the app → record the expense → continue with your day.
 
-It is built with [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/), fully **offline-first** — all financial data is stored locally on your device using SQLite. No account, no internet, no cloud, no backend server.
+Fully **offline-first**: all financial data lives in SQLite on your device. No account, no internet, no cloud, no backend.
 
 ## Features
 
-- 💰 **Quick transaction entry** — expense/income, amount, category, optional title & note, date & time in a few taps
-- 🗂️ **Categories** — sensible defaults plus full management: create, rename, choose an icon, and safely delete (blocked while a category is still in use)
-- 📊 **Analytics** — income vs. spending trend charts, period summaries, and spending by category (week / month / year)
-- 📋 **Transactions list** — search, type/date/category filters, and date-grouped sections
-- ⚙️ **Settings** — currency (NPR, USD, INR, EUR, GBP), System/Light/Dark appearance (persisted), default transaction type, and start-of-week preference
-- 🌙 **Themes** — custom Indigo/Periwinkle design system with semantic tokens for light and dark
-- 📱 **Cross-platform** — iOS, Android, and Web
-- 🧠 **Layer separation** — Screen → Hook → Repository → SQLite, no raw SQL in UI components
+- **Quick transaction entry** — expense/income, amount, category, optional title & note, custom date & time, in a few taps
+- **Categories** — sensible defaults plus full management: create, rename, pick an icon, safe delete (blocked while in use)
+- **Analytics** — income vs. spending trends, period summaries, spending by category (week / month / year), previous-period comparison with % changes, and biggest category movers
+- **Transactions** — date-grouped history with search and type / date / category filters
+- **Backup & restore** — offline JSON backup and CSV export via the share sheet; merge-only import that never touches existing data
+- **Settings** — currency (NPR, USD, INR, EUR, GBP), System / Light / Dark appearance, default transaction type, start-of-week
+- **Cross-platform** — iOS, Android, and Web
 
 ## Tech Stack
 
 - **Framework**: Expo SDK 56 + React Native + React
-- **Routing**: Expo Router (file-based, `app/` directory)
-- **Styling**: NativeWind v4 (Tailwind CSS, `className` prop)
-- **UI Library**: React Native Reusables (shadcn-style components in `components/ui/`)
+- **Routing**: Expo Router (file-based, `app/`)
+- **Styling**: NativeWind v4 (`className` prop)
+- **UI**: React Native Reusables (`components/ui/`)
 - **Icons**: Lucide React Native
-- **Database**: Expo SQLite (offline, local)
+- **Database**: Expo SQLite (local, offline)
 - **Animations**: React Native Reanimated
-- **Language**: TypeScript
-- **Path aliases**: `@/` → project root
+- **Language**: TypeScript (strict, no `any`)
+
+Architecture follows **Screen → Hook → Repository → SQLite** — no raw SQL in UI components. See [AGENTS.md](./AGENTS.md) for contributor conventions and [docs/prd.md](./docs/prd.md) for the product spec.
 
 ## Getting Started
 
 ```bash
 npm install
-npm run dev
+npm run dev      # Expo dev server (pick target below)
+npm run web      # Web in the browser
+npm run android  # Android emulator
+npm run ios      # iOS simulator (Mac only)
 ```
 
-This starts the Expo Dev Server. Open the app in:
-
-- **iOS**: press `i` to launch in the iOS simulator _(Mac only)_
-- **Android**: press `a` to launch in the Android emulator
-- **Web**: press `w` to run in a browser
-
-You can also scan the QR code with the [Expo Go](https://expo.dev/go) app to test on a physical device.
+You can also scan the QR code with [Expo Go](https://expo.dev/go) to run on a physical device.
 
 ## Scripts
 
-| Command              | Description                        |
-| -------------------- | ---------------------------------- |
-| `npm run dev`        | Start the Expo dev server          |
-| `npm run android`    | Start dev server for Android       |
-| `npm run ios`        | Start dev server for iOS           |
-| `npm run web`        | Start dev server for Web           |
-| `npm run ts:check`   | Type-check with `tsc --noEmit`     |
-| `npm run lint`       | Run ESLint                         |
-| `npm run clean`      | Remove `.expo` and `node_modules`  |
+| Command            | Description                     |
+| ------------------ | ------------------------------- |
+| `npm run dev`      | Start the Expo dev server       |
+| `npm run web`      | Start dev server for Web        |
+| `npm run android`  | Start dev server for Android    |
+| `npm run ios`      | Start dev server for iOS        |
+| `npm run ts:check` | Type-check (`tsc --noEmit`)     |
+| `npm run lint`     | Run ESLint                      |
+| `npm run clean`    | Remove `.expo` and `node_modules` |
 
 ## Project Structure
 
 ```text
-app/                  # Expo Router file-based routes
+app/                  # Expo Router routes
 ├── _layout.tsx       # Root layout (database, settings, theme providers)
 ├── (tabs)/           # Home, Transactions, Analytics, Settings
-├── transaction/      # Add / edit and transaction detail screens
-└── categories/       # Category list, create, and edit screens
-components/           # Reusable components (form fields, charts, rows, etc.)
-├── ui/               # React Native Reusables primitives (button, text, dialogs)
-hooks/                # Data hooks: transactions, categories, analytics, settings
+├── transaction/      # Add / edit / detail screens
+└── categories/       # Category list, create, edit screens
+components/           # Reusable UI (charts, rows, dialogs, ui/ primitives)
+hooks/                # Data hooks (transactions, analytics, backup, settings, …)
 lib/
-├── db/               # SQLite layer: schema migrations, repositories
-└── dates.ts, format.ts, theme.ts, category-icons.ts
+├── db/               # SQLite repositories (transactions, categories, backup, …)
+└── dates.ts, format.ts, …
 docs/prd.md           # Product Requirements Document
 ```
 
 ## Verification
 
-After significant changes run:
+After significant changes:
 
 ```bash
 npm run ts:check
@@ -83,22 +79,21 @@ npm run lint
 npx expo-doctor
 ```
 
-When debugging runtime issues, inspect Metro output and fix the root cause. After changing dependency versions or native config, clear the Metro cache with `npx expo start --clear`.
+After changing dependencies or native config, also run `npx expo install --check` and clear Metro cache (`npx expo start --clear`) before testing.
+
+## Releases
+
+Android releases are automated: pushing a tag like `v1.1.5` runs [.github/workflows/android-release.yml](./.github/workflows/android-release.yml), which type-checks, lints, builds a release APK with EAS, and publishes a [GitHub Release](https://github.com/smrn001/kharcha/releases) with a changelog generated from commit messages. The Android app checks these releases for in-app updates.
 
 ## Documentation
 
 - [Product Requirements Document](./docs/prd.md)
-- [React Native Docs](https://reactnative.dev/docs/getting-started)
 - [Expo Docs](https://docs.expo.dev/)
+- [React Native Docs](https://reactnative.dev/docs/getting-started)
 - [NativeWind Docs](https://www.nativewind.dev/)
 - [React Native Reusables](https://reactnativereusables.com)
 
-## Deploy with EAS
+## Deploy
 
-The easiest way to deploy the app is with [Expo Application Services (EAS)](https://expo.dev/eas).
-
-- [EAS Build](https://docs.expo.dev/build/introduction/)
-- [EAS Updates](https://docs.expo.dev/eas-update/introduction/)
-- [EAS Submit](https://docs.expo.dev/submit/introduction/)
-
-The Web build is also deployable as a static site (configured for Vercel SPA rewrites via `vercel.json`).
+- **Android**: automated via EAS (see Releases above); `release-apk` profile in `eas.json`
+- **Web**: static export, served with SPA rewrites (`vercel.json`)
