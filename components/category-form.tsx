@@ -1,4 +1,5 @@
 import { SegmentedControl } from '@/components/segmented-control';
+import { Host, FieldGroup } from '@expo/ui';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -67,21 +68,22 @@ export function CategoryForm({
       >
         <SegmentedControl options={typeOptions} value={type} onChange={handleTypeChange} />
 
-        <View className="gap-2">
-          <Text className="text-sm font-medium">{t('cat.formName')}</Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t('cat.formNamePh')}
-            placeholderTextColor={colors.mutedForeground}
-            accessibilityLabel={t('cat.formNameLabel')}
-            className={INPUT_CLASS}
-          />
-        </View>
+        {/* Host must directly wrap FieldGroup (Android Compose contract). */}
+        <Host>
+        <FieldGroup>
+          <FieldGroup.Section title={t('cat.formName')}>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder={t('cat.formNamePh')}
+              placeholderTextColor={colors.mutedForeground}
+              accessibilityLabel={t('cat.formNameLabel')}
+              className={INPUT_CLASS}
+            />
+          </FieldGroup.Section>
 
-        <View className="gap-2">
-          <Text className="text-sm font-medium">{t('cat.formIcon')}</Text>
-          <View className="flex-row flex-wrap gap-2">
+          <FieldGroup.Section title={t('cat.formIcon')}>
+            <View className="flex-row flex-wrap gap-2">
             {CATEGORY_ICONS.map((iconName) => {
               const selected = icon === iconName;
               const IconComponent = categoryIcon(iconName);
@@ -106,9 +108,11 @@ export function CategoryForm({
               );
             })}
           </View>
-        </View>
+          </FieldGroup.Section>
+        </FieldGroup>
+        </Host>
 
-        {error ? <Text className="text-destructive text-sm">{error}</Text> : null}
+        {error ? <Text selectable className="text-destructive text-sm">{error}</Text> : null}
 
         {footer}
       </ScrollView>

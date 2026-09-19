@@ -1,14 +1,4 @@
-import { ScreenHeader } from '@/components/screen-header';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -23,16 +13,18 @@ import { deleteTransaction, getTransactionById } from '@/lib/db/transactions';
 import { formatAmount } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSQLiteContext } from 'expo-sqlite';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import type { Transaction } from '@/types';
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row items-center justify-between py-3">
+    <View className="flex-row items-center justify-between gap-3 py-3">
       <Text variant="muted">{label}</Text>
-      <Text className="text-sm font-medium">{value}</Text>
+      <Text selectable className="text-right text-sm font-medium">
+        {value}
+      </Text>
     </View>
   );
 }
@@ -69,7 +61,13 @@ export default function TransactionDetailScreen() {
   if (loading || !transaction) {
     return (
       <View className="bg-background flex-1">
-        <ScreenHeader title={t('det.title')} />
+        <Stack.Screen
+          options={{
+            title: t('det.title'),
+            headerShown: true,
+            headerBackButtonDisplayMode: 'minimal',
+          }}
+        />
         <View className="flex-1 items-center pt-16">
           <Text variant="muted">{t('common.loading')}</Text>
         </View>
@@ -92,7 +90,13 @@ export default function TransactionDetailScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <ScreenHeader title={t('det.title')} />
+      <Stack.Screen
+        options={{
+          title: t('det.title'),
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
 
       <View className="flex-1 items-center px-6 pt-8">
         <View className="bg-muted h-16 w-16 items-center justify-center rounded-full">
@@ -129,27 +133,15 @@ export default function TransactionDetailScreen() {
         </View>
       </View>
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('det.delTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('det.delDesc')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              <Text>{t('det.cancel')}</Text>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onPress={handleDelete}
-              className="bg-destructive dark:bg-destructive/60"
-            >
-              <Text className="text-white font-medium">{t('common.delete')}</Text>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmSheet
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={t('det.delTitle')}
+        description={t('det.delDesc')}
+        cancelLabel={t('det.cancel')}
+        confirmLabel={t('common.delete')}
+        onConfirm={handleDelete}
+      />
     </View>
   );
 }

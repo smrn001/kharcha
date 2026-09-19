@@ -183,6 +183,8 @@ export const en = {
   'add.category': 'Category',
   'add.date': 'Date',
   'add.time': 'Time',
+  'add.dateTime': 'Date & time',
+  'add.details': 'Details',
   'add.titleOpt': 'Title (optional)',
   'add.titlePh': 'e.g. Lunch',
   'add.titleLabel': 'Title',

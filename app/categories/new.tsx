@@ -1,8 +1,7 @@
 import { CategoryForm } from '@/components/category-form';
-import { ScreenHeader } from '@/components/screen-header';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSQLiteContext } from 'expo-sqlite';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { createCategory } from '@/lib/db/categories';
@@ -28,7 +27,13 @@ export default function NewCategoryScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <ScreenHeader title={t('cat.newTitle')} />
+      <Stack.Screen
+        options={{
+          title: t('cat.newTitle'),
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
       <CategoryForm
         submitLabel={t('cat.create')}
         submitting={submitting}

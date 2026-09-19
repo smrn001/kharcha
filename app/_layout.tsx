@@ -6,6 +6,7 @@ import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import { UpdateCheckerProvider, useUpdateChecker } from '@/hooks/use-update-checker';
 import { DatabaseProvider } from '@/lib/db/database';
 import { NAV_THEME } from '@/lib/theme';
+import { Host } from '@expo/ui';
 import { ThemeProvider } from 'expo-router/react-navigation';
 import { PortalHost } from '@rn-primitives/portal';
 import { NavigationBar } from 'expo-navigation-bar';
@@ -48,14 +49,16 @@ function ThemedRoot() {
       {Platform.OS === 'android' && (
         <NavigationBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       )}
-      <View
-        className="flex-1 bg-background web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:shadow-2xl"
-        style={{
-          paddingTop: Platform.OS === 'web' ? 0 : insets.top,
-        }}
-      >
-        <Stack screenOptions={{ headerShown: false }} />
-      </View>
+      <Host style={{ flex: 1 }}>
+        <View
+          className="flex-1 bg-background web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:shadow-2xl"
+          style={{
+            paddingTop: Platform.OS === 'web' ? 0 : insets.top,
+          }}
+        >
+          <Stack screenOptions={{ headerShown: false }} />
+        </View>
+      </Host>
       <PortalHost />
       <AndroidUpdateChecker />
     </ThemeProvider>

@@ -1,29 +1,20 @@
-import { SegmentedControl } from '@/components/segmented-control';
-import { PageHeader } from '@/components/page-header';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { PageHeader } from '@/components/page-header';
 import { BackupError, useBackup, type ImportSummary } from '@/hooks/use-backup';
-import { hapticError, hapticMediumImpact, hapticSuccess } from '@/lib/haptics';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useUpdateChecker } from '@/hooks/use-update-checker';
 import { resetAllTransactions } from '@/lib/db/transactions';
 import { SUPPORTED_CURRENCIES } from '@/lib/format';
+import { hapticError, hapticMediumImpact, hapticSuccess } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
+import { Host, Picker, Switch } from '@expo/ui';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Check, ChevronRight, RefreshCw } from 'lucide-react-native';
+import { ChevronRight, RefreshCw } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
 import type {
@@ -83,6 +74,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function Divider() {
+  return <View className="bg-border mx-4 h-px" />;
+}
+
 function Row({
   label,
   value,
@@ -102,10 +97,23 @@ function Row({
       className="flex-row items-center justify-between gap-3 px-4 py-3.5 active:bg-muted/60"
       disabled={!onPress}
     >
-      <Text className={cn('text-sm', destructive && 'text-destructive font-medium')}>{label}</Text>
-      {children ?? (
+      <Text className={cn('flex-1 text-sm', destructive && 'text-destructive font-medium')}>
+        {label}
+      </Text>
+      {children ? (
+        // Native Compose views (Switch/Picker) need <Host> as their immediate parent.
+        Platform.OS === 'web' ? (
+          children
+        ) : (
+          <Host>{children}</Host>
+        )
+      ) : (
         <View className="flex-row items-center gap-1">
-          {value ? <Text variant="muted" className="text-sm">{value}</Text> : null}
+          {value ? (
+            <Text variant="muted" className="text-sm">
+              {value}
+            </Text>
+          ) : null}
           {onPress ? <Icon as={ChevronRight} size={16} className="text-muted-foreground" /> : null}
         </View>
       )}
@@ -119,29 +127,11 @@ export default function SettingsScreen() {
   const { t, plural } = useI18n();
   const { state: updateState, isChecking, checkNow } = useUpdateChecker();
   const { busy: backupBusy, exportJson, exportCsv, importFile } = useBackup();
-  const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [languageOpen, setLanguageOpen] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [numeralsOpen, setNumeralsOpen] = useState(false);
-  const [startOfWeekOpen, setStartOfWeekOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [backupMsg, setBackupMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(
     null
   );
-
-  const selectedCurrency =
-    SUPPORTED_CURRENCIES.find((currency) => currency.code === settings.currency) ??
-    SUPPORTED_CURRENCIES[0];
-
-  const selectedStartOfWeek =
-    WEEKDAY_OPTIONS.find((option) => option.value === settings.startOfWeek) ?? WEEKDAY_OPTIONS[1];
-  const selectedLanguage =
-    LANGUAGE_OPTIONS.find((option) => option.value === settings.language) ?? LANGUAGE_OPTIONS[0];
-  const selectedCalendar =
-    CALENDAR_OPTIONS.find((option) => option.value === settings.calendar) ?? CALENDAR_OPTIONS[0];
-  const selectedNumerals =
-    NUMERALS_OPTIONS.find((option) => option.value === settings.numerals) ?? NUMERALS_OPTIONS[0];
 
   const handleThemeChange = async (theme: ThemePreference) => {
     await updateSetting('theme', theme);
@@ -149,10 +139,6 @@ export default function SettingsScreen() {
 
   const handleTypeChange = async (type: TransactionType) => {
     await updateSetting('defaultTransactionType', type);
-  };
-
-  const handleHapticsChange = async (value: 'on' | 'off') => {
-    await updateSetting('haptics', value === 'on' ? 'true' : 'false');
   };
 
   const handleReset = async () => {
@@ -169,6 +155,7 @@ export default function SettingsScreen() {
   const backupDisabled = busy || backupBusy !== null;
 
   const handleExportJson = async () => {
+    if (backupDisabled) return;
     setBackupMsg(null);
     try {
       await exportJson();
@@ -181,6 +168,7 @@ export default function SettingsScreen() {
   };
 
   const handleExportCsv = async () => {
+    if (backupDisabled) return;
     setBackupMsg(null);
     try {
       await exportCsv();
@@ -235,6 +223,7 @@ export default function SettingsScreen() {
   };
 
   const handleImport = async () => {
+    if (backupDisabled) return;
     setBackupMsg(null);
     try {
       const summary = await importFile();
@@ -251,76 +240,100 @@ export default function SettingsScreen() {
   return (
     <View className="bg-background flex-1">
       <PageHeader title={t('set.title')} />
-
       <ScrollView contentContainerClassName="gap-6 pb-28" showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="automatic">
         <Section title={t('set.general')}>
-          <Row
-            label={t('set.currency')}
-            value={`${selectedCurrency.code} (${selectedCurrency.symbol})`}
-            onPress={() => setCurrencyOpen(true)}
-          />
-          <View className="bg-border mx-4 h-px" />
-          <Row
-            label={t('set.language')}
-            value={t(selectedLanguage.labelKey)}
-            onPress={() => setLanguageOpen(true)}
-          />
-          <View className="bg-border mx-4 h-px" />
-          <Row
-            label={t('set.calendar')}
-            value={t(selectedCalendar.labelKey)}
-            onPress={() => setCalendarOpen(true)}
-          />
-          <View className="bg-border mx-4 h-px" />
-          <Row
-            label={t('set.numerals')}
-            value={t(selectedNumerals.labelKey)}
-            onPress={() => setNumeralsOpen(true)}
-          />
-          <View className="bg-border mx-4 h-px" />
-          <View className="gap-2 px-4 py-3.5">
-            <Text className="text-sm">{t('set.theme')}</Text>
-            <SegmentedControl
-              options={THEME_OPTIONS.map((option) => ({
-                value: option.value,
-                label: t(option.labelKey),
-              }))}
-              value={settings.theme}
-              onChange={handleThemeChange}
-            />
-          </View>
+          <Row label={t('set.currency')}>
+            <Picker
+              appearance="menu"
+              selectedValue={settings.currency}
+              onValueChange={(value) => updateSetting('currency', value)}
+            >
+              {SUPPORTED_CURRENCIES.map((currency) => (
+                <Picker.Item
+                  key={currency.code}
+                  label={`${currency.name} (${currency.symbol})`}
+                  value={currency.code}
+                />
+              ))}
+            </Picker>
+          </Row>
+          <Divider />
+          <Row label={t('set.language')}>
+            <Picker
+              appearance="menu"
+              selectedValue={settings.language}
+              onValueChange={(value: LanguagePreference) => updateSetting('language', value)}
+            >
+              {LANGUAGE_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </Picker>
+          </Row>
+          <Divider />
+          <Row label={t('set.calendar')}>
+            <Picker
+              appearance="menu"
+              selectedValue={settings.calendar}
+              onValueChange={(value: CalendarPreference) => updateSetting('calendar', value)}
+            >
+              {CALENDAR_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </Picker>
+          </Row>
+          <Divider />
+          <Row label={t('set.numerals')}>
+            <Picker
+              appearance="menu"
+              selectedValue={settings.numerals}
+              onValueChange={(value: NumeralsPreference) => updateSetting('numerals', value)}
+            >
+              {NUMERALS_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </Picker>
+          </Row>
+          <Divider />
+          <Row label={t('set.theme')}>
+            <Picker appearance="menu" selectedValue={settings.theme} onValueChange={handleThemeChange}>
+              {THEME_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </Picker>
+          </Row>
         </Section>
 
         <Section title={t('set.preferences')}>
-          <View className="gap-2 px-4 py-3.5">
-            <Text className="text-sm">{t('set.defaultType')}</Text>
-            <SegmentedControl
-              options={TYPE_OPTIONS.map((option) => ({
-                value: option.value,
-                label: t(option.labelKey),
-              }))}
-              value={settings.defaultTransactionType}
-              onChange={handleTypeChange}
+          <Row label={t('set.defaultType')}>
+            <Picker
+              appearance="menu"
+              selectedValue={settings.defaultTransactionType}
+              onValueChange={handleTypeChange}
+            >
+              {TYPE_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </Picker>
+          </Row>
+          <Divider />
+          <Row label={t('set.startWeek')}>
+            <Picker
+              appearance="menu"
+              selectedValue={settings.startOfWeek}
+              onValueChange={(value: number) => updateSetting('startOfWeek', value)}
+            >
+              {WEEKDAY_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </Picker>
+          </Row>
+          <Divider />
+          <Row label={t('set.haptics')}>
+            <Switch
+              value={settings.haptics}
+              onValueChange={(value) => updateSetting('haptics', value ? 'true' : 'false')}
             />
-          </View>
-          <View className="bg-border mx-4 h-px" />
-          <Row
-            label={t('set.startWeek')}
-            value={t(selectedStartOfWeek.labelKey)}
-            onPress={() => setStartOfWeekOpen(true)}
-          />
-          <View className="bg-border mx-4 h-px" />
-          <View className="gap-2 px-4 py-3.5">
-            <Text className="text-sm">{t('set.haptics')}</Text>
-            <SegmentedControl
-              options={[
-                { value: 'on' as const, label: t('set.on') },
-                { value: 'off' as const, label: t('set.off') },
-              ]}
-              value={settings.haptics ? 'on' : 'off'}
-              onChange={handleHapticsChange}
-            />
-          </View>
+          </Row>
         </Section>
 
         <Section title={t('set.categories')}>
@@ -337,31 +350,30 @@ export default function SettingsScreen() {
             value={backupBusy === 'export-json' ? t('common.working') : t('set.jsonFile')}
             onPress={backupDisabled ? undefined : handleExportJson}
           />
-          <View className="bg-border mx-4 h-px" />
+          <Divider />
           <Row
             label={t('set.exportTx')}
             value={backupBusy === 'export-csv' ? t('common.working') : t('set.csvFile')}
             onPress={backupDisabled ? undefined : handleExportCsv}
           />
-          <View className="bg-border mx-4 h-px" />
+          <Divider />
           <Row
             label={t('set.importData')}
             value={backupBusy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
             onPress={backupDisabled ? undefined : handleImport}
           />
-          <View className="bg-border mx-4 h-px" />
+          <Divider />
           <Row label={t('set.resetData')} destructive onPress={() => setResetOpen(true)} />
           {backupMsg ? (
             <>
-              <View className="bg-border mx-4 h-px" />
+              <Divider />
               <View className="px-4 py-3">
                 <Text
                   selectable
-                  className={
-                    backupMsg.kind === 'success'
-                      ? 'text-sm text-positive'
-                      : 'text-sm text-destructive'
-                  }
+                  className={cn(
+                    'text-sm',
+                    backupMsg.kind === 'success' ? 'text-positive' : 'text-destructive'
+                  )}
                 >
                   {backupMsg.text}
                 </Text>
@@ -382,7 +394,7 @@ export default function SettingsScreen() {
           </View>
           {Platform.OS === 'android' ? (
             <>
-              <View className="bg-border mx-4 h-px" />
+              <Divider />
               <Row label={t('set.checkUpdates')} onPress={checkNow}>
                 {isChecking ? (
                   <View className="flex-row items-center gap-2">
@@ -415,191 +427,16 @@ export default function SettingsScreen() {
         </Section>
       </ScrollView>
 
-      <OptionDialog
-        open={currencyOpen}
-        onOpenChange={setCurrencyOpen}
-        title={t('set.chooseCurrency')}
-        description={t('set.currencyDesc')}
-      >
-        {SUPPORTED_CURRENCIES.map((currency, index) => {
-          const selected = currency.code === settings.currency;
-          return (
-            <View key={currency.code}>
-              {index > 0 ? <View className="bg-border h-px" /> : null}
-              <Pressable
-                onPress={async () => {
-                  await updateSetting('currency', currency.code);
-                  setCurrencyOpen(false);
-                }}
-                className="flex-row items-center justify-between py-3"
-              >
-                <View className="flex-1">
-                  <Text className="text-sm font-medium">{currency.name}</Text>
-                  <Text variant="muted" className="text-xs">
-                    {currency.code} · {currency.symbol}
-                  </Text>
-                </View>
-                {selected ? <Icon as={Check} size={16} className="text-primary" /> : null}
-              </Pressable>
-            </View>
-          );
-        })}
-      </OptionDialog>
-
-      <OptionDialog
-        open={languageOpen}
-        onOpenChange={setLanguageOpen}
-        title={t('set.chooseLanguage')}
-      >
-        {LANGUAGE_OPTIONS.map((option, index) => {
-          const selected = option.value === settings.language;
-          return (
-            <View key={option.value}>
-              {index > 0 ? <View className="bg-border h-px" /> : null}
-              <Pressable
-                onPress={async () => {
-                  await updateSetting('language', option.value);
-                  setLanguageOpen(false);
-                }}
-                className="flex-row items-center justify-between py-3"
-              >
-                <Text className="text-sm font-medium">{t(option.labelKey)}</Text>
-                {selected ? <Icon as={Check} size={16} className="text-primary" /> : null}
-              </Pressable>
-            </View>
-          );
-        })}
-      </OptionDialog>
-
-      <OptionDialog
-        open={calendarOpen}
-        onOpenChange={setCalendarOpen}
-        title={t('set.chooseCalendar')}
-        description={t('set.calendarDesc')}
-      >
-        {CALENDAR_OPTIONS.map((option, index) => {
-          const selected = option.value === settings.calendar;
-          return (
-            <View key={option.value}>
-              {index > 0 ? <View className="bg-border h-px" /> : null}
-              <Pressable
-                onPress={async () => {
-                  await updateSetting('calendar', option.value);
-                  setCalendarOpen(false);
-                }}
-                className="flex-row items-center justify-between py-3"
-              >
-                <Text className="text-sm font-medium">{t(option.labelKey)}</Text>
-                {selected ? <Icon as={Check} size={16} className="text-primary" /> : null}
-              </Pressable>
-            </View>
-          );
-        })}
-      </OptionDialog>
-
-      <OptionDialog
-        open={numeralsOpen}
-        onOpenChange={setNumeralsOpen}
-        title={t('set.chooseNumerals')}
-      >
-        {NUMERALS_OPTIONS.map((option, index) => {
-          const selected = option.value === settings.numerals;
-          return (
-            <View key={option.value}>
-              {index > 0 ? <View className="bg-border h-px" /> : null}
-              <Pressable
-                onPress={async () => {
-                  await updateSetting('numerals', option.value);
-                  setNumeralsOpen(false);
-                }}
-                className="flex-row items-center justify-between py-3"
-              >
-                <Text className="text-sm font-medium">{t(option.labelKey)}</Text>
-                {selected ? <Icon as={Check} size={16} className="text-primary" /> : null}
-              </Pressable>
-            </View>
-          );
-        })}
-      </OptionDialog>
-
-      <OptionDialog
-        open={startOfWeekOpen}
-        onOpenChange={setStartOfWeekOpen}
-        title={t('set.weekTitle')}
-        description={t('set.weekDesc')}
-      >
-        {WEEKDAY_OPTIONS.map((option, index) => {
-          const selected = option.value === settings.startOfWeek;
-          return (
-            <View key={option.value}>
-              {index > 0 ? <View className="bg-border h-px" /> : null}
-              <Pressable
-                onPress={async () => {
-                  await updateSetting('startOfWeek', option.value);
-                  setStartOfWeekOpen(false);
-                }}
-                className="flex-row items-center justify-between py-3"
-              >
-                <Text className="text-sm font-medium">{t(option.labelKey)}</Text>
-                {selected ? <Icon as={Check} size={16} className="text-primary" /> : null}
-              </Pressable>
-            </View>
-          );
-        })}
-      </OptionDialog>
-
-      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('set.resetTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('set.resetDesc')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              <Text>{t('common.cancel')}</Text>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onPress={handleReset}
-              disabled={busy}
-              className="bg-destructive dark:bg-destructive/60"
-            >
-              <Text className="text-white font-medium">{t('set.reset')}</Text>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmSheet
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        title={t('set.resetTitle')}
+        description={t('set.resetDesc')}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('set.reset')}
+        busy={busy}
+        onConfirm={handleReset}
+      />
     </View>
-  );
-}
-
-function OptionDialog({
-  open,
-  onOpenChange,
-  title,
-  description,
-  children,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  const { t } = useI18n();
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
-        </AlertDialogHeader>
-        {children}
-        <AlertDialogFooter>
-          <AlertDialogCancel>
-            <Text>{t('common.cancel')}</Text>
-          </AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   );
 }

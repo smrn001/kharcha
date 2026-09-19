@@ -1,19 +1,9 @@
 import { CategoryForm } from '@/components/category-form';
-import { ScreenHeader } from '@/components/screen-header';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Text } from '@/components/ui/text';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSQLiteContext } from 'expo-sqlite';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import {
@@ -53,7 +43,13 @@ export default function EditCategoryScreen() {
   if (loading) {
     return (
       <View className="bg-background flex-1">
-        <ScreenHeader title={t('cat.editTitle')} />
+        <Stack.Screen
+          options={{
+            title: t('cat.editTitle'),
+            headerShown: true,
+            headerBackButtonDisplayMode: 'minimal',
+          }}
+        />
         <Text variant="muted" className="px-5 py-16 text-center">
           {t('common.loading')}
         </Text>
@@ -64,7 +60,13 @@ export default function EditCategoryScreen() {
   if (!category) {
     return (
       <View className="bg-background flex-1">
-        <ScreenHeader title={t('cat.editTitle')} />
+        <Stack.Screen
+          options={{
+            title: t('cat.editTitle'),
+            headerShown: true,
+            headerBackButtonDisplayMode: 'minimal',
+          }}
+        />
         <Text variant="muted" className="px-5 py-16 text-center">
           {t('cat.notFound')}
         </Text>
@@ -106,7 +108,13 @@ export default function EditCategoryScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <ScreenHeader title={t('cat.editTitle')} />
+      <Stack.Screen
+        options={{
+          title: t('cat.editTitle'),
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
       <CategoryForm
         initial={{ name: category.name, icon: category.icon, type: category.type }}
         submitLabel={t('common.saveChanges')}
@@ -122,29 +130,17 @@ export default function EditCategoryScreen() {
         }
       />
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('cat.delTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('cat.delDesc')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {deleteError ? <Text className="text-destructive text-sm">{deleteError}</Text> : null}
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              <Text>{t('common.cancel')}</Text>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onPress={handleDelete}
-              disabled={busy}
-              className="bg-destructive dark:bg-destructive/60"
-            >
-              <Text className="text-white font-medium">{t('common.delete')}</Text>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmSheet
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={t('cat.delTitle')}
+        description={t('cat.delDesc')}
+        error={deleteError}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('common.delete')}
+        busy={busy}
+        onConfirm={handleDelete}
+      />
     </View>
   );
 }

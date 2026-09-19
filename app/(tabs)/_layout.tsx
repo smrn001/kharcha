@@ -1,55 +1,51 @@
-import { Icon } from '@/components/ui/icon';
+import { TabBar } from '@/components/tab-bar';
 import { useI18n } from '@/hooks/use-i18n';
-import { THEME } from '@/lib/theme';
-import { Tabs } from 'expo-router';
-import { ChartPie, Home, ReceiptText, Settings } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { Stack } from 'expo-router';
+import { Platform, View } from 'react-native';
 
-export default function TabLayout() {
-  const { colorScheme } = useColorScheme();
-  const colors = THEME[colorScheme ?? 'light'];
+function IoSTabs() {
   const { t } = useI18n();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedForeground,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t('tabs.home'),
-          tabBarIcon: ({ color, size }) => <Icon as={Home} color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="transactions"
-        options={{
-          title: t('tabs.transactions'),
-          tabBarIcon: ({ color, size }) => <Icon as={ReceiptText} color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          title: t('tabs.analytics'),
-          tabBarIcon: ({ color, size }) => <Icon as={ChartPie} color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: t('tabs.settings'),
-          tabBarIcon: ({ color, size }) => <Icon as={Settings} color={color} size={size} />,
-        }}
-      />
-    </Tabs>
+    <NativeTabs tintColor="#5046e5">
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Icon sf="house.fill" md="home" />
+        <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="transactions">
+        <NativeTabs.Trigger.Icon sf="receipt" md="receipt" />
+        <NativeTabs.Trigger.Label>{t('tabs.transactions')}</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="analytics">
+        <NativeTabs.Trigger.Icon sf="chart.pie" md="pie_chart" />
+        <NativeTabs.Trigger.Label>{t('tabs.analytics')}</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="settings">
+        <NativeTabs.Trigger.Icon sf="gear" md="settings" />
+        <NativeTabs.Trigger.Label>{t('tabs.settings')}</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
+}
+
+function AndroidTabs() {
+  return (
+    <View className="flex-1">
+      <Stack screenOptions={{ headerShown: false }} />
+      <TabBar />
+    </View>
+  );
+}
+
+/**
+ * Android uses the Jetpack Compose `NavigationBar` (Material 3) from
+ * `@expo/ui` as its bottom navigation. iOS keeps `NativeTabs`
+ * (SF Symbols). Web uses `_layout.web.tsx` (JS `Tabs`).
+ */
+export default function TabLayout() {
+  if (Platform.OS === 'android') {
+    return <AndroidTabs />;
+  }
+  return <IoSTabs />;
 }

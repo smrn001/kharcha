@@ -183,6 +183,8 @@ export const ne: Dictionary = {
   'add.category': 'वर्ग',
   'add.date': 'मिति',
   'add.time': 'समय',
+  'add.dateTime': 'मिति र समय',
+  'add.details': 'विवरण',
   'add.titleOpt': 'शीर्षक (वैकल्पिक)',
   'add.titlePh': 'जस्तै खाजा',
   'add.titleLabel': 'शीर्षक',

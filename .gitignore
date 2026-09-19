@@ -6,7 +6,6 @@ node_modules/
 # Expo
 .expo/
 dist/
-web-build/
 
 # Native
 android/
@@ -45,3 +44,4 @@ expo-env.d.ts
 # build artifacts
 kharcha.apk
 Kharcha-v*.apk
+.agents/skills/
