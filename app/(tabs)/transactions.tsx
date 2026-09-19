@@ -19,7 +19,7 @@ import { useColorScheme } from 'nativewind';
 import { router, useFocusEffect } from 'expo-router';
 import { Search, X } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, SectionList, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, SectionList, TextInput, View } from 'react-native';
 import type { Transaction, TransactionType } from '@/types';
 import type { TransactionFilters } from '@/lib/db/transactions';
 
@@ -89,6 +89,16 @@ export default function TransactionsScreen() {
   }, [query, type, dateFilter, customFrom, customTo, categoryIds, settings.startOfWeek]);
 
   const { transactions, loading, refresh } = useTransactions(filters);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh]);
 
   const hasActiveFilters =
     !!query.trim() || type !== 'all' || dateFilter !== 'all' || categoryIds.length > 0;
@@ -225,6 +235,8 @@ export default function TransactionsScreen() {
       </View>
 
       <SectionList<Transaction, Section>
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         sections={sections}
         keyExtractor={(item) => item.id}
         className="flex-1"
@@ -238,7 +250,7 @@ export default function TransactionsScreen() {
         )}
         renderItem={({ item }) => (
           <View className="px-5">
-            <Pressable onPress={() => router.push(`/transaction/${item.id}`)}>
+            <Pressable onPress={() => router.push(`/transaction/${item.id}`)} className="active:bg-muted/60">
               <TransactionRow
                 transaction={item}
                 category={item.categoryId ? categoryMap.get(item.categoryId) : undefined}

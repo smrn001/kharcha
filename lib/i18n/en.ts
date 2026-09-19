@@ -118,6 +118,9 @@ export const en = {
   'set.latin': 'Latin (123)',
   'set.devanagari': 'Devanagari (१२३)',
   'set.preferences': 'Preferences',
+  'set.haptics': 'Haptics',
+  'set.on': 'On',
+  'set.off': 'Off',
   'set.defaultType': 'Default transaction type',
   'set.expense': 'Expense',
   'set.income': 'Income',
@@ -158,6 +161,7 @@ export const en = {
   'set.checkFailed': 'Check failed',
   'set.available': 'v{version} available',
   'set.exportFailed': 'Export failed',
+  'set.exportDone': 'Backup file ready — shared through the system sheet.',
   'set.importFailed': 'Import failed',
   'set.importDone': 'Import complete',
   'set.importSummary':
@@ -250,6 +254,8 @@ export const en = {
   'nf.home': 'Go to home screen!',
 
   'row.transaction': 'Transaction',
+
+  'fab.add': 'Add transaction',
 };
 
 export type Dictionary = typeof en;

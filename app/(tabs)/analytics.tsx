@@ -70,6 +70,7 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
       className="flex-1"
       contentContainerClassName="gap-5 px-5 pb-28"
       showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic"
     >
       <SegmentedControl options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
 
@@ -150,7 +151,7 @@ function PeriodCards({
           <Text variant="muted" className="text-xs">
             {tcards('an.income')}
           </Text>
-          <Text className="text-positive mt-1 text-lg font-semibold">
+          <Text className="text-positive mt-1 text-lg font-semibold tabular-nums">
             {formatAmount(summary.income, currency)}
           </Text>
         </View>
@@ -158,7 +159,7 @@ function PeriodCards({
           <Text variant="muted" className="text-right text-xs">
             {tcards('an.expenses')}
           </Text>
-          <Text className="text-destructive mt-1 text-right text-lg font-semibold">
+          <Text className="text-destructive mt-1 text-right text-lg font-semibold tabular-nums">
             {formatAmount(summary.expense, currency)}
           </Text>
         </View>
@@ -170,7 +171,7 @@ function PeriodCards({
         <Text variant="muted" className="text-xs">
           {overspent ? tcards('an.overspent') : tcards('an.saved')}
         </Text>
-        <Text className={cn('text-base font-semibold', savedColor)}>
+        <Text className={cn('text-base font-semibold tabular-nums', savedColor)}>
           {formatAmount(overspent ? Math.abs(summary.saved) : summary.saved, currency)}
         </Text>
       </View>
@@ -407,7 +408,7 @@ function MoversCard({
                   {tmovers('an.was', { amount: formatAmount(mover.previous, currency) })}
                 </Text>
               </View>
-              <Text className={cn('text-sm font-semibold', up ? 'text-destructive' : 'text-positive')}>
+              <Text className={cn('text-sm font-semibold tabular-nums', up ? 'text-destructive' : 'text-positive')}>
                 {up ? '+' : '−'}
                 {formatAmount(Math.abs(mover.diff), currency)}
               </Text>
@@ -499,7 +500,7 @@ function CategoryBreakdown({
                   <Text className="flex-1 text-sm font-medium" numberOfLines={1}>
                     {categoryDisplayName(category, clang)}
                   </Text>
-                  <Text className="text-sm">{formatAmount(category.amount, currency)}</Text>
+                  <Text className="text-sm tabular-nums">{formatAmount(category.amount, currency)}</Text>
                   <Text variant="muted" className="w-10 text-right text-xs">
                     {category.percentage}%
                   </Text>

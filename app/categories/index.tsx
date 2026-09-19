@@ -22,7 +22,7 @@ function CategoryRow({
 }) {
   const IconComponent = categoryIcon(category.icon);
   return (
-    <Pressable onPress={onPress} className="flex-row items-center gap-3 px-4 py-3">
+    <Pressable onPress={onPress} className="flex-row items-center gap-3 px-4 py-3 active:bg-muted/60">
       <View className="bg-muted h-10 w-10 items-center justify-center rounded-full">
         <Icon as={IconComponent} size={18} />
       </View>
@@ -67,7 +67,7 @@ export default function CategoriesScreen() {
           {t('common.loading')}
         </Text>
       ) : (
-        <ScrollView contentContainerClassName="gap-6 px-5 pb-8">
+        <ScrollView contentContainerClassName="gap-6 px-5 pb-8" contentInsetAdjustmentBehavior="automatic">
           {sections.map((section) => (
             <View key={section.key} className="gap-2">
               <Text variant="muted" className="px-1 text-xs font-semibold uppercase">

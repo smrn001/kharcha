@@ -115,11 +115,11 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
 
         <View className="border-border gap-4 border-t px-6 py-5">
           <View className="flex-row items-center justify-center gap-4">
-            <Pressable onPress={onLater} hitSlop={8}>
+            <Pressable onPress={onLater} hitSlop={8} className="active:opacity-60">
               <Text className="text-sm font-medium text-foreground">{t('upd.later')}</Text>
             </Pressable>
             <View className="bg-border h-3 w-px" />
-            <Pressable onPress={onSkip} hitSlop={8}>
+            <Pressable onPress={onSkip} hitSlop={8} className="active:opacity-60">
               <Text className="text-muted-foreground text-sm">{t('upd.skip')}</Text>
             </Pressable>
           </View>

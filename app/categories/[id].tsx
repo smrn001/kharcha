@@ -114,7 +114,7 @@ export default function EditCategoryScreen() {
         error={error}
         onSubmit={handleSubmit}
         footer={
-          <Pressable onPress={() => setDeleteOpen(true)} hitSlop={8}>
+          <Pressable onPress={() => setDeleteOpen(true)} hitSlop={8} className="active:opacity-60">
             <Text className="text-destructive py-2 text-center text-sm font-medium">
               {t('cat.deleteBtn')}
             </Text>

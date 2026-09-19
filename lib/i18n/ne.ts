@@ -119,6 +119,9 @@ export const ne: Dictionary = {
   'set.latin': 'ल्याटिन (123)',
   'set.devanagari': 'देवनागरी (१२३)',
   'set.preferences': 'प्राथमिकता',
+  'set.haptics': 'ह्याप्टिक्स',
+  'set.on': 'चालु',
+  'set.off': 'बन्द',
   'set.defaultType': 'डिफल्ट लेनदेन प्रकार',
   'set.expense': 'खर्च',
   'set.income': 'आम्दानी',
@@ -159,6 +162,7 @@ export const ne: Dictionary = {
   'set.checkFailed': 'जाँच असफल',
   'set.available': 'v{version} उपलब्ध',
   'set.exportFailed': 'निकाल्न असफल',
+  'set.exportDone': 'ब्याकअप फाइल तयार — सिस्टम सिटबाट साझा गरियो।',
   'set.importFailed': 'ल्याउन असफल',
   'set.importDone': 'ल्याउन सफल',
   'set.importSummary':
@@ -249,4 +253,6 @@ export const ne: Dictionary = {
   'nf.home': 'गृहपृष्ठमा जानुहोस्!',
 
   'row.transaction': 'लेनदेन',
+
+  'fab.add': 'लेनदेन थप्नुहोस्',
 };

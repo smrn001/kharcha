@@ -63,6 +63,7 @@ export function CategoryForm({
         className="flex-1"
         contentContainerClassName="gap-5 px-4 pb-8"
         keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="automatic"
       >
         <SegmentedControl options={typeOptions} value={type} onChange={handleTypeChange} />
 
@@ -90,7 +91,7 @@ export function CategoryForm({
                   onPress={() => setIcon(selected ? undefined : iconName)}
                   accessibilityLabel={iconName}
                   className={cn(
-                    'h-11 w-11 items-center justify-center rounded-full border',
+                    'h-11 w-11 items-center justify-center rounded-full border active:opacity-70',
                     selected
                       ? 'border-primary bg-primary/10'
                       : 'border-border bg-card active:bg-muted'

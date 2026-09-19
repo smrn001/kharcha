@@ -39,7 +39,7 @@ export function TransactionRow({
       </View>
       <Text
         className={cn(
-          'text-sm font-semibold',
+          'text-sm font-semibold tabular-nums',
           isIncome ? 'text-positive' : 'text-foreground'
         )}
       >

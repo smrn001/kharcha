@@ -45,7 +45,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="pb-28">
+      <ScrollView contentContainerClassName="pb-28" contentInsetAdjustmentBehavior="automatic">
         <PageHeader title={t(greetingKey())} subtitle={t('home.subtitle')} />
 
         <View className="px-5 pt-5">
@@ -53,7 +53,7 @@ export default function HomeScreen() {
             <Text variant="muted" className="text-sm">
               {t('home.balance')}
             </Text>
-            <Text className="mt-1 text-3xl font-bold">
+            <Text selectable className="mt-1 text-3xl font-bold tabular-nums">
               {formatAmount(summary.balance, settings.currency)}
             </Text>
 
@@ -62,7 +62,7 @@ export default function HomeScreen() {
                 <Text variant="muted" className="text-xs">
                   {t('home.income')}
                 </Text>
-                <Text className="text-sm font-semibold text-positive">
+                <Text className="text-sm font-semibold tabular-nums text-positive">
                   {formatAmount(summary.income, settings.currency)}
                 </Text>
               </View>
@@ -70,7 +70,7 @@ export default function HomeScreen() {
                 <Text variant="muted" className="text-xs">
                   {t('home.expenses')}
                 </Text>
-                <Text className="text-sm font-semibold text-destructive">
+                <Text className="text-sm font-semibold tabular-nums text-destructive">
                   {formatAmount(summary.expense, settings.currency)}
                 </Text>
               </View>
@@ -83,7 +83,7 @@ export default function HomeScreen() {
             <Text variant="muted" className="text-xs">
               {t('home.today')}
             </Text>
-            <Text className="mt-1 text-sm font-semibold">
+            <Text className="mt-1 text-sm font-semibold tabular-nums">
               {formatAmount(summary.spentToday, settings.currency)}
             </Text>
           </View>
@@ -110,7 +110,7 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => router.push('/transactions')}
             accessibilityRole="link"
-            className="flex-row items-center gap-1"
+            className="flex-row items-center gap-1 active:opacity-70"
           >
             <Text className="text-primary text-sm font-medium">{t('home.viewAll')}</Text>
             <Icon as={ArrowRight} size={14} className="text-primary" />
@@ -131,6 +131,7 @@ export default function HomeScreen() {
               <Pressable
                 key={transaction.id}
                 onPress={() => router.push(`/transaction/${transaction.id}`)}
+                className="active:bg-muted/60"
               >
                 <View className="px-5">
                   <TransactionRow
