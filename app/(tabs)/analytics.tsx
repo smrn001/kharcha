@@ -1,4 +1,5 @@
 import { BarChart } from '@/components/bar-chart';
+import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { Icon, ListItem, Text } from '@expo/ui';
@@ -53,15 +54,17 @@ function SectionLabel({ children }: { children: string }) {
   const colors = useAppColors();
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
-      <Text
-        textStyle={{
-          fontSize: 12,
-          fontWeight: '600',
-          color: colors.mutedForeground,
-        }}
-      >
-        {children}
-      </Text>
+      <NativeBlock>
+        <Text
+          textStyle={{
+            fontSize: 12,
+            fontWeight: '600',
+            color: colors.mutedForeground,
+          }}
+        >
+          {children}
+        </Text>
+      </NativeBlock>
     </View>
   );
 }
@@ -106,39 +109,47 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
       </View>
 
       {loading && summary.income === 0 && summary.expense === 0 ? (
-        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-          {t('common.loading')}
-        </Text>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            {t('common.loading')}
+          </Text>
+        </NativeBlock>
       ) : (
         <>
           <SectionLabel>{sectionTitles[period]}</SectionLabel>
           <View>
-            <ListItem
-              children={t('an.income')}
-              supportingText={comparison?.currentRangeLabel}
-              trailing={
-                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.positive }}>
-                  {formatAmount(summary.income, currency)}
-                </Text>
-              }
-            />
-            <ListItem
-              children={t('an.expenses')}
-              supportingText={comparison?.currentRangeLabel}
-              trailing={
-                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.destructiveError }}>
-                  {formatAmount(summary.expense, currency)}
-                </Text>
-              }
-            />
-            <ListItem
-              children={overspent ? t('an.overspent') : t('an.saved')}
-              trailing={
-                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: savedColor }}>
-                  {formatAmount(Math.abs(saved), currency)}
-                </Text>
-              }
-            />
+            <NativeBlock matchContents={false}>
+              <ListItem
+                children={t('an.income')}
+                supportingText={comparison?.currentRangeLabel}
+                trailing={
+                  <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.positive }}>
+                    {formatAmount(summary.income, currency)}
+                  </Text>
+                }
+              />
+            </NativeBlock>
+            <NativeBlock matchContents={false}>
+              <ListItem
+                children={t('an.expenses')}
+                supportingText={comparison?.currentRangeLabel}
+                trailing={
+                  <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.destructiveError }}>
+                    {formatAmount(summary.expense, currency)}
+                  </Text>
+                }
+              />
+            </NativeBlock>
+            <NativeBlock matchContents={false}>
+              <ListItem
+                children={overspent ? t('an.overspent') : t('an.saved')}
+                trailing={
+                  <Text textStyle={{ fontSize: 16, fontWeight: '600', color: savedColor }}>
+                    {formatAmount(Math.abs(saved), currency)}
+                  </Text>
+                }
+              />
+            </NativeBlock>
           </View>
         </>
       )}
@@ -241,10 +252,12 @@ function ComparisonCard({
 
   return (
     <View>
-      <ListItem
-        children={t('an.vs', { label: prevLabel })}
-        supportingText={hasHistory ? insight : undefined}
-      />
+      <NativeBlock matchContents={false}>
+        <ListItem
+          children={t('an.vs', { label: prevLabel })}
+          supportingText={hasHistory ? insight : undefined}
+        />
+      </NativeBlock>
       {hasHistory ? (
         <ComparisonRow
           label={t('an.expenses')}
@@ -317,11 +330,13 @@ function ComparisonRow({
 }) {
   const { t: trow } = useI18n();
   return (
-    <ListItem
-      children={label}
-      supportingText={`${formatAmount(current, currency)} · ${trow('an.was', { amount: formatAmount(previous, currency) })}`}
-      trailing={<DeltaBadge delta={delta} goodWhenDown={goodWhenDown} />}
-    />
+    <NativeBlock matchContents={false}>
+      <ListItem
+        children={label}
+        supportingText={`${formatAmount(current, currency)} · ${trow('an.was', { amount: formatAmount(previous, currency) })}`}
+        trailing={<DeltaBadge delta={delta} goodWhenDown={goodWhenDown} />}
+      />
+    </NativeBlock>
   );
 }
 
@@ -345,23 +360,24 @@ function MoversCard({
       {visible.map((mover) => {
         const up = mover.diff > 0;
         return (
-          <ListItem
-            key={mover.categoryId}
-            leading={<Icon name={categoryIcon(mover.icon)} size={18} />}
-            children={categoryDisplayName(mover, mlang)}
-            supportingText={tmovers('an.was', { amount: formatAmount(mover.previous, currency) })}
-            trailing={
-              <Text
-                textStyle={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: up ? colors.destructiveError : colors.positive,
-                }}
-              >
-                {`${up ? '+' : '−'}${formatAmount(Math.abs(mover.diff), currency)}`}
-              </Text>
-            }
-          />
+          <NativeBlock key={mover.categoryId} matchContents={false}>
+            <ListItem
+              leading={<Icon name={categoryIcon(mover.icon)} size={18} />}
+              children={categoryDisplayName(mover, mlang)}
+              supportingText={tmovers('an.was', { amount: formatAmount(mover.previous, currency) })}
+              trailing={
+                <Text
+                  textStyle={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: up ? colors.destructiveError : colors.positive,
+                  }}
+                >
+                  {`${up ? '+' : '−'}${formatAmount(Math.abs(mover.diff), currency)}`}
+                </Text>
+              }
+            />
+          </NativeBlock>
         );
       })}
     </View>
@@ -384,16 +400,20 @@ function SpendingTrend({
 
   if (loading && trend.length === 0) {
     return (
-      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-        {ttrend('common.loading')}
-      </Text>
+      <NativeBlock>
+        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          {ttrend('common.loading')}
+        </Text>
+      </NativeBlock>
     );
   }
   if (trend.every((point) => point.income === 0 && point.expense === 0)) {
     return (
-      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-        {ttrend(period === 'week' ? 'an.noTrendWeek' : period === 'month' ? 'an.noTrendMonth' : 'an.noTrendYear')}
-      </Text>
+      <NativeBlock>
+        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          {ttrend(period === 'week' ? 'an.noTrendWeek' : period === 'month' ? 'an.noTrendMonth' : 'an.noTrendYear')}
+        </Text>
+      </NativeBlock>
     );
   }
 
@@ -418,28 +438,33 @@ function CategoryBreakdown({
 
   if (loading && categories.length === 0) {
     return (
-      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-        {tcat('common.loading')}
-      </Text>
+      <NativeBlock>
+        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          {tcat('common.loading')}
+        </Text>
+      </NativeBlock>
     );
   }
   if (categories.length === 0) {
     return (
-      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-        {tcat(period === 'week' ? 'an.noCatWeek' : period === 'month' ? 'an.noCatMonth' : 'an.noCatYear')}
-      </Text>
+      <NativeBlock>
+        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          {tcat(period === 'week' ? 'an.noCatWeek' : period === 'month' ? 'an.noCatMonth' : 'an.noCatYear')}
+        </Text>
+      </NativeBlock>
     );
   }
 
   return (
     <View>
       {categories.map((category) => (
-        <ListItem
-          key={category.categoryId}
-          leading={<Icon name={categoryIcon(category.icon)} size={18} />}
-          children={categoryDisplayName(category, clang)}
-          supportingText={`${formatAmount(category.amount, currency)} · ${category.percentage}%`}
-        />
+        <NativeBlock key={category.categoryId} matchContents={false}>
+          <ListItem
+            leading={<Icon name={categoryIcon(category.icon)} size={18} />}
+            children={categoryDisplayName(category, clang)}
+            supportingText={`${formatAmount(category.amount, currency)} · ${category.percentage}%`}
+          />
+        </NativeBlock>
       ))}
     </View>
   );

@@ -1,4 +1,5 @@
 import { FloatingAddButton } from '@/components/floating-add-button';
+import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button, Icon, ListItem, Text } from '@expo/ui';
@@ -60,23 +61,25 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 112 }} contentInsetAdjustmentBehavior="automatic">
         <PageHeader title={t(greetingKey())} subtitle={t('home.subtitle')} />
 
-        <ListItem
-          children={t('home.balance')}
-          supportingText={`${t('home.income')} ${formatAmount(summary.income, settings.currency)} · ${t('home.expenses')} ${formatAmount(summary.expense, settings.currency)}`}
-          trailing={
-            <Text
-              textStyle={{
-                fontSize: 22,
-                fontWeight: 'bold',
-                color: overspend ? colors.destructiveError : colors.positive,
-              }}
-            >
-              {formatAmount(summary.balance, settings.currency)}
-            </Text>
-          }
-        />
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('home.balance')}
+            supportingText={`${t('home.income')} ${formatAmount(summary.income, settings.currency)} · ${t('home.expenses')} ${formatAmount(summary.expense, settings.currency)}`}
+            trailing={
+              <Text
+                textStyle={{
+                  fontSize: 22,
+                  fontWeight: 'bold',
+                  color: overspend ? colors.destructiveError : colors.positive,
+                }}
+              >
+                {formatAmount(summary.balance, settings.currency)}
+              </Text>
+            }
+          />
+        </NativeBlock>
 
-        <View style={{ marginTop: 8 }}>
+        <NativeBlock matchContents={false} style={{ marginTop: 8 }}>
           <ListItem
             children={t('home.today')}
             trailing={
@@ -85,6 +88,8 @@ export default function HomeScreen() {
               </Text>
             }
           />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
           <ListItem
             children={t('home.week')}
             trailing={
@@ -93,6 +98,8 @@ export default function HomeScreen() {
               </Text>
             }
           />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
           <ListItem
             children={t('home.month')}
             trailing={
@@ -101,7 +108,7 @@ export default function HomeScreen() {
               </Text>
             }
           />
-        </View>
+        </NativeBlock>
 
         <View
           style={{
@@ -113,24 +120,34 @@ export default function HomeScreen() {
             paddingBottom: 4,
           }}
         >
-          <Text textStyle={{ fontSize: 17, fontWeight: 'bold' }}>{t('home.recent')}</Text>
-          <Button
-            variant="text"
-            onPress={() => router.push('/transactions')}
-            style={{ paddingVertical: 0 }}
-          >
-            <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('home.viewAll')}</Text>
-            <Icon name={ARROW_RIGHT_ICON} size={14} />
-          </Button>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 17, fontWeight: 'bold' }}>{t('home.recent')}</Text>
+          </NativeBlock>
+          <NativeBlock>
+            <Button
+              variant="text"
+              onPress={() => router.push('/transactions')}
+              style={{ paddingVertical: 0 }}
+            >
+              <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('home.viewAll')}</Text>
+              <Icon name={ARROW_RIGHT_ICON} size={14} />
+            </Button>
+          </NativeBlock>
         </View>
 
         {transactions.length === 0 ? (
           <View style={{ alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 40 }}>
-            <Icon name={RECEIPT_ICON} size={40} color={colors.mutedForeground} />
-            <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('home.emptyTitle')}</Text>
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
-              {t('home.emptyMsg')}
-            </Text>
+            <NativeBlock>
+              <Icon name={RECEIPT_ICON} size={40} color={colors.mutedForeground} />
+            </NativeBlock>
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('home.emptyTitle')}</Text>
+            </NativeBlock>
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+                {t('home.emptyMsg')}
+              </Text>
+            </NativeBlock>
           </View>
         ) : (
           <View>

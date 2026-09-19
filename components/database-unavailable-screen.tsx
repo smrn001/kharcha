@@ -1,4 +1,5 @@
 import { Button, Icon, Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { useAppColors } from '@/lib/colors';
 import { useI18n } from '@/hooks/use-i18n';
 import { View } from 'react-native';
@@ -28,12 +29,22 @@ export function DatabaseUnavailableScreen({ kind, onRetry }: DatabaseUnavailable
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <View style={{ alignItems: 'center', gap: 16, maxWidth: 440 }}>
-        <Icon name={isOtherTab ? PANELS_ICON : ALERT_ICON} size={40} />
-        <Text textStyle={{ textAlign: 'center', fontSize: 22, fontWeight: '600' }}>{title}</Text>
-        <Text textStyle={{ textAlign: 'center', fontSize: 15, color: colors.mutedForeground }}>
-          {message}
-        </Text>
-        {onRetry ? <Button label={t('common.retry')} onPress={onRetry} /> : null}
+        <NativeBlock>
+          <Icon name={isOtherTab ? PANELS_ICON : ALERT_ICON} size={40} />
+        </NativeBlock>
+        <NativeBlock>
+          <Text textStyle={{ textAlign: 'center', fontSize: 22, fontWeight: '600' }}>{title}</Text>
+        </NativeBlock>
+        <NativeBlock>
+          <Text textStyle={{ textAlign: 'center', fontSize: 15, color: colors.mutedForeground }}>
+            {message}
+          </Text>
+        </NativeBlock>
+        {onRetry ? (
+          <NativeBlock>
+            <Button label={t('common.retry')} onPress={onRetry} />
+          </NativeBlock>
+        ) : null}
       </View>
     </View>
   );

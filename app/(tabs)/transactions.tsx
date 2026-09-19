@@ -1,6 +1,7 @@
 import { FilterChip } from '@/components/filter-chip';
 import { DateTimeField } from '@/components/date-time-field';
 import { FloatingAddButton } from '@/components/floating-add-button';
+import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { TransactionRow } from '@/components/transaction-row';
@@ -168,8 +169,10 @@ export default function TransactionsScreen() {
             paddingHorizontal: 12,
           }}
         >
-          <Icon name={SEARCH_ICON} size={16} color={colors.mutedForeground} />
-          <View style={{ flex: 1 }}>
+          <NativeBlock>
+            <Icon name={SEARCH_ICON} size={16} color={colors.mutedForeground} />
+          </NativeBlock>
+          <NativeBlock matchContents={false} style={{ flex: 1 }}>
             <TextInput
               onChangeText={setQuery}
               placeholder={t('txns.searchPh')}
@@ -177,10 +180,12 @@ export default function TransactionsScreen() {
               textStyle={{ fontSize: 15 }}
               style={{ height: '100%' }}
             />
-          </View>
+          </NativeBlock>
           {query ? (
             <Pressable onPress={() => setQuery('')} accessibilityLabel={t('txns.searchClear')} hitSlop={8}>
-              <Icon name={X_ICON} size={16} color={colors.mutedForeground} />
+              <NativeBlock>
+                <Icon name={X_ICON} size={16} color={colors.mutedForeground} />
+              </NativeBlock>
             </Pressable>
           ) : null}
         </View>
@@ -252,9 +257,11 @@ export default function TransactionsScreen() {
 
         {hasActiveFilters ? (
           <Pressable onPress={clearFilters} style={{ alignSelf: 'flex-start' }} hitSlop={8}>
-            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>
-              {t('txns.clearFilters')}
-            </Text>
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>
+                {t('txns.clearFilters')}
+              </Text>
+            </NativeBlock>
           </Pressable>
         ) : null}
       </View>
@@ -270,15 +277,17 @@ export default function TransactionsScreen() {
         keyboardShouldPersistTaps="handled"
         renderSectionHeader={({ section }) => (
           <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 }}>
-            <Text
-              textStyle={{
-                fontSize: 12,
-                fontWeight: '600',
-                color: colors.mutedForeground,
-              }}
-            >
-              {section.title}
-            </Text>
+            <NativeBlock>
+              <Text
+                textStyle={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: colors.mutedForeground,
+                }}
+              >
+                {section.title}
+              </Text>
+            </NativeBlock>
           </View>
         )}
         renderItem={({ item }) => (
@@ -294,25 +303,41 @@ export default function TransactionsScreen() {
         )}
         ListEmptyComponent={
           loading ? (
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
-              {t('common.loading')}
-            </Text>
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+                {t('common.loading')}
+              </Text>
+            </NativeBlock>
           ) : hasActiveFilters ? (
             <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
-              <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
-              <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.noMatchTitle')}</Text>
-              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
-                {t('txns.noMatchMsg')}
-              </Text>
-              <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
+              <NativeBlock>
+                <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
+              </NativeBlock>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.noMatchTitle')}</Text>
+              </NativeBlock>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+                  {t('txns.noMatchMsg')}
+                </Text>
+              </NativeBlock>
+              <NativeBlock>
+                <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
+              </NativeBlock>
             </View>
           ) : (
             <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
-              <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
-              <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.emptyTitle')}</Text>
-              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
-                {t('txns.emptyMsg')}
-              </Text>
+              <NativeBlock>
+                <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
+              </NativeBlock>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.emptyTitle')}</Text>
+              </NativeBlock>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+                  {t('txns.emptyMsg')}
+                </Text>
+              </NativeBlock>
             </View>
           )
         }

@@ -1,5 +1,6 @@
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Button, Icon, Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { useCategories } from '@/hooks/use-categories';
 import { useDetailDate } from '@/hooks/use-day-heading';
 import { useI18n } from '@/hooks/use-i18n';
@@ -33,10 +34,14 @@ function DetailRow({
         separator ? { borderTopWidth: 1, borderTopColor: colors.separator } : null,
       ]}
     >
-      <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>{label}</Text>
-      <Text textStyle={{ fontSize: 15, fontWeight: '500', textAlign: 'right' }}>
-        {value}
-      </Text>
+      <NativeBlock>
+        <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>{label}</Text>
+      </NativeBlock>
+      <NativeBlock>
+        <Text textStyle={{ fontSize: 15, fontWeight: '500', textAlign: 'right' }}>
+          {value}
+        </Text>
+      </NativeBlock>
     </View>
   );
 }
@@ -82,9 +87,11 @@ export default function TransactionDetailScreen() {
           }}
         />
         <View style={{ flex: 1, alignItems: 'center', paddingTop: 64 }}>
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-            {t('common.loading')}
-          </Text>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+              {t('common.loading')}
+            </Text>
+          </NativeBlock>
         </View>
       </View>
     );
@@ -113,20 +120,26 @@ export default function TransactionDetailScreen() {
       />
 
       <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 24 }}>
-        <Icon name={categoryIcon(category?.icon)} size={40} color={colors.mutedForeground} />
-        <Text textStyle={{ fontSize: 36, fontWeight: 'bold' }}>
-          {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, settings.currency)}`}
-        </Text>
-        <View style={{ marginTop: 4 }}>
-          <Text
-            textStyle={{
-              fontSize: 14,
-              fontWeight: '500',
-              color: isIncome ? colors.positive : colors.mutedForeground,
-            }}
-          >
-            {isIncome ? t('det.income') : t('det.expense')}
+        <NativeBlock>
+          <Icon name={categoryIcon(category?.icon)} size={40} color={colors.mutedForeground} />
+        </NativeBlock>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 36, fontWeight: 'bold' }}>
+            {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, settings.currency)}`}
           </Text>
+        </NativeBlock>
+        <View style={{ marginTop: 4 }}>
+          <NativeBlock>
+            <Text
+              textStyle={{
+                fontSize: 14,
+                fontWeight: '500',
+                color: isIncome ? colors.positive : colors.mutedForeground,
+              }}
+            >
+              {isIncome ? t('det.income') : t('det.expense')}
+            </Text>
+          </NativeBlock>
         </View>
 
         <View style={{ width: '100%', marginTop: 24, paddingHorizontal: 12 }}>
@@ -140,15 +153,19 @@ export default function TransactionDetailScreen() {
         </View>
 
         <View style={{ width: '100%', gap: 12, marginTop: 24, paddingHorizontal: 12 }}>
-          <Button
-            label={t('det.edit')}
-            onPress={() => router.push(`/transaction/new?id=${transaction.id}`)}
-          />
-          <Button
-            variant="text"
-            label={t('det.delete')}
-            onPress={() => setConfirmDelete(true)}
-          />
+          <NativeBlock matchContents={false}>
+            <Button
+              label={t('det.edit')}
+              onPress={() => router.push(`/transaction/new?id=${transaction.id}`)}
+            />
+          </NativeBlock>
+          <NativeBlock matchContents={false}>
+            <Button
+              variant="text"
+              label={t('det.delete')}
+              onPress={() => setConfirmDelete(true)}
+            />
+          </NativeBlock>
         </View>
       </View>
 

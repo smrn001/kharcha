@@ -1,5 +1,6 @@
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { Icon, Host, ListItem, Picker, Switch, Text } from '@expo/ui';
+import { Column, Icon, Host, ListItem, Picker, Switch, Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
 import { BackupError, useBackup, type ImportSummary } from '@/hooks/use-backup';
 import { useI18n } from '@/hooks/use-i18n';
@@ -67,15 +68,17 @@ function SectionLabel({ children }: { children: string }) {
   const colors = useAppColors();
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
-      <Text
-        textStyle={{
-          fontSize: 12,
-          fontWeight: '600',
-          color: colors.mutedForeground,
-        }}
-      >
-        {children}
-      </Text>
+      <NativeBlock>
+        <Text
+          textStyle={{
+            fontSize: 12,
+            fontWeight: '600',
+            color: colors.mutedForeground,
+          }}
+        >
+          {children}
+        </Text>
+      </NativeBlock>
     </View>
   );
 }
@@ -203,202 +206,238 @@ export default function SettingsScreen() {
         contentInsetAdjustmentBehavior="automatic"
       >
         <SectionLabel>{t('set.general')}</SectionLabel>
-        <ListItem
-          children={t('set.currency')}
-          trailing={
-            <Host>
-              <Picker
-                appearance="menu"
-                selectedValue={settings.currency}
-                onValueChange={(value) => updateSetting('currency', value)}
-              >
-                {SUPPORTED_CURRENCIES.map((currency) => (
-                  <Picker.Item
-                    key={currency.code}
-                    label={`${currency.name} (${currency.symbol})`}
-                    value={currency.code}
-                  />
-                ))}
-              </Picker>
-            </Host>
-          }
-        />
-        <ListItem
-          children={t('set.language')}
-          trailing={
-            <Host>
-              <Picker
-                appearance="menu"
-                selectedValue={settings.language}
-                onValueChange={(value) => updateSetting('language', value as LanguagePreference)}
-              >
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                ))}
-              </Picker>
-            </Host>
-          }
-        />
-        <ListItem
-          children={t('set.calendar')}
-          trailing={
-            <Host>
-              <Picker
-                appearance="menu"
-                selectedValue={settings.calendar}
-                onValueChange={(value) => updateSetting('calendar', value as CalendarPreference)}
-              >
-                {CALENDAR_OPTIONS.map((option) => (
-                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                ))}
-              </Picker>
-            </Host>
-          }
-        />
-        <ListItem
-          children={t('set.numerals')}
-          trailing={
-            <Host>
-              <Picker
-                appearance="menu"
-                selectedValue={settings.numerals}
-                onValueChange={(value) => updateSetting('numerals', value as NumeralsPreference)}
-              >
-                {NUMERALS_OPTIONS.map((option) => (
-                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                ))}
-              </Picker>
-            </Host>
-          }
-        />
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.currency')}
+            trailing={
+              <Host>
+                <Picker
+                  appearance="menu"
+                  selectedValue={settings.currency}
+                  onValueChange={(value) => updateSetting('currency', value)}
+                >
+                  {SUPPORTED_CURRENCIES.map((currency) => (
+                    <Picker.Item
+                      key={currency.code}
+                      label={`${currency.name} (${currency.symbol})`}
+                      value={currency.code}
+                    />
+                  ))}
+                </Picker>
+              </Host>
+            }
+          />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.language')}
+            trailing={
+              <Host>
+                <Picker
+                  appearance="menu"
+                  selectedValue={settings.language}
+                  onValueChange={(value) => updateSetting('language', value as LanguagePreference)}
+                >
+                  {LANGUAGE_OPTIONS.map((option) => (
+                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                  ))}
+                </Picker>
+              </Host>
+            }
+          />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.calendar')}
+            trailing={
+              <Host>
+                <Picker
+                  appearance="menu"
+                  selectedValue={settings.calendar}
+                  onValueChange={(value) => updateSetting('calendar', value as CalendarPreference)}
+                >
+                  {CALENDAR_OPTIONS.map((option) => (
+                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                  ))}
+                </Picker>
+              </Host>
+            }
+          />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.numerals')}
+            trailing={
+              <Host>
+                <Picker
+                  appearance="menu"
+                  selectedValue={settings.numerals}
+                  onValueChange={(value) => updateSetting('numerals', value as NumeralsPreference)}
+                >
+                  {NUMERALS_OPTIONS.map((option) => (
+                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                  ))}
+                </Picker>
+              </Host>
+            }
+          />
+        </NativeBlock>
 
         <SectionLabel>{t('set.preferences')}</SectionLabel>
-        <ListItem
-          children={t('set.defaultType')}
-          trailing={
-            <Host>
-              <Picker
-                appearance="menu"
-                selectedValue={settings.defaultTransactionType}
-                onValueChange={(value) => handleTypeChange(value as TransactionType)}
-              >
-                {TYPE_OPTIONS.map((option) => (
-                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                ))}
-              </Picker>
-            </Host>
-          }
-        />
-        <ListItem
-          children={t('set.startWeek')}
-          trailing={
-            <Host>
-              <Picker
-                appearance="menu"
-                selectedValue={settings.startOfWeek}
-                onValueChange={(value) => updateSetting('startOfWeek', Number(value))}
-              >
-                {WEEKDAY_OPTIONS.map((option) => (
-                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                ))}
-              </Picker>
-            </Host>
-          }
-        />
-        <ListItem
-          children={t('set.haptics')}
-          trailing={
-            <Host>
-              <Switch
-                value={settings.haptics}
-                onValueChange={(value) => updateSetting('haptics', value ? 'true' : 'false')}
-              />
-            </Host>
-          }
-        />
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.defaultType')}
+            trailing={
+              <Host>
+                <Picker
+                  appearance="menu"
+                  selectedValue={settings.defaultTransactionType}
+                  onValueChange={(value) => handleTypeChange(value as TransactionType)}
+                >
+                  {TYPE_OPTIONS.map((option) => (
+                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                  ))}
+                </Picker>
+              </Host>
+            }
+          />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.startWeek')}
+            trailing={
+              <Host>
+                <Picker
+                  appearance="menu"
+                  selectedValue={settings.startOfWeek}
+                  onValueChange={(value) => updateSetting('startOfWeek', Number(value))}
+                >
+                  {WEEKDAY_OPTIONS.map((option) => (
+                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                  ))}
+                </Picker>
+              </Host>
+            }
+          />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.haptics')}
+            trailing={
+              <Host>
+                <Switch
+                  value={settings.haptics}
+                  onValueChange={(value) => updateSetting('haptics', value ? 'true' : 'false')}
+                />
+              </Host>
+            }
+          />
+        </NativeBlock>
 
         <SectionLabel>{t('set.categories')}</SectionLabel>
-        <ListItem
-          children={t('set.manageCategories')}
-          supportingText={t('set.manageDesc')}
-          trailing={<Icon name={CHEVRON_ICON} size={16} />}
-          onPress={() => router.push('/categories')}
-        />
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.manageCategories')}
+            supportingText={t('set.manageDesc')}
+            trailing={<Icon name={CHEVRON_ICON} size={16} />}
+            onPress={() => router.push('/categories')}
+          />
+        </NativeBlock>
 
         <SectionLabel>{t('set.data')}</SectionLabel>
-        <ListItem
-          children={t('set.exportBackup')}
-          supportingText={backupBusy === 'export-json' ? t('common.working') : t('set.jsonFile')}
-          onPress={backupDisabled ? undefined : handleExportJson}
-        />
-        <ListItem
-          children={t('set.exportTx')}
-          supportingText={backupBusy === 'export-csv' ? t('common.working') : t('set.csvFile')}
-          onPress={backupDisabled ? undefined : handleExportCsv}
-        />
-        <ListItem
-          children={t('set.importData')}
-          supportingText={backupBusy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
-          onPress={backupDisabled ? undefined : handleImport}
-        />
-        <ListItem children={t('set.resetData')} onPress={() => setResetOpen(true)} />
-        {backupMsg ? (
+        <NativeBlock matchContents={false}>
           <ListItem
-            children={
-              <Text
-                textStyle={{
-                  fontSize: 14,
-                  color: backupMsg.kind === 'success' ? colors.positive : colors.destructiveError,
-                }}
-              >
-                {backupMsg.text}
-              </Text>
-            }
-            onPress={undefined}
+            children={t('set.exportBackup')}
+            supportingText={backupBusy === 'export-json' ? t('common.working') : t('set.jsonFile')}
+            onPress={backupDisabled ? undefined : handleExportJson}
           />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.exportTx')}
+            supportingText={backupBusy === 'export-csv' ? t('common.working') : t('set.csvFile')}
+            onPress={backupDisabled ? undefined : handleExportCsv}
+          />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem
+            children={t('set.importData')}
+            supportingText={backupBusy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
+            onPress={backupDisabled ? undefined : handleImport}
+          />
+        </NativeBlock>
+        <NativeBlock matchContents={false}>
+          <ListItem children={t('set.resetData')} onPress={() => setResetOpen(true)} />
+        </NativeBlock>
+        {backupMsg ? (
+          <NativeBlock matchContents={false}>
+            <ListItem
+              children={
+                <Text
+                  textStyle={{
+                    fontSize: 14,
+                    color: backupMsg.kind === 'success' ? colors.positive : colors.destructiveError,
+                  }}
+                >
+                  {backupMsg.text}
+                </Text>
+              }
+              onPress={undefined}
+            />
+          </NativeBlock>
         ) : null}
 
         <SectionLabel>{t('set.about')}</SectionLabel>
-        <ListItem
-          children={
-            <View style={{ gap: 2 }}>
-              <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>{t('set.aboutName')}</Text>
-              <Text textStyle={{ fontSize: 13, color: colors.mutedForeground }}>
-                {t('set.aboutDesc')}
-              </Text>
-              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
-                {t('set.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
-              </Text>
-            </View>
-          }
-          onPress={undefined}
-        />
-        {Platform.OS === 'android' ? (
+        <NativeBlock matchContents={false}>
           <ListItem
-            children={t('set.checkUpdates')}
-            trailing={
-              isChecking ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <ActivityIndicator size="small" />
-                  <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-                    {t('set.checking')}
-                  </Text>
-                </View>
-              ) : (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-                    {updateState.status === 'available'
-                      ? t('set.available', { version: updateState.latestVersion })
-                      : updateState.status === 'error'
-                        ? t('set.checkFailed')
-                        : t('set.upToDate')}
-                  </Text>
-                  <Icon name={REFRESH_ICON} size={16} color={colors.mutedForeground} />
-                </View>
-              )
+            children={
+              <Column spacing={2}>
+                <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>{t('set.aboutName')}</Text>
+                <Text textStyle={{ fontSize: 13, color: colors.mutedForeground }}>
+                  {t('set.aboutDesc')}
+                </Text>
+                <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+                  {t('set.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
+                </Text>
+              </Column>
             }
-            onPress={checkNow}
+            onPress={undefined}
           />
+        </NativeBlock>
+        {Platform.OS === 'android' ? (
+          <NativeBlock matchContents={false}>
+            <ListItem
+              children={t('set.checkUpdates')}
+              trailing={
+                isChecking ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <ActivityIndicator size="small" />
+                    <NativeBlock>
+                      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                        {t('set.checking')}
+                      </Text>
+                    </NativeBlock>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <NativeBlock>
+                      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                        {updateState.status === 'available'
+                          ? t('set.available', { version: updateState.latestVersion })
+                          : updateState.status === 'error'
+                            ? t('set.checkFailed')
+                            : t('set.upToDate')}
+                      </Text>
+                    </NativeBlock>
+                    <NativeBlock>
+                      <Icon name={REFRESH_ICON} size={16} color={colors.mutedForeground} />
+                    </NativeBlock>
+                  </View>
+                )
+              }
+              onPress={checkNow}
+            />
+          </NativeBlock>
         ) : null}
       </ScrollView>
 

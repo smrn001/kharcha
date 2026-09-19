@@ -1,4 +1,5 @@
 import { Icon, ListItem, Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { useI18n } from '@/hooks/use-i18n';
 import { useAppColors } from '@/lib/colors';
 import { categoryIcon } from '@/lib/category-icons';
@@ -26,23 +27,25 @@ export function TransactionRow({
     name + (transaction.date ? ` · ${formatTime(transaction.date)}` : '');
 
   return (
-    <ListItem
-      leading={<Icon name={categoryIcon(category?.icon)} size={18} />}
-      supportingText={supporting}
-      trailing={
-        <Text
-          textStyle={{
-            fontSize: 14,
-            fontWeight: '600',
-            color: isIncome ? colors.positive : undefined,
-          }}
-        >
-          {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, currency)}`}
-        </Text>
-      }
-      onPress={onPress}
-    >
-      {transaction.title ?? name ?? t('row.transaction')}
-    </ListItem>
+    <NativeBlock matchContents={false}>
+      <ListItem
+        leading={<Icon name={categoryIcon(category?.icon)} size={18} />}
+        supportingText={supporting}
+        trailing={
+          <Text
+            textStyle={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: isIncome ? colors.positive : undefined,
+            }}
+          >
+            {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, currency)}`}
+          </Text>
+        }
+        onPress={onPress}
+      >
+        {transaction.title ?? name ?? t('row.transaction')}
+      </ListItem>
+    </NativeBlock>
   );
 }

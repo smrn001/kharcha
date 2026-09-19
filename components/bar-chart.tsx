@@ -1,4 +1,5 @@
 import { Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { useAppColors } from '@/lib/colors';
 import { useI18n } from '@/hooks/use-i18n';
 import { View } from 'react-native';
@@ -42,15 +43,21 @@ export function BarChart({
             <View
               style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.positive }}
             />
-            <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>{t('an.income')}</Text>
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+                {t('an.income')}
+              </Text>
+            </NativeBlock>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View
               style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.destructiveError }}
             />
-            <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
-              {t('an.expenses')}
-            </Text>
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+                {t('an.expenses')}
+              </Text>
+            </NativeBlock>
           </View>
         </View>
       ) : null}
@@ -58,13 +65,14 @@ export function BarChart({
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ justifyContent: 'space-between', height: CHART_HEIGHT }}>
           {ticks.map((fraction) => (
-            <Text
-              key={fraction}
-              textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'right' }}
-              numberOfLines={1}
-            >
-              {formatValue ? formatValue(Math.round(max * fraction)) : `${Math.round(max * fraction)}`}
-            </Text>
+            <NativeBlock key={fraction}>
+              <Text
+                textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'right' }}
+                numberOfLines={1}
+              >
+                {formatValue ? formatValue(Math.round(max * fraction)) : `${Math.round(max * fraction)}`}
+              </Text>
+            </NativeBlock>
           ))}
         </View>
 
@@ -72,20 +80,22 @@ export function BarChart({
           <View style={{ height: 16, flexDirection: 'row', gap: 4 }}>
             {data.map((datum, index) => (
               <View key={`value-${datum.label}-${index}`} style={{ flex: 1, alignItems: 'center' }}>
-                <Text
-                  textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'center' }}
-                  numberOfLines={1}
-                >
-                  {datum.expense > 0
-                    ? formatValue
-                      ? formatValue(datum.expense)
-                      : `${datum.expense}`
-                    : datum.income > 0
+                <NativeBlock>
+                  <Text
+                    textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'center' }}
+                    numberOfLines={1}
+                  >
+                    {datum.expense > 0
                       ? formatValue
-                        ? formatValue(datum.income)
-                        : `${datum.income}`
-                      : ''}
-                </Text>
+                        ? formatValue(datum.expense)
+                        : `${datum.expense}`
+                      : datum.income > 0
+                        ? formatValue
+                          ? formatValue(datum.income)
+                          : `${datum.income}`
+                        : ''}
+                  </Text>
+                </NativeBlock>
               </View>
             ))}
           </View>
@@ -164,12 +174,14 @@ export function BarChart({
           <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
             {data.map((datum, index) => (
               <View key={`label-${datum.label}-${index}`} style={{ flex: 1, alignItems: 'center' }}>
-                <Text
-                  textStyle={{ fontSize: 10, color: colors.mutedForeground, textAlign: 'center' }}
-                  numberOfLines={1}
-                >
-                  {datum.label}
-                </Text>
+                <NativeBlock>
+                  <Text
+                    textStyle={{ fontSize: 10, color: colors.mutedForeground, textAlign: 'center' }}
+                    numberOfLines={1}
+                  >
+                    {datum.label}
+                  </Text>
+                </NativeBlock>
               </View>
             ))}
           </View>

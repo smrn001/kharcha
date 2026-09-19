@@ -1,4 +1,5 @@
 import { BottomSheet, Button, Icon, Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { useAppColors } from '@/lib/colors';
 import { useI18n } from '@/hooks/use-i18n';
 import type { UpdateState } from '@/hooks/use-update-checker';
@@ -58,67 +59,95 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
     >
       <View style={{ gap: 20 }}>
         <View style={{ gap: 4 }}>
-          <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{t('upd.title')}</Text>
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-            {t('upd.desc', { version: state.latestVersion })}
-          </Text>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{t('upd.title')}</Text>
+          </NativeBlock>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+              {t('upd.desc', { version: state.latestVersion })}
+            </Text>
+          </NativeBlock>
         </View>
 
         <View style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1, gap: 4, borderRadius: 10, backgroundColor: colors.mutedBackground, padding: 14 }}>
-              <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
-                {t('upd.installed')}
-              </Text>
-              <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.currentVersion}`}</Text>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
+                  {t('upd.installed')}
+                </Text>
+              </NativeBlock>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.currentVersion}`}</Text>
+              </NativeBlock>
             </View>
             <View style={{ flex: 1, gap: 4, borderRadius: 10, padding: 14 }}>
-              <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
-                {t('upd.available')}
-              </Text>
-              <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.latestVersion}`}</Text>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
+                  {t('upd.available')}
+                </Text>
+              </NativeBlock>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.latestVersion}`}</Text>
+              </NativeBlock>
             </View>
           </View>
 
           <View style={{ gap: 8 }}>
-            <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.whatsNew')}</Text>
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.whatsNew')}</Text>
+            </NativeBlock>
             {bullets.length > 0 ? (
               <View style={{ gap: 10 }}>
                 {bullets.map((bullet, index) => (
                   <View key={index} style={{ flexDirection: 'row', gap: 10 }}>
-                    <Icon name={CHECK_ICON} size={16} />
-                    <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-                      {bullet}
-                    </Text>
+                    <NativeBlock>
+                      <Icon name={CHECK_ICON} size={16} />
+                    </NativeBlock>
+                    <NativeBlock>
+                      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                        {bullet}
+                      </Text>
+                    </NativeBlock>
                   </View>
                 ))}
               </View>
             ) : (
-              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-                {t('upd.noNotes')}
-              </Text>
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                  {t('upd.noNotes')}
+                </Text>
+              </NativeBlock>
             )}
             {changelogUrl ? (
               <View style={{ alignItems: 'flex-start' }}>
-                <Button variant="text" onPress={() => onOpenLink(changelogUrl)}>
-                  <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.changelog')}</Text>
-                  <Icon name={ARROW_RIGHT_ICON} size={14} />
-                </Button>
+                <NativeBlock>
+                  <Button variant="text" onPress={() => onOpenLink(changelogUrl)}>
+                    <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.changelog')}</Text>
+                    <Icon name={ARROW_RIGHT_ICON} size={14} />
+                  </Button>
+                </NativeBlock>
               </View>
             ) : null}
           </View>
         </View>
 
         <View style={{ gap: 16 }}>
-          <Button
-            label={t('upd.download')}
-            onPress={() => onDownload(state.downloadUrl)}
-            disabled={!state.downloadUrl}
-          />
+          <NativeBlock matchContents={false}>
+            <Button
+              label={t('upd.download')}
+              onPress={() => onDownload(state.downloadUrl)}
+              disabled={!state.downloadUrl}
+            />
+          </NativeBlock>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <Button variant="text" label={t('upd.later')} onPress={onLater} />
+            <NativeBlock>
+              <Button variant="text" label={t('upd.later')} onPress={onLater} />
+            </NativeBlock>
             <View style={{ width: 1, height: 12, backgroundColor: colors.separator }} />
-            <Button variant="text" label={t('upd.skip')} onPress={onSkip} />
+            <NativeBlock>
+              <Button variant="text" label={t('upd.skip')} onPress={onSkip} />
+            </NativeBlock>
           </View>
         </View>
       </View>

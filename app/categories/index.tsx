@@ -1,4 +1,5 @@
 import { Button, Icon, ListItem, Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { useCategories } from '@/hooks/use-categories';
 import { useI18n } from '@/hooks/use-i18n';
 import { categoryIcon } from '@/lib/category-icons';
@@ -25,12 +26,14 @@ function CategoryRow({
   onPress: () => void;
 }) {
   return (
-    <ListItem
-      leading={<Icon name={categoryIcon(category.icon)} size={18} />}
-      children={categoryDisplayName(category, lang)}
-      trailing={<Icon name={CHEVRON_ICON_SYM} size={16} />}
-      onPress={onPress}
-    />
+    <NativeBlock matchContents={false}>
+      <ListItem
+        leading={<Icon name={categoryIcon(category.icon)} size={18} />}
+        children={categoryDisplayName(category, lang)}
+        trailing={<Icon name={CHEVRON_ICON_SYM} size={16} />}
+        onPress={onPress}
+      />
+    </NativeBlock>
   );
 }
 
@@ -43,15 +46,17 @@ function SectionLabel({ children }: { children: string }) {
   const colors = useAppColors();
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
-      <Text
-        textStyle={{
-          fontSize: 12,
-          fontWeight: '600',
-          color: colors.mutedForeground,
-        }}
-      >
-        {children}
-      </Text>
+      <NativeBlock>
+        <Text
+          textStyle={{
+            fontSize: 12,
+            fontWeight: '600',
+            color: colors.mutedForeground,
+          }}
+        >
+          {children}
+        </Text>
+      </NativeBlock>
     </View>
   );
 }
@@ -80,21 +85,25 @@ export default function CategoriesScreen() {
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
           headerRight: () => (
-            <Button
-              variant="text"
-              label={t('cat.add')}
-              onPress={() => router.push('/categories/new')}
-            >
-              <Icon name={PLUS_ICON} size={20} />
-            </Button>
+            <NativeBlock>
+              <Button
+                variant="text"
+                label={t('cat.add')}
+                onPress={() => router.push('/categories/new')}
+              >
+                <Icon name={PLUS_ICON} size={20} />
+              </Button>
+            </NativeBlock>
           ),
         }}
       />
 
       {loading && categories.length === 0 ? (
-        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
-          {t('common.loading')}
-        </Text>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+            {t('common.loading')}
+          </Text>
+        </NativeBlock>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
           {sections.map((section) => (

@@ -1,5 +1,6 @@
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { Button, FieldGroup, Host, Icon, Text, TextInput } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { CATEGORY_ICONS, categoryIcon } from '@/lib/category-icons';
 import { useAppColors } from '@/lib/colors';
 import { useI18n } from '@/hooks/use-i18n';
@@ -82,14 +83,15 @@ export function CategoryForm({
                 {CATEGORY_ICONS.map((iconName) => {
                   const selected = icon === iconName;
                   return (
-                    <Button
-                      key={iconName}
-                      variant={selected ? 'filled' : 'text'}
-                      onPress={() => setIcon(selected ? undefined : iconName)}
-                      style={{ width: 44, height: 44, borderRadius: 22, padding: 0 }}
-                    >
-                      <Icon name={categoryIcon(iconName)} size={18} />
-                    </Button>
+                    <NativeBlock key={iconName}>
+                      <Button
+                        variant={selected ? 'filled' : 'text'}
+                        onPress={() => setIcon(selected ? undefined : iconName)}
+                        style={{ width: 44, height: 44, borderRadius: 22, padding: 0 }}
+                      >
+                        <Icon name={categoryIcon(iconName)} size={18} />
+                      </Button>
+                    </NativeBlock>
                   );
                 })}
               </View>
@@ -98,18 +100,22 @@ export function CategoryForm({
         </Host>
 
         {error ? (
-          <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+          </NativeBlock>
         ) : null}
 
         {footer}
       </ScrollView>
 
       <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Button
-          label={submitting ? t('common.saving') : submitLabel}
-          onPress={handleSubmit}
-          disabled={submitting || !name.trim()}
-        />
+        <NativeBlock matchContents={false}>
+          <Button
+            label={submitting ? t('common.saving') : submitLabel}
+            onPress={handleSubmit}
+            disabled={submitting || !name.trim()}
+          />
+        </NativeBlock>
       </View>
     </View>
   );

@@ -2,6 +2,7 @@ import { CategoryPicker } from '@/components/category-picker';
 import { DateTimeField } from '@/components/date-time-field';
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { Button, FieldGroup, Host, Text, TextInput } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { useCategories } from '@/hooks/use-categories';
 import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { useI18n } from '@/hooks/use-i18n';
@@ -146,18 +147,22 @@ export default function NewTransactionScreen() {
 
         {/* Host must directly wrap FieldGroup (Android Compose contract). */}
         {loadingEdit ? (
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-            {t('common.loading')}
-          </Text>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+              {t('common.loading')}
+            </Text>
+          </NativeBlock>
         ) : (
           <Host>
             <FieldGroup>
               <FieldGroup.Section title={t('add.amount')}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text textStyle={{ fontSize: 28, fontWeight: 'bold' }}>
-                    {settings.currency}
-                  </Text>
-                  <View style={{ flex: 1 }}>
+                  <NativeBlock>
+                    <Text textStyle={{ fontSize: 28, fontWeight: 'bold' }}>
+                      {settings.currency}
+                    </Text>
+                  </NativeBlock>
+                  <NativeBlock matchContents={false} style={{ flex: 1 }}>
                     <TextInput
                       keyboardType="decimal-pad"
                       defaultValue={amountInput}
@@ -166,7 +171,7 @@ export default function NewTransactionScreen() {
                       textStyle={{ fontSize: 28, fontWeight: 'bold' }}
                       style={{ height: 64 }}
                     />
-                  </View>
+                  </NativeBlock>
                 </View>
               </FieldGroup.Section>
 
@@ -203,14 +208,18 @@ export default function NewTransactionScreen() {
         )}
 
         {error ? (
-          <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+          </NativeBlock>
         ) : null}
 
-        <Button
-          label={saving ? t('common.saving') : editingId ? t('common.saveChanges') : t('add.save')}
-          onPress={handleSave}
-          disabled={saving || loadingEdit}
-        />
+        <NativeBlock matchContents={false}>
+          <Button
+            label={saving ? t('common.saving') : editingId ? t('common.saveChanges') : t('add.save')}
+            onPress={handleSave}
+            disabled={saving || loadingEdit}
+          />
+        </NativeBlock>
       </ScrollView>
     </KeyboardAvoidingView>
   );

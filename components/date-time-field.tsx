@@ -1,4 +1,5 @@
-import { BottomSheet, Button, Text } from '@expo/ui';
+import { BottomSheet, Button, Column, Text } from '@expo/ui';
+import { NativeBlock } from '@/components/native-block';
 import { formatFullDate, formatTime } from '@/lib/dates';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useAppColors } from '@/lib/colors';
@@ -59,17 +60,21 @@ export function DateTimeField({
           gap: 2,
         }}
       >
-        {label ? (
-          <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>{label}</Text>
-        ) : null}
-        <Text
-          textStyle={{
-            fontSize: 14,
-            color: value ? undefined : colors.mutedForeground,
-          }}
-        >
-          {display}
-        </Text>
+        <NativeBlock matchContents={false}>
+          <Column spacing={2}>
+            {label ? (
+              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>{label}</Text>
+            ) : null}
+            <Text
+              textStyle={{
+                fontSize: 14,
+                color: value ? undefined : colors.mutedForeground,
+              }}
+            >
+              {display}
+            </Text>
+          </Column>
+        </NativeBlock>
       </Pressable>
 
       <BottomSheet isPresented={showPicker} onDismiss={() => setShowPicker(false)}>
@@ -82,7 +87,9 @@ export function DateTimeField({
               if (selected) onChange(selected);
             }}
           />
-          <Button label="Done" onPress={() => setShowPicker(false)} />
+          <NativeBlock>
+            <Button label="Done" onPress={() => setShowPicker(false)} />
+          </NativeBlock>
         </View>
       </BottomSheet>
     </View>

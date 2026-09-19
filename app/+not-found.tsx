@@ -1,5 +1,6 @@
 import { Column, Text } from '@expo/ui';
 import { Link, Stack } from 'expo-router';
+import { NativeBlock } from '@/components/native-block';
 import { useI18n } from '@/hooks/use-i18n';
 
 export default function NotFoundScreen() {
@@ -7,12 +8,16 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: t('nf.title') }} />
-      <Column spacing={12} style={{ padding: 24 }}>
-        <Text>{t('nf.msg')}</Text>
-        <Link href="/">
-          <Text>{t('nf.home')}</Text>
-        </Link>
-      </Column>
+      <NativeBlock matchContents={false}>
+        <Column spacing={12} style={{ padding: 24 }}>
+          <Text>{t('nf.msg')}</Text>
+          <NativeBlock>
+            <Link href="/">
+              <Text>{t('nf.home')}</Text>
+            </Link>
+          </NativeBlock>
+        </Column>
+      </NativeBlock>
     </>
   );
 }

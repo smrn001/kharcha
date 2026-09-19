@@ -1,5 +1,6 @@
 import { CategoryForm } from '@/components/category-form';
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { NativeBlock } from '@/components/native-block';
 import { Button, Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
 import { useAppColors } from '@/lib/colors';
@@ -53,9 +54,11 @@ export default function EditCategoryScreen() {
           }}
         />
         <View style={{ paddingVertical: 64, alignItems: 'center' }}>
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
-            {t('common.loading')}
-          </Text>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+              {t('common.loading')}
+            </Text>
+          </NativeBlock>
         </View>
       </View>
     );
@@ -72,9 +75,11 @@ export default function EditCategoryScreen() {
           }}
         />
         <View style={{ paddingVertical: 64, alignItems: 'center' }}>
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
-            {t('cat.notFound')}
-          </Text>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+              {t('cat.notFound')}
+            </Text>
+          </NativeBlock>
         </View>
       </View>
     );
@@ -127,11 +132,13 @@ export default function EditCategoryScreen() {
         onSubmit={handleSubmit}
         footer={
           <View style={{ alignItems: 'center' }}>
-            <Button variant="text" onPress={() => setDeleteOpen(true)}>
-              <Text textStyle={{ fontSize: 15, fontWeight: '500', color: colors.destructiveError }}>
-                {t('cat.deleteBtn')}
-              </Text>
-            </Button>
+            <NativeBlock>
+              <Button variant="text" onPress={() => setDeleteOpen(true)}>
+                <Text textStyle={{ fontSize: 15, fontWeight: '500', color: colors.destructiveError }}>
+                  {t('cat.deleteBtn')}
+                </Text>
+              </Button>
+            </NativeBlock>
           </View>
         }
       />
