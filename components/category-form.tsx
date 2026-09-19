@@ -1,19 +1,11 @@
-import { SegmentedControl } from '@/components/segmented-control';
-import { Host, FieldGroup } from '@expo/ui';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { SegmentedControl } from '@expo/ui/community/segmented-control';
+import { Button, FieldGroup, Host, Icon, Text, TextInput } from '@expo/ui';
 import { CATEGORY_ICONS, categoryIcon } from '@/lib/category-icons';
-import { THEME } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import { useAppColors } from '@/lib/colors';
 import { useI18n } from '@/hooks/use-i18n';
 import type { NewCategory, TransactionType } from '@/types';
-import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
-
-const INPUT_CLASS =
-  'h-12 rounded-md border border-input bg-background px-3 text-base text-foreground';
+import { ScrollView, View } from 'react-native';
 
 function useTypeOptions(): { value: TransactionType; label: string }[] {
   const { t } = useI18n();
@@ -38,9 +30,7 @@ export function CategoryForm({
   onSubmit: (input: NewCategory) => void;
   footer?: React.ReactNode;
 }) {
-  const { colorScheme } = useColorScheme();
-  const colors = THEME[colorScheme ?? 'light'];
-
+  const colors = useAppColors();
   const { t } = useI18n();
   const typeOptions = useTypeOptions();
   const [name, setName] = useState(initial?.name ?? '');
@@ -59,70 +49,67 @@ export function CategoryForm({
   };
 
   return (
-    <View className="flex-1">
+    <View style={{ flex: 1 }}>
       <ScrollView
-        className="flex-1"
-        contentContainerClassName="gap-5 px-4 pb-8"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ gap: 20, paddingHorizontal: 16, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
       >
-        <SegmentedControl options={typeOptions} value={type} onChange={handleTypeChange} />
+        <SegmentedControl
+          values={typeOptions.map((o) => o.label)}
+          selectedIndex={type === 'income' ? 1 : 0}
+          onValueChange={(label) => {
+            const next = typeOptions.find((o) => o.label === label)?.value;
+            if (next) handleTypeChange(next);
+          }}
+        />
 
-        {/* Host must directly wrap FieldGroup (Android Compose contract). */}
         <Host>
-        <FieldGroup>
-          <FieldGroup.Section title={t('cat.formName')}>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder={t('cat.formNamePh')}
-              placeholderTextColor={colors.mutedForeground}
-              accessibilityLabel={t('cat.formNameLabel')}
-              className={INPUT_CLASS}
-            />
-          </FieldGroup.Section>
+          <FieldGroup>
+            <FieldGroup.Section title={t('cat.formName')}>
+              <TextInput
+                defaultValue={initial?.name ?? ''}
+                onChangeText={setName}
+                placeholder={t('cat.formNamePh')}
+                autoCapitalize="words"
+                textStyle={{ fontSize: 16 }}
+              />
+            </FieldGroup.Section>
 
-          <FieldGroup.Section title={t('cat.formIcon')}>
-            <View className="flex-row flex-wrap gap-2">
-            {CATEGORY_ICONS.map((iconName) => {
-              const selected = icon === iconName;
-              const IconComponent = categoryIcon(iconName);
-              return (
-                <Pressable
-                  key={iconName}
-                  onPress={() => setIcon(selected ? undefined : iconName)}
-                  accessibilityLabel={iconName}
-                  className={cn(
-                    'h-11 w-11 items-center justify-center rounded-full border active:opacity-70',
-                    selected
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border bg-card active:bg-muted'
-                  )}
-                >
-                  <Icon
-                    as={IconComponent}
-                    size={18}
-                    className={cn(selected ? 'text-primary' : 'text-muted-foreground')}
-                  />
-                </Pressable>
-              );
-            })}
-          </View>
-          </FieldGroup.Section>
-        </FieldGroup>
+            <FieldGroup.Section title={t('cat.formIcon')}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 4 }}>
+                {CATEGORY_ICONS.map((iconName) => {
+                  const selected = icon === iconName;
+                  return (
+                    <Button
+                      key={iconName}
+                      variant={selected ? 'filled' : 'text'}
+                      onPress={() => setIcon(selected ? undefined : iconName)}
+                      style={{ width: 44, height: 44, borderRadius: 22, padding: 0 }}
+                    >
+                      <Icon name={categoryIcon(iconName)} size={18} />
+                    </Button>
+                  );
+                })}
+              </View>
+            </FieldGroup.Section>
+          </FieldGroup>
         </Host>
 
-        {error ? <Text selectable className="text-destructive text-sm">{error}</Text> : null}
+        {error ? (
+          <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+        ) : null}
 
         {footer}
       </ScrollView>
 
-      <View className="border-border border-t bg-background px-4 py-3">
-        <Button onPress={handleSubmit} disabled={submitting || !name.trim()}>
-          <Text className="text-primary-foreground font-medium">
-            {submitting ? t('common.saving') : submitLabel}
-          </Text>
-        </Button>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+        <Button
+          label={submitting ? t('common.saving') : submitLabel}
+          onPress={handleSubmit}
+          disabled={submitting || !name.trim()}
+        />
       </View>
     </View>
   );

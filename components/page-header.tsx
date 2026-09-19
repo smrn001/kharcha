@@ -1,11 +1,14 @@
-import { Text } from '@/components/ui/text';
-import { View } from 'react-native';
+import { Column, Text } from '@expo/ui';
+import { useAppColors } from '@/lib/colors';
 
 export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  const colors = useAppColors();
   return (
-    <View className="px-5 pb-2 pt-4">
-      <Text className="text-2xl font-bold">{title}</Text>
-      {subtitle ? <Text variant="muted">{subtitle}</Text> : null}
-    </View>
+    <Column style={{ paddingTop: 16, paddingBottom: 8, paddingHorizontal: 20 }} spacing={2}>
+      <Text textStyle={{ fontSize: 24, fontWeight: 'bold' }}>{title}</Text>
+      {subtitle ? (
+        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>{subtitle}</Text>
+      ) : null}
+    </Column>
   );
 }

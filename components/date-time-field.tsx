@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
+import { BottomSheet, Button, Text } from '@expo/ui';
 import { formatFullDate, formatTime } from '@/lib/dates';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { useAppColors } from '@/lib/colors';
 import { useState } from 'react';
-import { Modal, Platform, Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 export interface DateTimeFieldProps {
   mode: 'date' | 'time';
@@ -11,7 +11,6 @@ export interface DateTimeFieldProps {
   onChange: (date: Date) => void;
   label?: string;
   placeholder?: string;
-  className?: string;
 }
 
 export function DateTimeField({
@@ -20,9 +19,9 @@ export function DateTimeField({
   onChange,
   label,
   placeholder,
-  className,
 }: DateTimeFieldProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const colors = useAppColors();
 
   const display = value
     ? mode === 'date'
@@ -45,41 +44,45 @@ export function DateTimeField({
   };
 
   return (
-    <View className={className}>
+    <View>
       <Pressable
         onPress={openPicker}
-        className="border-input h-12 justify-center rounded-md border px-3 active:opacity-80"
+        style={{
+          minHeight: 48,
+          justifyContent: 'center',
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: colors.separator,
+          paddingHorizontal: 12,
+          gap: 2,
+        }}
       >
         {label ? (
-          <Text variant="muted" className="text-xs">
-            {label}
-          </Text>
+          <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>{label}</Text>
         ) : null}
-        <Text className={value ? 'text-sm' : 'text-muted-foreground text-sm'}>{display}</Text>
+        <Text
+          textStyle={{
+            fontSize: 14,
+            color: value ? undefined : colors.mutedForeground,
+          }}
+        >
+          {display}
+        </Text>
       </Pressable>
 
-      <Modal
-        visible={showPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowPicker(false)}
-      >
-        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setShowPicker(false)}>
-          <Pressable className="border-border bg-card rounded-t-xl border p-4">
-            <DateTimePicker
-              value={value ?? new Date()}
-              mode={mode}
-              display="spinner"
-              onValueChange={(_event, selected) => {
-                if (selected) onChange(selected);
-              }}
-            />
-            <Button onPress={() => setShowPicker(false)}>
-              <Text className="text-primary-foreground font-medium">Done</Text>
-            </Button>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <BottomSheet isPresented={showPicker} onDismiss={() => setShowPicker(false)}>
+        <View style={{ gap: 16 }}>
+          <DateTimePicker
+            value={value ?? new Date()}
+            mode={mode}
+            display="spinner"
+            onChange={(_event, selected) => {
+              if (selected) onChange(selected);
+            }}
+          />
+          <Button label="Done" onPress={() => setShowPicker(false)} />
+        </View>
+      </BottomSheet>
     </View>
   );
 }

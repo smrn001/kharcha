@@ -1,5 +1,6 @@
+import { Text } from '@expo/ui';
+import { useAppColors } from '@/lib/colors';
 import { useI18n } from '@/hooks/use-i18n';
-import { Text } from '@/components/ui/text';
 import { View } from 'react-native';
 
 export interface BarChartDatum {
@@ -26,40 +27,40 @@ export function BarChart({
   formatValue?: (value: number) => string;
 }) {
   const { t } = useI18n();
-  const max = niceCeil(
-    Math.max(...data.flatMap((d) => [d.income, d.expense]), 1)
-  );
+  const colors = useAppColors();
+  const max = niceCeil(Math.max(...data.flatMap((d) => [d.income, d.expense]), 1));
   const barHeight = (value: number) =>
     Math.max(Math.round((value / max) * CHART_HEIGHT), value > 0 ? 4 : 0);
   const ticks = [1, 0.5, 0];
   const hasIncome = data.some((d) => d.income > 0);
 
   return (
-    <View className="w-full">
+    <View style={{ width: '100%' }}>
       {hasIncome ? (
-        <View className="mb-2 flex-row justify-end gap-4">
-          <View className="flex-row items-center gap-1.5">
-            <View className="bg-positive h-2.5 w-2.5 rounded-sm" />
-            <Text variant="muted" className="text-xs">
-              {t('an.income')}
-            </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View
+              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.positive }}
+            />
+            <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>{t('an.income')}</Text>
           </View>
-          <View className="flex-row items-center gap-1.5">
-            <View className="bg-destructive h-2.5 w-2.5 rounded-sm" />
-            <Text variant="muted" className="text-xs">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View
+              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.destructiveError }}
+            />
+            <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
               {t('an.expenses')}
             </Text>
           </View>
         </View>
       ) : null}
 
-      <View className="flex-row gap-2">
-        <View className="justify-between py-0.5" style={{ height: CHART_HEIGHT }}>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ justifyContent: 'space-between', height: CHART_HEIGHT }}>
           {ticks.map((fraction) => (
             <Text
               key={fraction}
-              variant="muted"
-              className="text-right text-[9px]"
+              textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'right' }}
               numberOfLines={1}
             >
               {formatValue ? formatValue(Math.round(max * fraction)) : Math.round(max * fraction)}
@@ -67,62 +68,92 @@ export function BarChart({
           ))}
         </View>
 
-        <View className="flex-1">
-          <View className="h-4 flex-row items-end justify-between gap-1">
+        <View style={{ flex: 1 }}>
+          <View style={{ height: 16, flexDirection: 'row', gap: 4 }}>
             {data.map((datum, index) => (
-              <Text
-                key={`value-${datum.label}-${index}`}
-                variant="muted"
-                className="flex-1 text-center text-[9px]"
-                numberOfLines={1}
-              >
-                {datum.expense > 0
-                  ? formatValue
-                    ? formatValue(datum.expense)
-                    : datum.expense
-                  : datum.income > 0
+              <View key={`value-${datum.label}-${index}`} style={{ flex: 1, alignItems: 'center' }}>
+                <Text
+                  textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'center' }}
+                  numberOfLines={1}
+                >
+                  {datum.expense > 0
                     ? formatValue
-                      ? formatValue(datum.income)
-                      : datum.income
-                    : ''}
-              </Text>
+                      ? formatValue(datum.expense)
+                      : datum.expense
+                    : datum.income > 0
+                      ? formatValue
+                        ? formatValue(datum.income)
+                        : datum.income
+                      : ''}
+                </Text>
+              </View>
             ))}
           </View>
 
-          <View className="relative" style={{ height: CHART_HEIGHT }}>
+          <View style={{ height: CHART_HEIGHT }}>
             {ticks.map((fraction) => (
               <View
                 key={`tick-${fraction}`}
-                className="absolute inset-x-0 border-t border-border/40"
-                style={{ bottom: Math.round(fraction * CHART_HEIGHT) }}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: Math.round(fraction * CHART_HEIGHT),
+                  borderTopWidth: 1,
+                  borderTopColor: colors.separator,
+                }}
               />
             ))}
             <View
-              className="flex-row items-end justify-between gap-1"
-              style={{ height: CHART_HEIGHT }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                gap: 4,
+                height: CHART_HEIGHT,
+              }}
             >
               {data.map((datum, index) => (
                 <View
                   key={`bar-${datum.label}-${index}`}
-                  className="flex-1 flex-row items-end justify-center gap-px"
-                  style={{ height: CHART_HEIGHT }}
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'flex-end',
+                    justifyContent: 'center',
+                    gap: 1,
+                    height: CHART_HEIGHT,
+                  }}
                   accessibilityLabel={`${datum.label} — income: ${datum.income}, spending: ${datum.expense}`}
                 >
                   {hasIncome ? (
                     <>
                       <View
-                        className="bg-positive w-1/2 rounded-tl-sm"
-                        style={{ height: barHeight(datum.income) }}
+                        style={{
+                          width: '50%',
+                          borderTopLeftRadius: 2,
+                          backgroundColor: colors.positive,
+                          height: barHeight(datum.income),
+                        }}
                       />
                       <View
-                        className="bg-destructive w-1/2 rounded-tr-sm"
-                        style={{ height: barHeight(datum.expense) }}
+                        style={{
+                          width: '50%',
+                          borderTopRightRadius: 2,
+                          backgroundColor: colors.destructiveError,
+                          height: barHeight(datum.expense),
+                        }}
                       />
                     </>
                   ) : (
                     <View
-                      className="bg-destructive w-full rounded-t-sm"
-                      style={{ height: barHeight(datum.expense) }}
+                      style={{
+                        width: '100%',
+                        borderTopLeftRadius: 2,
+                        borderTopRightRadius: 2,
+                        backgroundColor: colors.destructiveError,
+                        height: barHeight(datum.expense),
+                      }}
                     />
                   )}
                 </View>
@@ -130,16 +161,16 @@ export function BarChart({
             </View>
           </View>
 
-          <View className="mt-1 flex-row justify-between gap-1">
+          <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>
             {data.map((datum, index) => (
-              <Text
-                key={`label-${datum.label}-${index}`}
-                variant="muted"
-                className="flex-1 text-center text-[10px]"
-                numberOfLines={1}
-              >
-                {datum.label}
-              </Text>
+              <View key={`label-${datum.label}-${index}`} style={{ flex: 1, alignItems: 'center' }}>
+                <Text
+                  textStyle={{ fontSize: 10, color: colors.mutedForeground, textAlign: 'center' }}
+                  numberOfLines={1}
+                >
+                  {datum.label}
+                </Text>
+              </View>
             ))}
           </View>
         </View>

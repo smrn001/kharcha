@@ -1,7 +1,5 @@
-import { Text } from '@/components/ui/text';
+import { Button, Text } from '@expo/ui';
 import { hapticSelection } from '@/lib/haptics';
-import { cn } from '@/lib/utils';
-import { Pressable } from 'react-native';
 
 export function FilterChip({
   label,
@@ -13,21 +11,15 @@ export function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Button
+      variant={selected ? 'filled' : 'outlined'}
       onPress={() => {
         void hapticSelection();
         onPress();
       }}
-      className={cn(
-        'rounded-full border px-3 py-1.5 active:opacity-70',
-        selected ? 'border-primary bg-primary/10' : 'border-border bg-card'
-      )}
+      style={{ borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}
     >
-      <Text
-        className={cn('text-sm', selected ? 'font-medium text-foreground' : 'text-muted-foreground')}
-      >
-        {label}
-      </Text>
-    </Pressable>
+      <Text textStyle={{ fontSize: 14, fontWeight: selected ? '500' : '400' }}>{label}</Text>
+    </Button>
   );
 }

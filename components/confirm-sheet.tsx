@@ -1,15 +1,9 @@
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
-import { hslToHex, THEME } from '@/lib/theme';
-import { BottomSheet } from '@expo/ui';
-import { useColorScheme } from 'nativewind';
-import { View } from 'react-native';
+import { BottomSheet, Button, Column, Text } from '@expo/ui';
+import { useAppColors } from '@/lib/colors';
 
 /**
  * Confirmation modal built on the universal `BottomSheet` from `@expo/ui`.
- * Used for destructive confirmations (reset data, delete transaction, delete
- * category). Children are regular React Native views, so they stay fully
- * themed with the app palette.
+ * Uses device-adaptive surfaces and the accent (filled/plain) buttons.
  */
 export function ConfirmSheet({
   open,
@@ -34,43 +28,31 @@ export function ConfirmSheet({
   destructive?: boolean;
   onConfirm: () => void;
 }) {
-  const { colorScheme } = useColorScheme();
-  const colors = THEME[colorScheme ?? 'light'];
+  const colors = useAppColors();
 
   return (
     <BottomSheet
       isPresented={open}
       onDismiss={() => onOpenChange(false)}
-      containerColor={hslToHex(colors.background)}
-      contentPadding={{ left: 20, right: 20, top: 20, bottom: 24 }}
+      contentPadding={{ left: 24, right: 24, top: 8, bottom: 20 }}
     >
-      <View className="gap-5">
-        <View className="gap-1.5">
-          <Text className="text-foreground text-lg font-semibold">{title}</Text>
+      <Column spacing={20}>
+        <Column spacing={6}>
+          <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{title}</Text>
           {description ? (
-            <Text variant="muted" className="text-sm leading-5">
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, lineHeight: 20 }}>
               {description}
             </Text>
           ) : null}
           {error ? (
-            <Text selectable className="text-destructive text-sm">
-              {error}
-            </Text>
+            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
           ) : null}
-        </View>
-        <View className="gap-2.5">
-          <Button variant="outline" onPress={() => onOpenChange(false)} disabled={busy}>
-            <Text className="font-medium">{cancelLabel}</Text>
-          </Button>
-          <Button
-            variant={destructive ? 'destructive' : 'default'}
-            onPress={onConfirm}
-            disabled={busy}
-          >
-            <Text className="font-medium">{confirmLabel}</Text>
-          </Button>
-        </View>
-      </View>
+        </Column>
+        <Column spacing={8}>
+          <Button variant="text" label={cancelLabel} onPress={() => onOpenChange(false)} disabled={busy} />
+          <Button variant="filled" label={confirmLabel} onPress={onConfirm} disabled={busy} />
+        </Column>
+      </Column>
     </BottomSheet>
   );
 }

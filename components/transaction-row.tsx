@@ -1,51 +1,49 @@
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { Icon, ListItem, Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
+import { useAppColors } from '@/lib/colors';
 import { categoryIcon } from '@/lib/category-icons';
 import { formatTime } from '@/lib/dates';
 import { formatAmount } from '@/lib/format';
 import { categoryDisplayName } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
 import type { Category, Transaction } from '@/types';
-import { View } from 'react-native';
 
 export function TransactionRow({
   transaction,
   category,
   currency,
+  onPress,
 }: {
   transaction: Transaction;
   category?: Category;
   currency: string;
+  onPress?: () => void;
 }) {
-  const IconComponent = categoryIcon(category?.icon);
+  const colors = useAppColors();
   const isIncome = transaction.type === 'income';
   const { t, lang } = useI18n();
   const name = category ? categoryDisplayName(category, lang) : undefined;
+  const supporting =
+    name + (transaction.date ? ` · ${formatTime(transaction.date)}` : '');
 
   return (
-    <View className="flex-row items-center gap-3 py-3">
-      <View className="bg-muted h-10 w-10 items-center justify-center rounded-full">
-        <Icon as={IconComponent} size={18} />
-      </View>
-      <View className="flex-1">
-        <Text className="text-sm font-medium" numberOfLines={1}>
-          {transaction.title ?? name ?? t('row.transaction')}
+    <ListItem
+      leading={<Icon name={categoryIcon(category?.icon)} size={18} />}
+      supportingText={supporting}
+      trailing={
+        <Text
+          textStyle={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: isIncome ? colors.positive : undefined,
+          }}
+        >
+          {isIncome ? '+' : '-'}
+          {formatAmount(transaction.amount, currency)}
         </Text>
-        <Text variant="muted" className="text-xs">
-          {name}
-          {transaction.date ? ` · ${formatTime(transaction.date)}` : ''}
-        </Text>
-      </View>
-      <Text
-        className={cn(
-          'text-sm font-semibold tabular-nums',
-          isIncome ? 'text-positive' : 'text-foreground'
-        )}
-      >
-        {isIncome ? '+' : '-'}
-        {formatAmount(transaction.amount, currency)}
-      </Text>
-    </View>
+      }
+      onPress={onPress}
+    >
+      {transaction.title ?? name ?? t('row.transaction')}
+    </ListItem>
   );
 }

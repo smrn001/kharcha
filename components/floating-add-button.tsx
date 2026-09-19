@@ -1,23 +1,41 @@
-import { Icon } from '@/components/ui/icon';
+import { Button, Icon } from '@expo/ui';
+import { FloatingActionButton, Host, Icon as ComposeIcon } from '@expo/ui/jetpack-compose';
 import { useI18n } from '@/hooks/use-i18n';
 import { router } from 'expo-router';
-import { Plus } from 'lucide-react-native';
-import { Pressable } from 'react-native';
+import { Platform, View } from 'react-native';
 
+const PLUS_ICON = Icon.select({
+  ios: 'plus',
+  android: import('@expo/material-symbols/add.xml'),
+});
+
+/**
+ * Floating "add transaction" button. Android renders the native Material 3
+ * `FloatingActionButton`; iOS renders a circular accent-filled `Button`.
+ */
 export function FloatingAddButton() {
   const { t } = useI18n();
-  return (
-    <Pressable
-      onPress={() => router.push('/transaction/new')}
-      accessibilityLabel={t('fab.add')}
-      accessibilityRole="button"
-      className="bg-primary absolute bottom-6 right-6 z-10 h-14 w-14 items-center justify-center rounded-full transition-transform duration-100 active:scale-95 active:bg-primary/90"
-      style={{
-        boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.2)',
+  const onPress = () => router.push('/transaction/new');
 
-      }}
-    >
-      <Icon as={Plus} size={24} className="text-primary-foreground" />
-    </Pressable>
+  if (Platform.OS === 'android') {
+    return (
+      <View style={{ position: 'absolute', right: 24, bottom: 24, zIndex: 10 }}>
+        <Host matchContents={{ vertical: true }}>
+          <FloatingActionButton onClick={onPress}>
+            <FloatingActionButton.Icon>
+              <ComposeIcon source={require('@expo/material-symbols/add.xml')} />
+            </FloatingActionButton.Icon>
+          </FloatingActionButton>
+        </Host>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ position: 'absolute', right: 24, bottom: 24, zIndex: 10 }}>
+      <Button variant="filled" onPress={onPress} style={{ width: 56, height: 56, borderRadius: 28, padding: 0 }}>
+        <Icon name={PLUS_ICON} size={22} />
+      </Button>
+    </View>
   );
 }

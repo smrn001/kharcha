@@ -8,7 +8,7 @@ function IoSTabs() {
   const { t } = useI18n();
 
   return (
-    <NativeTabs tintColor="#5046e5">
+    <NativeTabs>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon sf="house.fill" md="home" />
         <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
@@ -31,7 +31,7 @@ function IoSTabs() {
 
 function AndroidTabs() {
   return (
-    <View className="flex-1">
+    <View style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }} />
       <TabBar />
     </View>
@@ -40,8 +40,8 @@ function AndroidTabs() {
 
 /**
  * Android uses the Jetpack Compose `NavigationBar` (Material 3) from
- * `@expo/ui` as its bottom navigation. iOS keeps `NativeTabs`
- * (SF Symbols). Web uses `_layout.web.tsx` (JS `Tabs`).
+ * `@expo/ui` as its bottom navigation; iOS keeps native tab bars via
+ * `NativeTabs` (SF Symbols).
  */
 export default function TabLayout() {
   if (Platform.OS === 'android') {
