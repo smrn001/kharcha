@@ -52,9 +52,13 @@ function ThemedRoot() {
   // white and covers the host canvas. Toggle the nav theme with the device
   // scheme and pin the content background to our themed canvas.
   const navigationTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  // Android draws edge-to-edge, so the status bar sits directly on the themed
+  // screen background. Pin the icon color to the scheme we already resolved
+  // (`auto` re-reads the scheme on mount, which is null on first render in dev
+  // builds and can leave the wrong icon tone on the background).
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Host style={{ flex: 1 }} colorScheme={scheme ?? undefined}>
         <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.background }}>
           <ThemeProvider value={navigationTheme}>
