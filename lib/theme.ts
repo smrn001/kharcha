@@ -1,4 +1,4 @@
-import { useColorScheme, Platform } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import { getMaterialColors } from '@expo/ui/jetpack-compose';
 
 /**

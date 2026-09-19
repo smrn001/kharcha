@@ -4,7 +4,7 @@ import { UpdateCheckerProvider, useUpdateChecker } from '@/hooks/use-update-chec
 import { DatabaseProvider } from '@/lib/db/database';
 import { useTheme } from '@/lib/theme';
 import { Host } from '@expo/ui';
-import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Linking, Platform, View, useColorScheme, AppState } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +32,7 @@ export default function RootLayout() {
 function ThemedRoot() {
   const insets = useSafeAreaInsets();
   const colors = useTheme();
+  const scheme = useColorScheme();
   const [, resyncPalette] = useState(0);
 
   // `getMaterialColors` reads the palette per render but never subscribes to
@@ -46,12 +47,24 @@ function ThemedRoot() {
     return () => sub.remove();
   }, []);
 
+  // react-navigation paints each native screen with the navigation theme's
+  // background; without a themed ThemeProvider every screen renders opaque
+  // white and covers the host canvas. Toggle the nav theme with the device
+  // scheme and pin the content background to our themed canvas.
+  const navigationTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
   return (
     <>
       <StatusBar style="auto" />
-      <Host style={{ flex: 1 }} colorScheme={useColorScheme() ?? undefined}>
+      <Host style={{ flex: 1 }} colorScheme={scheme ?? undefined}>
         <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.background }}>
-          <Stack screenOptions={{ headerShown: false }} />
+          <ThemeProvider value={navigationTheme}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            />
+          </ThemeProvider>
         </View>
       </Host>
       <AndroidUpdateChecker />
