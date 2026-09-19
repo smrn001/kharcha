@@ -57,7 +57,7 @@ export default function HomeScreen() {
   const overspend = summary.expense > summary.income;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 , backgroundColor: colors.background,}}>
       <ScrollView contentContainerStyle={{ paddingBottom: 112 }} contentInsetAdjustmentBehavior="automatic">
         <PageHeader title={t(greetingKey())} subtitle={t('home.subtitle')} />
 

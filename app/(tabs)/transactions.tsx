@@ -7,8 +7,8 @@ import {
   type DateFilter,
   type TypeFilter,
 } from '@/components/transaction-filters';
-import { TransactionRow } from '@/components/transaction-row';
-import { Button, Icon, Text } from '@expo/ui';
+import { TransactionFieldRow } from '@/components/transaction-row';
+import { Button, FieldGroup, Host, Icon, Text } from '@expo/ui';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useCategories } from '@/hooks/use-categories';
 import { useDayHeading } from '@/hooks/use-day-heading';
@@ -19,7 +19,7 @@ import { endOfDay, startOfDay, startOfMonth, startOfWeek, toDateKey } from '@/li
 import { useTheme } from '@/lib/theme';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { RefreshControl, SectionList, View } from 'react-native';
+import { View, useColorScheme } from 'react-native';
 import type { Transaction } from '@/types';
 import type { TransactionFilters as QueryFilters } from '@/lib/db/transactions';
 
@@ -45,6 +45,7 @@ interface Section {
 
 export default function TransactionsScreen() {
   const colors = useTheme();
+  const scheme = useColorScheme();
   const { settings } = useSettings();
 
   const [query, setQuery] = useState('');
@@ -98,16 +99,6 @@ export default function TransactionsScreen() {
   ]);
 
   const { transactions, loading, refresh } = useTransactions(filters);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await refresh();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refresh]);
 
   const hasActiveFilters =
     !!query.trim() ||
@@ -166,7 +157,7 @@ export default function TransactionsScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 , backgroundColor: colors.background,}} >
       <PageHeader title={t('txns.title')} />
 
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
@@ -198,86 +189,72 @@ export default function TransactionsScreen() {
         />
       </View>
 
-      <SectionList<Transaction, Section>
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 112 }}
-        stickySectionHeadersEnabled={false}
-        keyboardShouldPersistTaps="handled"
-        renderSectionHeader={({ section }) => (
-          <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 }}>
+      {loading && transactions.length === 0 ? (
+        <View style={{ flex: 1 }}>
+          <LoadingView label={t('common.loading')} />
+        </View>
+      ) : transactions.length === 0 ? (
+        <View style={{ flex: 1, alignItems: 'center', gap: 12, paddingVertical: 64, paddingHorizontal: 20 }}>
+          <View
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: colors.surface,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <NativeBlock>
-              <Text
-                textStyle={{
-                  fontSize: 12,
-                  fontWeight: '600',
-                  color: colors.textSecondary,
-                }}
-              >
-                {section.title}
-              </Text>
+              <Icon name={SEARCH_ICON} size={24} color={colors.textSecondary} />
             </NativeBlock>
           </View>
-        )}
-        renderItem={({ item }) => (
-          <TransactionRow
-            transaction={item}
-            category={item.categoryId ? categoryMap.get(item.categoryId) : undefined}
-            currency={settings.currency}
-            onPress={() => router.push(`/transaction/${item.id}`)}
-          />
-        )}
-        ItemSeparatorComponent={() => (
-          <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 72, marginRight: 20 }} />
-        )}
-        ListEmptyComponent={
-          loading ? (
-            <LoadingView label={t('common.loading')} />
-          ) : (
-            <View style={{ alignItems: 'center', gap: 12, paddingVertical: 64, paddingHorizontal: 20 }}>
-              <View
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 28,
-                  backgroundColor: colors.surface,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <NativeBlock>
-                  <Icon name={SEARCH_ICON} size={24} color={colors.textSecondary} />
-                </NativeBlock>
-              </View>
-              <NativeBlock>
-                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
-                  {hasActiveFilters ? t('txns.noMatchTitle') : t('txns.emptyTitle')}
-                </Text>
-              </NativeBlock>
-              <NativeBlock>
-                <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
-                  {hasActiveFilters ? t('txns.noMatchMsg') : t('txns.emptyMsg')}
-                </Text>
-              </NativeBlock>
-              {query.trim() && !loading ? (
-                <NativeBlock>
-                  <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
-                    {t('txns.found', { count: String(transactions.length) })}
-                  </Text>
-                </NativeBlock>
-              ) : null}
-              {hasActiveFilters ? (
-                <NativeBlock>
-                  <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
-                </NativeBlock>
-              ) : null}
-            </View>
-          )
-        }
-      />
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
+              {hasActiveFilters ? t('txns.noMatchTitle') : t('txns.emptyTitle')}
+            </Text>
+          </NativeBlock>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
+              {hasActiveFilters ? t('txns.noMatchMsg') : t('txns.emptyMsg')}
+            </Text>
+          </NativeBlock>
+          {query.trim() && !loading ? (
+            <NativeBlock>
+              <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
+                {t('txns.found', { count: String(transactions.length) })}
+              </Text>
+            </NativeBlock>
+          ) : null}
+          {hasActiveFilters ? (
+            <NativeBlock>
+              <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
+            </NativeBlock>
+          ) : null}
+        </View>
+      ) : (
+        <Host style={{ flex: 1 }} colorScheme={scheme ?? undefined}>
+          <FieldGroup>
+            {sections.map((section) => (
+              <FieldGroup.Section key={section.key} title={section.title}>
+                {section.data.map((transaction) => (
+                  <TransactionFieldRow
+                    key={transaction.id}
+                    transaction={transaction}
+                    category={
+                      transaction.categoryId
+                        ? categoryMap.get(transaction.categoryId)
+                        : undefined
+                    }
+                    currency={settings.currency}
+                    onPress={() => router.push(`/transaction/${transaction.id}`)}
+                  />
+                ))}
+              </FieldGroup.Section>
+            ))}
+          </FieldGroup>
+        </Host>
+      )}
 
       <FloatingAddButton />
     </View>

@@ -40,11 +40,13 @@ function usePeriodOptions(): {
 }
 
 export default function AnalyticsScreen() {
+  const colors = useTheme();
+
   const { settings } = useSettings();
   const { t } = useI18n();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 , backgroundColor: colors.background,}}>
       <PageHeader title={t('tabs.analytics')} />
       <AnalyticsContent currency={settings.currency} startOfWeek={settings.startOfWeek} />
     </View>
