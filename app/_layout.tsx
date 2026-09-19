@@ -1,4 +1,5 @@
 import { UpdateDialog } from '@/components/update-dialog';
+import { useAppliedColorScheme, useAppliedTheme } from '@/hooks/use-applied-theme';
 import { SettingsProvider } from '@/hooks/use-settings';
 import { UpdateCheckerProvider, useUpdateChecker } from '@/hooks/use-update-checker';
 import { DatabaseProvider } from '@/lib/db/database';
@@ -6,7 +7,7 @@ import { useTheme } from '@/lib/theme';
 import { Host } from '@expo/ui';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Linking, Platform, View, useColorScheme, AppState } from 'react-native';
+import { Linking, Platform, View, AppState } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 
@@ -32,8 +33,11 @@ export default function RootLayout() {
 function ThemedRoot() {
   const insets = useSafeAreaInsets();
   const colors = useTheme();
-  const scheme = useColorScheme();
+  const scheme = useAppliedColorScheme();
   const [, resyncPalette] = useState(0);
+
+  // Let the persisted theme preference (if any) drive the resolved scheme.
+  useAppliedTheme();
 
   // `getMaterialColors` reads the palette per render but never subscribes to
   // system changes, so forcing a re-render on foreground keeps the JS-side

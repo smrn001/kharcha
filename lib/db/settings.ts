@@ -5,6 +5,7 @@ import type {
   LanguagePreference,
   NumeralsPreference,
   Settings,
+  ThemePreference,
   TransactionType,
 } from '@/types';
 
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   calendar: 'ad',
   numerals: 'latin',
   haptics: true,
+  theme: 'system',
 };
 
 /** Device language, falling back to English when detection fails. */
@@ -51,6 +53,10 @@ function parseNumerals(value: string | null | undefined): NumeralsPreference {
   return value === 'devanagari' ? 'devanagari' : 'latin';
 }
 
+function parseTheme(value: string | null | undefined): ThemePreference {
+  return value === 'light' || value === 'dark' ? value : 'system';
+}
+
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
   const rows = await db.getAllAsync<SettingsRow>('SELECT key, value FROM settings');
   const map: Record<string, string | null> = {};
@@ -65,6 +71,7 @@ export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
     calendar: parseCalendar(map.calendar),
     numerals: parseNumerals(map.numerals),
     haptics: map.haptics == null ? DEFAULT_SETTINGS.haptics : map.haptics !== 'false',
+    theme: parseTheme(map.theme),
   };
 }
 

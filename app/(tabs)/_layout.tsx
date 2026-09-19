@@ -1,8 +1,8 @@
 import { TabBar } from '@/components/tab-bar';
 import { useI18n } from '@/hooks/use-i18n';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { Stack } from 'expo-router';
-import { Platform, View } from 'react-native';
+import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 
 function IoSTabs() {
   const { t } = useI18n();
@@ -29,20 +29,28 @@ function IoSTabs() {
   );
 }
 
+/**
+ * Android uses the Jetpack Compose `NavigationBar` (Material 3) from
+ * `@expo/ui` as its bottom navigation, rendered as the `Tabs` navigator's
+ * custom `tabBar`. Using a real tab navigator (instead of a Stack) keeps all
+ * four screens mounted once visited, so switching tabs reuses the rendered
+ * screen instead of unmounting/remounting it (fresh `Host` inflation + queries)
+ * — which made tab changes slow. iOS keeps native tab bars via `NativeTabs`.
+ */
 function AndroidTabs() {
   return (
-    <View style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false }} />
-      <TabBar />
-    </View>
+    <Tabs
+      screenOptions={{ headerShown: false }}
+      tabBar={() => <TabBar />}
+    >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="transactions" />
+      <Tabs.Screen name="analytics" />
+      <Tabs.Screen name="settings" />
+    </Tabs>
   );
 }
 
-/**
- * Android uses the Jetpack Compose `NavigationBar` (Material 3) from
- * `@expo/ui` as its bottom navigation; iOS keeps native tab bars via
- * `NativeTabs` (SF Symbols).
- */
 export default function TabLayout() {
   if (Platform.OS === 'android') {
     return <AndroidTabs />;

@@ -1,5 +1,7 @@
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { Button, Column, FieldGroup, Host, Icon, Picker, Row, Spacer, Switch, Text } from '@expo/ui';
+import { SelectionRow } from '@/components/selection-row';
+import { SelectionSheet } from '@/components/selection-sheet';
+import { Button, Column, FieldGroup, Host, Icon, Row, Spacer, Switch, Text } from '@expo/ui';
 import { BackupError, useBackup, type ImportSummary } from '@/hooks/use-backup';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
@@ -17,6 +19,7 @@ import type {
   CalendarPreference,
   LanguagePreference,
   NumeralsPreference,
+  ThemePreference,
   TransactionType,
 } from '@/types';
 import type { DictionaryKey } from '@/lib/i18n/en';
@@ -62,27 +65,27 @@ const NUMERALS_OPTIONS: { value: NumeralsPreference; labelKey: DictionaryKey }[]
   { value: 'devanagari', labelKey: 'set.devanagari' },
 ];
 
-function PickerRow<T extends string | number>({
-  label,
-  value,
-  onValueChange,
-  children,
-}: {
-  label: string;
-  value: T;
-  onValueChange: (value: T) => void;
-  children: React.ReactNode;
-}) {
-  const colors = useTheme();
-  return (
-    <Row alignment="center" spacing={16}>
-      <Text textStyle={{ fontSize: 16, color: colors.text }}>{label}</Text>
-      <Spacer flexible />
-      <Picker appearance="menu" selectedValue={value} onValueChange={onValueChange}>
-        {children}
-      </Picker>
-    </Row>
-  );
+const THEME_OPTIONS: { value: ThemePreference; labelKey: DictionaryKey }[] = [
+  { value: 'system', labelKey: 'set.themeSystem' },
+  { value: 'light', labelKey: 'set.themeLight' },
+  { value: 'dark', labelKey: 'set.themeDark' },
+];
+
+type SelectionKey =
+  | 'theme'
+  | 'currency'
+  | 'language'
+  | 'calendar'
+  | 'numerals'
+  | 'defaultType'
+  | 'week';
+
+function optionLabel(
+  t: (key: DictionaryKey) => string,
+  values: readonly { value: string | number; labelKey: DictionaryKey }[],
+  value: string | number | undefined
+): string {
+  return t(values.find((option) => option.value === value)?.labelKey ?? values[0].labelKey);
 }
 
 function ActionRow({
@@ -130,12 +133,95 @@ export default function SettingsScreen() {
   const { busy: backupBusy, exportJson, exportCsv, importFile } = useBackup();
   const [resetOpen, setResetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sheet, setSheet] = useState<SelectionKey | null>(null);
   const [backupMsg, setBackupMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(
     null
   );
 
   const handleTypeChange = async (type: TransactionType) => {
     await updateSetting('defaultTransactionType', type);
+  };
+
+  const currencyLabel = SUPPORTED_CURRENCIES.find((c) => c.code === settings.currency);
+
+  const sheetContent: {
+    title: string;
+    options: { value: string | number; label: string }[];
+    selected: string | number | null;
+  } | null =
+    sheet === 'theme'
+      ? {
+          title: t('set.chooseTheme'),
+          options: THEME_OPTIONS.map((option) => ({
+            value: option.value,
+            label: t(option.labelKey),
+          })),
+          selected: settings.theme,
+        }
+      : sheet === 'currency'
+        ? {
+            title: t('set.chooseCurrency'),
+            options: SUPPORTED_CURRENCIES.map((c) => ({
+              value: c.code,
+              label: `${c.name} (${c.symbol})`,
+            })),
+            selected: settings.currency,
+          }
+        : sheet === 'language'
+          ? {
+              title: t('set.chooseLanguage'),
+              options: LANGUAGE_OPTIONS.map((option) => ({
+                value: option.value,
+                label: t(option.labelKey),
+              })),
+              selected: settings.language,
+            }
+          : sheet === 'calendar'
+            ? {
+                title: t('set.chooseCalendar'),
+                options: CALENDAR_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: t(option.labelKey),
+                })),
+                selected: settings.calendar,
+              }
+            : sheet === 'numerals'
+              ? {
+                  title: t('set.chooseNumerals'),
+                  options: NUMERALS_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: t(option.labelKey),
+                  })),
+                  selected: settings.numerals,
+                }
+              : sheet === 'defaultType'
+                ? {
+                    title: t('set.chooseDefaultType'),
+                    options: TYPE_OPTIONS.map((option) => ({
+                      value: option.value,
+                      label: t(option.labelKey),
+                    })),
+                    selected: settings.defaultTransactionType,
+                  }
+                : sheet === 'week'
+                  ? {
+                      title: t('set.chooseStartWeek'),
+                      options: WEEKDAY_OPTIONS.map((option) => ({
+                        value: option.value,
+                        label: t(option.labelKey),
+                      })),
+                      selected: settings.startOfWeek,
+                    }
+                  : null;
+
+  const handleSheetSelect = (value: string | number) => {
+    if (sheet === 'theme') void updateSetting('theme', value);
+    else if (sheet === 'currency') void updateSetting('currency', value);
+    else if (sheet === 'language') void updateSetting('language', value);
+    else if (sheet === 'calendar') void updateSetting('calendar', value);
+    else if (sheet === 'numerals') void updateSetting('numerals', value);
+    else if (sheet === 'defaultType') void handleTypeChange(value as TransactionType);
+    else if (sheet === 'week') void updateSetting('startOfWeek', Number(value));
   };
 
   const handleReset = async () => {
@@ -245,67 +331,44 @@ export default function SettingsScreen() {
               </Text>
             </FieldGroup.SectionHeader>
 
-            <PickerRow
+            <SelectionRow
+              label={t('set.theme')}
+              value={optionLabel(t, THEME_OPTIONS, settings.theme)}
+              onPress={() => setSheet('theme')}
+            />
+            <SelectionRow
               label={t('set.currency')}
-              value={settings.currency}
-              onValueChange={(value) => updateSetting('currency', value)}
-            >
-              {SUPPORTED_CURRENCIES.map((currency) => (
-                <Picker.Item
-                  key={currency.code}
-                  label={`${currency.name} (${currency.symbol})`}
-                  value={currency.code}
-                />
-              ))}
-            </PickerRow>
-            <PickerRow
+              value={currencyLabel ? `${currencyLabel.name} (${currencyLabel.symbol})` : settings.currency}
+              onPress={() => setSheet('currency')}
+            />
+            <SelectionRow
               label={t('set.language')}
-              value={settings.language}
-              onValueChange={(value) => updateSetting('language', value as LanguagePreference)}
-            >
-              {LANGUAGE_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </PickerRow>
-            <PickerRow
+              value={optionLabel(t, LANGUAGE_OPTIONS, settings.language)}
+              onPress={() => setSheet('language')}
+            />
+            <SelectionRow
               label={t('set.calendar')}
-              value={settings.calendar}
-              onValueChange={(value) => updateSetting('calendar', value as CalendarPreference)}
-            >
-              {CALENDAR_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </PickerRow>
-            <PickerRow
+              value={optionLabel(t, CALENDAR_OPTIONS, settings.calendar)}
+              onPress={() => setSheet('calendar')}
+            />
+            <SelectionRow
               label={t('set.numerals')}
-              value={settings.numerals}
-              onValueChange={(value) => updateSetting('numerals', value as NumeralsPreference)}
-            >
-              {NUMERALS_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </PickerRow>
+              value={optionLabel(t, NUMERALS_OPTIONS, settings.numerals)}
+              onPress={() => setSheet('numerals')}
+            />
           </FieldGroup.Section>
 
           <FieldGroup.Section title={t('set.preferences')}>
-            <PickerRow
+            <SelectionRow
               label={t('set.defaultType')}
-              value={settings.defaultTransactionType}
-              onValueChange={(value) => handleTypeChange(value as TransactionType)}
-            >
-              {TYPE_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </PickerRow>
-            <PickerRow
+              value={optionLabel(t, TYPE_OPTIONS, settings.defaultTransactionType)}
+              onPress={() => setSheet('defaultType')}
+            />
+            <SelectionRow
               label={t('set.startWeek')}
-              value={settings.startOfWeek}
-              onValueChange={(value) => updateSetting('startOfWeek', Number(value))}
-            >
-              {WEEKDAY_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </PickerRow>
+              value={optionLabel(t, WEEKDAY_OPTIONS, settings.startOfWeek)}
+              onPress={() => setSheet('week')}
+            />
             <Switch
               label={t('set.haptics')}
               value={settings.haptics}
@@ -401,6 +464,19 @@ export default function SettingsScreen() {
         busy={busy}
         onConfirm={handleReset}
       />
+
+      {sheetContent ? (
+        <SelectionSheet
+          open
+          onOpenChange={(open) => {
+            if (!open) setSheet(null);
+          }}
+          title={sheetContent.title}
+          options={sheetContent.options}
+          selected={sheetContent.selected}
+          onSelect={handleSheetSelect}
+        />
+      ) : null}
     </View>
   );
 }

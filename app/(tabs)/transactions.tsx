@@ -1,58 +1,31 @@
-import { FilterChip } from '@/components/filter-chip';
-import { DateTimeField } from '@/components/date-time-field';
 import { FloatingAddButton } from '@/components/floating-add-button';
+import { LoadingView } from '@/components/loading-view';
 import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
-import { SegmentedControl } from '@expo/ui/community/segmented-control';
+import {
+  TransactionFilters,
+  type DateFilter,
+  type TypeFilter,
+} from '@/components/transaction-filters';
 import { TransactionRow } from '@/components/transaction-row';
-import { Button, Icon, Text, TextInput } from '@expo/ui';
+import { Button, Icon, Text } from '@expo/ui';
 import { useCategories } from '@/hooks/use-categories';
 import { useDayHeading } from '@/hooks/use-day-heading';
 import { useI18n } from '@/hooks/use-i18n';
-import { categoryDisplayName } from '@/lib/i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { endOfDay, startOfDay, startOfMonth, startOfWeek, toDateKey } from '@/lib/dates';
 import { useTheme } from '@/lib/theme';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, SectionList, View } from 'react-native';
-import type { Transaction, TransactionType } from '@/types';
-import type { TransactionFilters } from '@/lib/db/transactions';
+import { RefreshControl, SectionList, View } from 'react-native';
+import type { Transaction } from '@/types';
+import type { TransactionFilters as QueryFilters } from '@/lib/db/transactions';
 
 const SEARCH_ICON = Icon.select({
   ios: 'magnifyingglass',
   android: import('@expo/material-symbols/search.xml'),
 });
-
-const X_ICON = Icon.select({
-  ios: 'xmark',
-  android: import('@expo/material-symbols/close.xml'),
-});
-
-type TypeFilter = 'all' | TransactionType;
-type DateFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
-
-function useFilterOptions(): {
-  types: { value: TypeFilter; label: string }[];
-  dates: { value: DateFilter; label: string }[];
-} {
-  const { t } = useI18n();
-  return {
-    types: [
-      { value: 'all', label: t('txns.all') },
-      { value: 'expense', label: t('txns.expense') },
-      { value: 'income', label: t('txns.income') },
-    ],
-    dates: [
-      { value: 'all', label: t('txns.all') },
-      { value: 'today', label: t('txns.today') },
-      { value: 'week', label: t('txns.week') },
-      { value: 'month', label: t('txns.month') },
-      { value: 'custom', label: t('txns.custom') },
-    ],
-  };
-}
 
 interface Section {
   key: string;
@@ -71,12 +44,11 @@ export default function TransactionsScreen() {
   const [customTo, setCustomTo] = useState<Date | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
 
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const dayHeading = useDayHeading();
-  const { types: TYPE_OPTS, dates: DATE_OPTS } = useFilterOptions();
   const { categories } = useCategories(type === 'all' ? undefined : type);
-  const filters = useMemo<TransactionFilters>(() => {
-    const next: TransactionFilters = {};
+  const filters = useMemo<QueryFilters>(() => {
+    const next: QueryFilters = {};
     const trimmed = query.trim();
     if (trimmed) next.search = trimmed;
     if (type !== 'all') next.type = type;
@@ -157,113 +129,26 @@ export default function TransactionsScreen() {
     <View style={{ flex: 1 }}>
       <PageHeader title={t('txns.title')} />
 
-      <View style={{ gap: 12, paddingHorizontal: 16, paddingBottom: 4 }}>
-        <View
-          style={{
-            height: 40,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            borderRadius: 10,
-            backgroundColor: colors.surface,
-            paddingHorizontal: 12,
-          }}
-        >
-          <NativeBlock>
-            <Icon name={SEARCH_ICON} size={16} color={colors.textSecondary} />
-          </NativeBlock>
-          <NativeBlock matchContents={false} style={{ flex: 1 }}>
-            <TextInput
-              onChangeText={setQuery}
-              placeholder={t('txns.searchPh')}
-              autoCapitalize="none"
-              textStyle={{ fontSize: 15 }}
-              style={{ height: 40 }}
-            />
-          </NativeBlock>
-          {query ? (
-            <Pressable onPress={() => setQuery('')} accessibilityLabel={t('txns.searchClear')} hitSlop={8}>
-              <NativeBlock>
-                <Icon name={X_ICON} size={16} color={colors.textSecondary} />
-              </NativeBlock>
-            </Pressable>
-          ) : null}
-        </View>
-
-        <SegmentedControl
-          values={TYPE_OPTS.map((o) => o.label)}
-          selectedIndex={TYPE_OPTS.findIndex((o) => o.value === type)}
-          onValueChange={(label) => {
-            const next = TYPE_OPTS.find((o) => o.label === label)?.value;
-            if (next) handleTypeChange(next);
-          }}
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        <TransactionFilters
+          query={query}
+          onQueryChange={setQuery}
+          type={type}
+          onTypeChange={handleTypeChange}
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+          customFrom={customFrom}
+          customTo={customTo}
+          onCustomFrom={setCustomFrom}
+          onCustomTo={setCustomTo}
+          categoryIds={categoryIds}
+          onToggleCategory={toggleCategory}
+          onClearCategories={() => setCategoryIds([])}
+          categories={categories}
+          resultCount={transactions.length}
+          hasActiveFilters={hasActiveFilters}
+          onClearAll={clearFilters}
         />
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8 }}
-        >
-          {DATE_OPTS.map((option) => (
-            <FilterChip
-              key={option.value}
-              label={option.label}
-              selected={dateFilter === option.value}
-              onPress={() => setDateFilter(option.value)}
-            />
-          ))}
-        </ScrollView>
-
-        {dateFilter === 'custom' ? (
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <DateTimeField
-              mode="date"
-              value={customFrom}
-              onChange={setCustomFrom}
-              label={t('common.from')}
-              placeholder={t('common.selectDate')}
-              style={{ flex: 1 }}
-            />
-            <DateTimeField
-              mode="date"
-              value={customTo}
-              onChange={setCustomTo}
-              label={t('common.to')}
-              placeholder={t('common.selectDate')}
-              style={{ flex: 1 }}
-            />
-          </View>
-        ) : null}
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8 }}
-        >
-          <FilterChip
-            label={t('txns.allCategories')}
-            selected={categoryIds.length === 0}
-            onPress={() => setCategoryIds([])}
-          />
-          {categories.map((category) => (
-            <FilterChip
-              key={category.id}
-              label={categoryDisplayName(category, lang)}
-              selected={categoryIds.includes(category.id)}
-              onPress={() => toggleCategory(category.id)}
-            />
-          ))}
-        </ScrollView>
-
-        {hasActiveFilters ? (
-          <Pressable onPress={clearFilters} style={{ alignSelf: 'flex-start' }} hitSlop={8}>
-            <NativeBlock>
-              <Text textStyle={{ fontSize: 14, color: colors.destructive }}>
-                {t('txns.clearFilters')}
-              </Text>
-            </NativeBlock>
-          </Pressable>
-        ) : null}
       </View>
 
       <SectionList<Transaction, Section>
@@ -303,41 +188,45 @@ export default function TransactionsScreen() {
         )}
         ListEmptyComponent={
           loading ? (
-            <NativeBlock>
-              <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
-                {t('common.loading')}
-              </Text>
-            </NativeBlock>
-          ) : hasActiveFilters ? (
-            <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
-              <NativeBlock>
-                <Icon name={SEARCH_ICON} size={40} color={colors.textSecondary} />
-              </NativeBlock>
-              <NativeBlock>
-                <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.noMatchTitle')}</Text>
-              </NativeBlock>
-              <NativeBlock>
-                <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
-                  {t('txns.noMatchMsg')}
-                </Text>
-              </NativeBlock>
-              <NativeBlock>
-                <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
-              </NativeBlock>
-            </View>
+            <LoadingView label={t('common.loading')} />
           ) : (
-            <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
+            <View style={{ alignItems: 'center', gap: 12, paddingVertical: 64, paddingHorizontal: 20 }}>
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: colors.surface,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <NativeBlock>
+                  <Icon name={SEARCH_ICON} size={24} color={colors.textSecondary} />
+                </NativeBlock>
+              </View>
               <NativeBlock>
-                <Icon name={SEARCH_ICON} size={40} color={colors.textSecondary} />
-              </NativeBlock>
-              <NativeBlock>
-                <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.emptyTitle')}</Text>
+                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
+                  {hasActiveFilters ? t('txns.noMatchTitle') : t('txns.emptyTitle')}
+                </Text>
               </NativeBlock>
               <NativeBlock>
                 <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
-                  {t('txns.emptyMsg')}
+                  {hasActiveFilters ? t('txns.noMatchMsg') : t('txns.emptyMsg')}
                 </Text>
               </NativeBlock>
+              {query.trim() && !loading ? (
+                <NativeBlock>
+                  <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
+                    {t('txns.found', { count: String(transactions.length) })}
+                  </Text>
+                </NativeBlock>
+              ) : null}
+              {hasActiveFilters ? (
+                <NativeBlock>
+                  <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
+                </NativeBlock>
+              ) : null}
             </View>
           )
         }

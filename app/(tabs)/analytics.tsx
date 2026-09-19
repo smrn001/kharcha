@@ -1,4 +1,5 @@
 import { BarChart } from '@/components/bar-chart';
+import { LoadingView } from '@/components/loading-view';
 import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
@@ -109,11 +110,9 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
       </View>
 
       {loading && summary.income === 0 && summary.expense === 0 ? (
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
-            {t('common.loading')}
-          </Text>
-        </NativeBlock>
+        <View style={{ paddingTop: 24 }}>
+          <LoadingView label={t('common.loading')} />
+        </View>
       ) : (
         <>
           <SectionLabel>{sectionTitles[period]}</SectionLabel>

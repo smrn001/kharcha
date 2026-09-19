@@ -1,8 +1,9 @@
 import { CategoryPicker } from '@/components/category-picker';
 import { DateTimeField } from '@/components/date-time-field';
+import { LoadingView } from '@/components/loading-view';
+import { NativeBlock } from '@/components/native-block';
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { Button, FieldGroup, Host, Text, TextInput } from '@expo/ui';
-import { NativeBlock } from '@/components/native-block';
 import { useCategories } from '@/hooks/use-categories';
 import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { useI18n } from '@/hooks/use-i18n';
@@ -147,18 +148,14 @@ export default function NewTransactionScreen() {
 
         {/* Host must directly wrap FieldGroup (Android Compose contract). */}
         {loadingEdit ? (
-          <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
-              {t('common.loading')}
-            </Text>
-          </NativeBlock>
+          <LoadingView label={t('common.loading')} />
         ) : (
           <Host>
             <FieldGroup>
               <FieldGroup.Section title={t('add.amount')}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <NativeBlock>
-                    <Text textStyle={{ fontSize: 28, fontWeight: 'bold' }}>
+                    <Text textStyle={{ fontSize: 24, fontWeight: '600', color: colors.primary }}>
                       {settings.currency}
                     </Text>
                   </NativeBlock>
@@ -168,7 +165,8 @@ export default function NewTransactionScreen() {
                       defaultValue={amountInput}
                       onChangeText={handleAmountChange}
                       placeholder="0.00"
-                      textStyle={{ fontSize: 28, fontWeight: 'bold' }}
+                      placeholderTextColor={colors.textSecondary}
+                      textStyle={{ fontSize: 28, fontWeight: 'bold', color: colors.text }}
                       style={{ height: 64 }}
                     />
                   </NativeBlock>
@@ -191,15 +189,17 @@ export default function NewTransactionScreen() {
                   defaultValue={title}
                   onChangeText={setTitle}
                   placeholder={t('add.titlePh')}
-                  textStyle={{ fontSize: 16 }}
+                  placeholderTextColor={colors.textSecondary}
+                  textStyle={{ fontSize: 16, color: colors.text }}
                   style={{ height: 56 }}
                 />
                 <TextInput
                   defaultValue={note}
                   onChangeText={setNote}
                   placeholder={t('add.notePh')}
+                  placeholderTextColor={colors.textSecondary}
                   multiline
-                  textStyle={{ fontSize: 16 }}
+                  textStyle={{ fontSize: 16, color: colors.text }}
                   style={{ height: 96 }}
                 />
               </FieldGroup.Section>
@@ -218,6 +218,7 @@ export default function NewTransactionScreen() {
             label={saving ? t('common.saving') : editingId ? t('common.saveChanges') : t('add.save')}
             onPress={handleSave}
             disabled={saving || loadingEdit}
+            style={{ borderRadius: 12, height: 52 }}
           />
         </NativeBlock>
       </ScrollView>

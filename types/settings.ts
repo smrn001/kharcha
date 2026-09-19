@@ -3,6 +3,8 @@ import type { TransactionType } from './transaction';
 export type LanguagePreference = 'en' | 'ne';
 export type CalendarPreference = 'ad' | 'bs' | 'both';
 export type NumeralsPreference = 'latin' | 'devanagari';
+/** 'system' follows the device scheme; 'light'/'dark' force it. */
+export type ThemePreference = 'system' | 'light' | 'dark';
 
 export interface Settings {
   currency: string;
@@ -13,4 +15,5 @@ export interface Settings {
   calendar: CalendarPreference;
   numerals: NumeralsPreference;
   haptics: boolean;
+  theme: ThemePreference;
 }

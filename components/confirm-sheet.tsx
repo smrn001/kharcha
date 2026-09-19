@@ -1,4 +1,4 @@
-import { BottomSheet, Button, Column, Text } from '@expo/ui';
+import { BottomSheet, Button, Column, Row, Spacer, Text } from '@expo/ui';
 import { useTheme } from '@/lib/theme';
 
 /**
@@ -48,10 +48,11 @@ export function ConfirmSheet({
             <Text textStyle={{ fontSize: 14, color: colors.destructive }}>{error}</Text>
           ) : null}
         </Column>
-        <Column spacing={8}>
+        <Row alignment="center" spacing={12}>
           <Button variant="text" label={cancelLabel} onPress={() => onOpenChange(false)} disabled={busy} />
+          <Spacer flexible />
           <Button variant="filled" label={confirmLabel} onPress={onConfirm} disabled={busy} />
-        </Column>
+        </Row>
       </Column>
     </BottomSheet>
   );
