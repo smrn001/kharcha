@@ -178,7 +178,7 @@ export default function TransactionsScreen() {
               placeholder={t('txns.searchPh')}
               autoCapitalize="none"
               textStyle={{ fontSize: 15 }}
-              style={{ height: '100%' }}
+              style={{ height: 40 }}
             />
           </NativeBlock>
           {query ? (
