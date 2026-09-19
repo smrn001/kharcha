@@ -13,6 +13,7 @@ import {
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { BackupError, useBackup, type ImportSummary } from '@/hooks/use-backup';
+import { hapticError, hapticMediumImpact, hapticSuccess } from '@/lib/haptics';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useUpdateChecker } from '@/hooks/use-update-checker';
@@ -24,7 +25,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Check, ChevronRight, RefreshCw } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
 import type {
   CalendarPreference,
   LanguagePreference,
@@ -98,7 +99,7 @@ function Row({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between gap-3 px-4 py-3.5"
+      className="flex-row items-center justify-between gap-3 px-4 py-3.5 active:bg-muted/60"
       disabled={!onPress}
     >
       <Text className={cn('text-sm', destructive && 'text-destructive font-medium')}>{label}</Text>
@@ -125,6 +126,9 @@ export default function SettingsScreen() {
   const [startOfWeekOpen, setStartOfWeekOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [backupMsg, setBackupMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(
+    null
+  );
 
   const selectedCurrency =
     SUPPORTED_CURRENCIES.find((currency) => currency.code === settings.currency) ??
@@ -147,10 +151,15 @@ export default function SettingsScreen() {
     await updateSetting('defaultTransactionType', type);
   };
 
+  const handleHapticsChange = async (value: 'on' | 'off') => {
+    await updateSetting('haptics', value === 'on' ? 'true' : 'false');
+  };
+
   const handleReset = async () => {
     try {
       setBusy(true);
       await resetAllTransactions(db);
+      void hapticMediumImpact();
       setResetOpen(false);
     } finally {
       setBusy(false);
@@ -160,18 +169,26 @@ export default function SettingsScreen() {
   const backupDisabled = busy || backupBusy !== null;
 
   const handleExportJson = async () => {
+    setBackupMsg(null);
     try {
       await exportJson();
+      void hapticSuccess();
+      setBackupMsg({ kind: 'success', text: t('set.exportDone') });
     } catch (error) {
-      Alert.alert(t('set.exportFailed'), messageFor(error));
+      void hapticError();
+      setBackupMsg({ kind: 'error', text: messageFor(error) });
     }
   };
 
   const handleExportCsv = async () => {
+    setBackupMsg(null);
     try {
       await exportCsv();
+      void hapticSuccess();
+      setBackupMsg({ kind: 'success', text: t('set.exportDone') });
     } catch (error) {
-      Alert.alert(t('set.exportFailed'), messageFor(error));
+      void hapticError();
+      setBackupMsg({ kind: 'error', text: messageFor(error) });
     }
   };
 
@@ -218,13 +235,16 @@ export default function SettingsScreen() {
   };
 
   const handleImport = async () => {
+    setBackupMsg(null);
     try {
       const summary = await importFile();
       if (summary) {
-        Alert.alert(t('set.importDone'), summarizeImport(summary));
+        void hapticSuccess();
+        setBackupMsg({ kind: 'success', text: summarizeImport(summary) });
       }
     } catch (error) {
-      Alert.alert(t('set.importFailed'), messageFor(error));
+      void hapticError();
+      setBackupMsg({ kind: 'error', text: messageFor(error) });
     }
   };
 
@@ -232,7 +252,7 @@ export default function SettingsScreen() {
     <View className="bg-background flex-1">
       <PageHeader title={t('set.title')} />
 
-      <ScrollView contentContainerClassName="gap-6 pb-28" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerClassName="gap-6 pb-28" showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="automatic">
         <Section title={t('set.general')}>
           <Row
             label={t('set.currency')}
@@ -289,6 +309,18 @@ export default function SettingsScreen() {
             value={t(selectedStartOfWeek.labelKey)}
             onPress={() => setStartOfWeekOpen(true)}
           />
+          <View className="bg-border mx-4 h-px" />
+          <View className="gap-2 px-4 py-3.5">
+            <Text className="text-sm">{t('set.haptics')}</Text>
+            <SegmentedControl
+              options={[
+                { value: 'on' as const, label: t('set.on') },
+                { value: 'off' as const, label: t('set.off') },
+              ]}
+              value={settings.haptics ? 'on' : 'off'}
+              onChange={handleHapticsChange}
+            />
+          </View>
         </Section>
 
         <Section title={t('set.categories')}>
@@ -319,6 +351,23 @@ export default function SettingsScreen() {
           />
           <View className="bg-border mx-4 h-px" />
           <Row label={t('set.resetData')} destructive onPress={() => setResetOpen(true)} />
+          {backupMsg ? (
+            <>
+              <View className="bg-border mx-4 h-px" />
+              <View className="px-4 py-3">
+                <Text
+                  selectable
+                  className={
+                    backupMsg.kind === 'success'
+                      ? 'text-sm text-positive'
+                      : 'text-sm text-destructive'
+                  }
+                >
+                  {backupMsg.text}
+                </Text>
+              </View>
+            </>
+          ) : null}
         </Section>
 
         <Section title={t('set.about')}>
