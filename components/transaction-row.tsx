@@ -1,7 +1,7 @@
 import { Icon, ListItem, Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
 import { useI18n } from '@/hooks/use-i18n';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { categoryIcon } from '@/lib/category-icons';
 import { formatTime } from '@/lib/dates';
 import { formatAmount } from '@/lib/format';
@@ -19,7 +19,7 @@ export function TransactionRow({
   currency: string;
   onPress?: () => void;
 }) {
-  const colors = useAppColors();
+  const colors = useTheme();
   const isIncome = transaction.type === 'income';
   const { t, lang } = useI18n();
   const name = category ? categoryDisplayName(category, lang) : undefined;
@@ -36,7 +36,7 @@ export function TransactionRow({
             textStyle={{
               fontSize: 14,
               fontWeight: '600',
-              color: isIncome ? colors.positive : undefined,
+              color: isIncome ? colors.success : undefined,
             }}
           >
             {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, currency)}`}

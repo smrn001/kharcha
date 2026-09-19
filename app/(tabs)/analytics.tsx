@@ -13,7 +13,7 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { categoryDisplayName, type DictionaryKey } from '@/lib/i18n';
 import { categoryIcon } from '@/lib/category-icons';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { formatAmount, formatAmountCompact } from '@/lib/format';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -51,7 +51,7 @@ export default function AnalyticsScreen() {
 }
 
 function SectionLabel({ children }: { children: string }) {
-  const colors = useAppColors();
+  const colors = useTheme();
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
       <NativeBlock>
@@ -59,7 +59,7 @@ function SectionLabel({ children }: { children: string }) {
           textStyle={{
             fontSize: 12,
             fontWeight: '600',
-            color: colors.mutedForeground,
+            color: colors.textSecondary,
           }}
         >
           {children}
@@ -76,7 +76,7 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
     period,
     startOfWeek
   );
-  const colors = useAppColors();
+  const colors = useTheme();
   const { t } = useI18n();
   const { titles: sectionTitles } = usePeriodOptions();
 
@@ -88,7 +88,7 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
 
   const saved = summary.income - summary.expense;
   const overspent = saved < 0;
-  const savedColor = overspent ? colors.destructiveError : saved > 0 ? colors.positive : undefined;
+  const savedColor = overspent ? colors.destructive : saved > 0 ? colors.success : undefined;
 
   return (
     <ScrollView
@@ -110,7 +110,7 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
 
       {loading && summary.income === 0 && summary.expense === 0 ? (
         <NativeBlock>
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
             {t('common.loading')}
           </Text>
         </NativeBlock>
@@ -123,7 +123,7 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
                 children={t('an.income')}
                 supportingText={comparison?.currentRangeLabel}
                 trailing={
-                  <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.positive }}>
+                  <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.success }}>
                     {formatAmount(summary.income, currency)}
                   </Text>
                 }
@@ -134,7 +134,7 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
                 children={t('an.expenses')}
                 supportingText={comparison?.currentRangeLabel}
                 trailing={
-                  <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.destructiveError }}>
+                  <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.destructive }}>
                     {formatAmount(summary.expense, currency)}
                   </Text>
                 }
@@ -303,11 +303,11 @@ function DeltaBadge({
   delta: AnalyticsComparison['expense'];
   goodWhenDown: boolean;
 }) {
-  const colors = useAppColors();
+  const colors = useTheme();
   const up = delta.diff > 0;
   const flat = delta.diff === 0;
   const good = flat ? null : goodWhenDown ? !up : up;
-  const color = flat ? colors.mutedForeground : good ? colors.positive : colors.destructiveError;
+  const color = flat ? colors.textSecondary : good ? colors.success : colors.destructive;
   const label = flat ? '0%' : delta.pct === null ? 'new' : `${up ? '+' : '−'}${Math.abs(Math.round(delta.pct))}%`;
 
   return <Text textStyle={{ fontSize: 13, fontWeight: '600', color }}>{label}</Text>;
@@ -350,7 +350,7 @@ function MoversCard({
   loading: boolean;
 }) {
   const { t: tmovers, lang: mlang } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
   const visible = movers.filter((mover) => mover.diff !== 0);
   if (loading && movers.length === 0) return null;
   if (visible.length === 0) return null;
@@ -370,7 +370,7 @@ function MoversCard({
                   textStyle={{
                     fontSize: 14,
                     fontWeight: '600',
-                    color: up ? colors.destructiveError : colors.positive,
+                    color: up ? colors.destructive : colors.success,
                   }}
                 >
                   {`${up ? '+' : '−'}${formatAmount(Math.abs(mover.diff), currency)}`}
@@ -396,12 +396,12 @@ function SpendingTrend({
   loading: boolean;
 }) {
   const { t: ttrend } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
 
   if (loading && trend.length === 0) {
     return (
       <NativeBlock>
-        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
           {ttrend('common.loading')}
         </Text>
       </NativeBlock>
@@ -410,7 +410,7 @@ function SpendingTrend({
   if (trend.every((point) => point.income === 0 && point.expense === 0)) {
     return (
       <NativeBlock>
-        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
           {ttrend(period === 'week' ? 'an.noTrendWeek' : period === 'month' ? 'an.noTrendMonth' : 'an.noTrendYear')}
         </Text>
       </NativeBlock>
@@ -434,12 +434,12 @@ function CategoryBreakdown({
   loading: boolean;
 }) {
   const { t: tcat, lang: clang } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
 
   if (loading && categories.length === 0) {
     return (
       <NativeBlock>
-        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
           {tcat('common.loading')}
         </Text>
       </NativeBlock>
@@ -448,7 +448,7 @@ function CategoryBreakdown({
   if (categories.length === 0) {
     return (
       <NativeBlock>
-        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
           {tcat(period === 'week' ? 'an.noCatWeek' : period === 'month' ? 'an.noCatMonth' : 'an.noCatYear')}
         </Text>
       </NativeBlock>

@@ -3,7 +3,7 @@ import { ConfirmSheet } from '@/components/confirm-sheet';
 import { NativeBlock } from '@/components/native-block';
 import { Button, Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -20,7 +20,7 @@ export default function EditCategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   const { t, plural } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
 
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export default function EditCategoryScreen() {
         />
         <View style={{ paddingVertical: 64, alignItems: 'center' }}>
           <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
               {t('common.loading')}
             </Text>
           </NativeBlock>
@@ -76,7 +76,7 @@ export default function EditCategoryScreen() {
         />
         <View style={{ paddingVertical: 64, alignItems: 'center' }}>
           <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
               {t('cat.notFound')}
             </Text>
           </NativeBlock>
@@ -134,7 +134,7 @@ export default function EditCategoryScreen() {
           <View style={{ alignItems: 'center' }}>
             <NativeBlock>
               <Button variant="text" onPress={() => setDeleteOpen(true)}>
-                <Text textStyle={{ fontSize: 15, fontWeight: '500', color: colors.destructiveError }}>
+                <Text textStyle={{ fontSize: 15, fontWeight: '500', color: colors.destructive }}>
                   {t('cat.deleteBtn')}
                 </Text>
               </Button>

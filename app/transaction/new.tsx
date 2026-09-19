@@ -10,7 +10,7 @@ import { useSettings } from '@/hooks/use-settings';
 import { getTransactionById, createTransaction, updateTransaction } from '@/lib/db/transactions';
 import { ensureDefaultAccount } from '@/lib/db/accounts';
 import { minorUnitsToInput, parseAmountToMinorUnits } from '@/lib/format';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -22,7 +22,7 @@ export default function NewTransactionScreen() {
   const editingId = id ?? null;
 
   const db = useSQLiteContext();
-  const colors = useAppColors();
+  const colors = useTheme();
   const { settings } = useSettings();
   const { t } = useI18n();
 
@@ -148,7 +148,7 @@ export default function NewTransactionScreen() {
         {/* Host must directly wrap FieldGroup (Android Compose contract). */}
         {loadingEdit ? (
           <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
               {t('common.loading')}
             </Text>
           </NativeBlock>
@@ -209,7 +209,7 @@ export default function NewTransactionScreen() {
 
         {error ? (
           <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+            <Text textStyle={{ fontSize: 14, color: colors.destructive }}>{error}</Text>
           </NativeBlock>
         ) : null}
 

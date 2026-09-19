@@ -8,7 +8,7 @@ import {
   Text,
 } from '@expo/ui/jetpack-compose';
 import { router, usePathname } from 'expo-router';
-import { Platform, View } from 'react-native';
+import { Platform, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TAB_ITEMS: {
@@ -52,6 +52,7 @@ export function TabBar() {
   const { t } = useI18n();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
 
   if (Platform.OS !== 'android') {
     return null;
@@ -64,7 +65,11 @@ export function TabBar() {
 
   return (
     <View style={{ paddingBottom: insets.bottom }}>
-      <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
+      <Host
+        matchContents={{ vertical: true }}
+        style={{ width: '100%' }}
+        colorScheme={colorScheme ?? undefined}
+      >
         <NavigationBar tonalElevation={0}>
           {TAB_ITEMS.map((tab) => {
             const selected = selectedName === tab.name;

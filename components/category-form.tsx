@@ -2,7 +2,7 @@ import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { Button, FieldGroup, Host, Icon, Text, TextInput } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
 import { CATEGORY_ICONS, categoryIcon } from '@/lib/category-icons';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import type { NewCategory, TransactionType } from '@/types';
 import { useState } from 'react';
@@ -31,7 +31,7 @@ export function CategoryForm({
   onSubmit: (input: NewCategory) => void;
   footer?: React.ReactNode;
 }) {
-  const colors = useAppColors();
+  const colors = useTheme();
   const { t } = useI18n();
   const typeOptions = useTypeOptions();
   const [name, setName] = useState(initial?.name ?? '');
@@ -101,7 +101,7 @@ export function CategoryForm({
 
         {error ? (
           <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+            <Text textStyle={{ fontSize: 14, color: colors.destructive }}>{error}</Text>
           </NativeBlock>
         ) : null}
 

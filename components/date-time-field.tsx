@@ -2,7 +2,7 @@ import { BottomSheet, Button, Column, Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
 import { formatFullDate, formatTime } from '@/lib/dates';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useState } from 'react';
 import { Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -24,7 +24,7 @@ export function DateTimeField({
   style,
 }: DateTimeFieldProps) {
   const [showPicker, setShowPicker] = useState(false);
-  const colors = useAppColors();
+  const colors = useTheme();
 
   const display = value
     ? mode === 'date'
@@ -55,7 +55,7 @@ export function DateTimeField({
           justifyContent: 'center',
           borderRadius: 8,
           borderWidth: 1,
-          borderColor: colors.separator,
+          borderColor: colors.border,
           paddingHorizontal: 12,
           gap: 2,
         }}
@@ -63,12 +63,12 @@ export function DateTimeField({
         <NativeBlock matchContents={false}>
           <Column spacing={2}>
             {label ? (
-              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>{label}</Text>
+              <Text textStyle={{ fontSize: 12, color: colors.textSecondary }}>{label}</Text>
             ) : null}
             <Text
               textStyle={{
                 fontSize: 14,
-                color: value ? undefined : colors.mutedForeground,
+                color: value ? undefined : colors.textSecondary,
               }}
             >
               {display}

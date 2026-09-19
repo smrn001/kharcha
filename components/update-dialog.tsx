@@ -1,6 +1,6 @@
 import { BottomSheet, Button, Icon, Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import type { UpdateState } from '@/hooks/use-update-checker';
 import { View } from 'react-native';
@@ -47,7 +47,7 @@ function parseReleaseNotes(notes: string): { bullets: string[]; changelogUrl: st
 
 export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }: UpdateDialogProps) {
   const { t } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
   const { bullets, changelogUrl } = parseReleaseNotes(state.notes);
 
   return (
@@ -63,7 +63,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
             <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{t('upd.title')}</Text>
           </NativeBlock>
           <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
               {t('upd.desc', { version: state.latestVersion })}
             </Text>
           </NativeBlock>
@@ -71,9 +71,9 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
 
         <View style={{ gap: 16 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ flex: 1, gap: 4, borderRadius: 10, backgroundColor: colors.mutedBackground, padding: 14 }}>
+            <View style={{ flex: 1, gap: 4, borderRadius: 10, backgroundColor: colors.surface, padding: 14 }}>
               <NativeBlock>
-                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
+                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary }}>
                   {t('upd.installed')}
                 </Text>
               </NativeBlock>
@@ -83,7 +83,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
             </View>
             <View style={{ flex: 1, gap: 4, borderRadius: 10, padding: 14 }}>
               <NativeBlock>
-                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
+                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.textSecondary }}>
                   {t('upd.available')}
                 </Text>
               </NativeBlock>
@@ -105,7 +105,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
                       <Icon name={CHECK_ICON} size={16} />
                     </NativeBlock>
                     <NativeBlock>
-                      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                      <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
                         {bullet}
                       </Text>
                     </NativeBlock>
@@ -114,7 +114,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
               </View>
             ) : (
               <NativeBlock>
-                <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
                   {t('upd.noNotes')}
                 </Text>
               </NativeBlock>
@@ -144,7 +144,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
             <NativeBlock>
               <Button variant="text" label={t('upd.later')} onPress={onLater} />
             </NativeBlock>
-            <View style={{ width: 1, height: 12, backgroundColor: colors.separator }} />
+            <View style={{ width: 1, height: 12, backgroundColor: colors.border }} />
             <NativeBlock>
               <Button variant="text" label={t('upd.skip')} onPress={onSkip} />
             </NativeBlock>

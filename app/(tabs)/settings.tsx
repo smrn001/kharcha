@@ -9,7 +9,7 @@ import { useUpdateChecker } from '@/hooks/use-update-checker';
 import { resetAllTransactions } from '@/lib/db/transactions';
 import { SUPPORTED_CURRENCIES } from '@/lib/format';
 import { hapticError, hapticMediumImpact, hapticSuccess } from '@/lib/haptics';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
@@ -65,7 +65,7 @@ const NUMERALS_OPTIONS: { value: NumeralsPreference; labelKey: DictionaryKey }[]
 ];
 
 function SectionLabel({ children }: { children: string }) {
-  const colors = useAppColors();
+  const colors = useTheme();
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
       <NativeBlock>
@@ -73,7 +73,7 @@ function SectionLabel({ children }: { children: string }) {
           textStyle={{
             fontSize: 12,
             fontWeight: '600',
-            color: colors.mutedForeground,
+            color: colors.textSecondary,
           }}
         >
           {children}
@@ -87,7 +87,7 @@ export default function SettingsScreen() {
   const db = useSQLiteContext();
   const { settings, updateSetting } = useSettings();
   const { t, plural } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
   const { state: updateState, isChecking, checkNow } = useUpdateChecker();
   const { busy: backupBusy, exportJson, exportCsv, importFile } = useBackup();
   const [resetOpen, setResetOpen] = useState(false);
@@ -376,7 +376,7 @@ export default function SettingsScreen() {
                 <Text
                   textStyle={{
                     fontSize: 14,
-                    color: backupMsg.kind === 'success' ? colors.positive : colors.destructiveError,
+                    color: backupMsg.kind === 'success' ? colors.success : colors.destructive,
                   }}
                 >
                   {backupMsg.text}
@@ -393,10 +393,10 @@ export default function SettingsScreen() {
             children={
               <Column spacing={2}>
                 <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>{t('set.aboutName')}</Text>
-                <Text textStyle={{ fontSize: 13, color: colors.mutedForeground }}>
+                <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
                   {t('set.aboutDesc')}
                 </Text>
-                <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+                <Text textStyle={{ fontSize: 12, color: colors.textSecondary }}>
                   {t('set.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
                 </Text>
               </Column>
@@ -413,7 +413,7 @@ export default function SettingsScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <ActivityIndicator size="small" />
                     <NativeBlock>
-                      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                      <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
                         {t('set.checking')}
                       </Text>
                     </NativeBlock>
@@ -421,7 +421,7 @@ export default function SettingsScreen() {
                 ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <NativeBlock>
-                      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                      <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
                         {updateState.status === 'available'
                           ? t('set.available', { version: updateState.latestVersion })
                           : updateState.status === 'error'
@@ -430,7 +430,7 @@ export default function SettingsScreen() {
                       </Text>
                     </NativeBlock>
                     <NativeBlock>
-                      <Icon name={REFRESH_ICON} size={16} color={colors.mutedForeground} />
+                      <Icon name={REFRESH_ICON} size={16} color={colors.textSecondary} />
                     </NativeBlock>
                   </View>
                 )

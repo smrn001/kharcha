@@ -1,5 +1,5 @@
 import { BottomSheet, Button, Column, Text } from '@expo/ui';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 
 /**
  * Confirmation modal built on the universal `BottomSheet` from `@expo/ui`.
@@ -28,7 +28,7 @@ export function ConfirmSheet({
   destructive?: boolean;
   onConfirm: () => void;
 }) {
-  const colors = useAppColors();
+  const colors = useTheme();
 
   return (
     <BottomSheet
@@ -40,12 +40,12 @@ export function ConfirmSheet({
         <Column spacing={6}>
           <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{title}</Text>
           {description ? (
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, lineHeight: 20 }}>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary, lineHeight: 20 }}>
               {description}
             </Text>
           ) : null}
           {error ? (
-            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+            <Text textStyle={{ fontSize: 14, color: colors.destructive }}>{error}</Text>
           ) : null}
         </Column>
         <Column spacing={8}>

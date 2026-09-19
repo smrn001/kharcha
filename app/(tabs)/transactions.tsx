@@ -13,7 +13,7 @@ import { categoryDisplayName } from '@/lib/i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { endOfDay, startOfDay, startOfMonth, startOfWeek, toDateKey } from '@/lib/dates';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, SectionList, View } from 'react-native';
@@ -61,7 +61,7 @@ interface Section {
 }
 
 export default function TransactionsScreen() {
-  const colors = useAppColors();
+  const colors = useTheme();
   const { settings } = useSettings();
 
   const [query, setQuery] = useState('');
@@ -165,12 +165,12 @@ export default function TransactionsScreen() {
             alignItems: 'center',
             gap: 8,
             borderRadius: 10,
-            backgroundColor: colors.mutedBackground,
+            backgroundColor: colors.surface,
             paddingHorizontal: 12,
           }}
         >
           <NativeBlock>
-            <Icon name={SEARCH_ICON} size={16} color={colors.mutedForeground} />
+            <Icon name={SEARCH_ICON} size={16} color={colors.textSecondary} />
           </NativeBlock>
           <NativeBlock matchContents={false} style={{ flex: 1 }}>
             <TextInput
@@ -184,7 +184,7 @@ export default function TransactionsScreen() {
           {query ? (
             <Pressable onPress={() => setQuery('')} accessibilityLabel={t('txns.searchClear')} hitSlop={8}>
               <NativeBlock>
-                <Icon name={X_ICON} size={16} color={colors.mutedForeground} />
+                <Icon name={X_ICON} size={16} color={colors.textSecondary} />
               </NativeBlock>
             </Pressable>
           ) : null}
@@ -258,7 +258,7 @@ export default function TransactionsScreen() {
         {hasActiveFilters ? (
           <Pressable onPress={clearFilters} style={{ alignSelf: 'flex-start' }} hitSlop={8}>
             <NativeBlock>
-              <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>
+              <Text textStyle={{ fontSize: 14, color: colors.destructive }}>
                 {t('txns.clearFilters')}
               </Text>
             </NativeBlock>
@@ -282,7 +282,7 @@ export default function TransactionsScreen() {
                 textStyle={{
                   fontSize: 12,
                   fontWeight: '600',
-                  color: colors.mutedForeground,
+                  color: colors.textSecondary,
                 }}
               >
                 {section.title}
@@ -299,25 +299,25 @@ export default function TransactionsScreen() {
           />
         )}
         ItemSeparatorComponent={() => (
-          <View style={{ height: 1, backgroundColor: colors.separator, marginLeft: 72, marginRight: 20 }} />
+          <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 72, marginRight: 20 }} />
         )}
         ListEmptyComponent={
           loading ? (
             <NativeBlock>
-              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+              <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
                 {t('common.loading')}
               </Text>
             </NativeBlock>
           ) : hasActiveFilters ? (
             <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
               <NativeBlock>
-                <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
+                <Icon name={SEARCH_ICON} size={40} color={colors.textSecondary} />
               </NativeBlock>
               <NativeBlock>
                 <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.noMatchTitle')}</Text>
               </NativeBlock>
               <NativeBlock>
-                <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+                <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
                   {t('txns.noMatchMsg')}
                 </Text>
               </NativeBlock>
@@ -328,13 +328,13 @@ export default function TransactionsScreen() {
           ) : (
             <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
               <NativeBlock>
-                <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
+                <Icon name={SEARCH_ICON} size={40} color={colors.textSecondary} />
               </NativeBlock>
               <NativeBlock>
                 <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.emptyTitle')}</Text>
               </NativeBlock>
               <NativeBlock>
-                <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+                <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
                   {t('txns.emptyMsg')}
                 </Text>
               </NativeBlock>

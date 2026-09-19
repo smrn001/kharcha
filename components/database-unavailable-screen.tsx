@@ -1,6 +1,6 @@
 import { Button, Icon, Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { View } from 'react-native';
 
@@ -21,7 +21,7 @@ type DatabaseUnavailableScreenProps = {
 
 export function DatabaseUnavailableScreen({ kind, onRetry }: DatabaseUnavailableScreenProps) {
   const { t } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
   const isOtherTab = kind === 'other-tab';
   const title = isOtherTab ? t('dberr.tabTitle') : t('dberr.errTitle');
   const message = isOtherTab ? t('dberr.tabMsg') : t('dberr.errMsg');
@@ -36,7 +36,7 @@ export function DatabaseUnavailableScreen({ kind, onRetry }: DatabaseUnavailable
           <Text textStyle={{ textAlign: 'center', fontSize: 22, fontWeight: '600' }}>{title}</Text>
         </NativeBlock>
         <NativeBlock>
-          <Text textStyle={{ textAlign: 'center', fontSize: 15, color: colors.mutedForeground }}>
+          <Text textStyle={{ textAlign: 'center', fontSize: 15, color: colors.textSecondary }}>
             {message}
           </Text>
         </NativeBlock>

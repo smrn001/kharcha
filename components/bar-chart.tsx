@@ -1,6 +1,6 @@
 import { Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import { View } from 'react-native';
 
@@ -28,7 +28,7 @@ export function BarChart({
   formatValue?: (value: number) => string;
 }) {
   const { t } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
   const max = niceCeil(Math.max(...data.flatMap((d) => [d.income, d.expense]), 1));
   const barHeight = (value: number) =>
     Math.max(Math.round((value / max) * CHART_HEIGHT), value > 0 ? 4 : 0);
@@ -41,20 +41,20 @@ export function BarChart({
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginBottom: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View
-              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.positive }}
+              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.success }}
             />
             <NativeBlock>
-              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+              <Text textStyle={{ fontSize: 12, color: colors.textSecondary }}>
                 {t('an.income')}
               </Text>
             </NativeBlock>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View
-              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.destructiveError }}
+              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.destructive }}
             />
             <NativeBlock>
-              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+              <Text textStyle={{ fontSize: 12, color: colors.textSecondary }}>
                 {t('an.expenses')}
               </Text>
             </NativeBlock>
@@ -67,7 +67,7 @@ export function BarChart({
           {ticks.map((fraction) => (
             <NativeBlock key={fraction}>
               <Text
-                textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'right' }}
+                textStyle={{ fontSize: 9, color: colors.textSecondary, textAlign: 'right' }}
                 numberOfLines={1}
               >
                 {formatValue ? formatValue(Math.round(max * fraction)) : `${Math.round(max * fraction)}`}
@@ -82,7 +82,7 @@ export function BarChart({
               <View key={`value-${datum.label}-${index}`} style={{ flex: 1, alignItems: 'center' }}>
                 <NativeBlock>
                   <Text
-                    textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'center' }}
+                    textStyle={{ fontSize: 9, color: colors.textSecondary, textAlign: 'center' }}
                     numberOfLines={1}
                   >
                     {datum.expense > 0
@@ -110,7 +110,7 @@ export function BarChart({
                   right: 0,
                   bottom: Math.round(fraction * CHART_HEIGHT),
                   borderTopWidth: 1,
-                  borderTopColor: colors.separator,
+                  borderTopColor: colors.border,
                 }}
               />
             ))}
@@ -142,7 +142,7 @@ export function BarChart({
                         style={{
                           width: '50%',
                           borderTopLeftRadius: 2,
-                          backgroundColor: colors.positive,
+                          backgroundColor: colors.success,
                           height: barHeight(datum.income),
                         }}
                       />
@@ -150,7 +150,7 @@ export function BarChart({
                         style={{
                           width: '50%',
                           borderTopRightRadius: 2,
-                          backgroundColor: colors.destructiveError,
+                          backgroundColor: colors.destructive,
                           height: barHeight(datum.expense),
                         }}
                       />
@@ -161,7 +161,7 @@ export function BarChart({
                         width: '100%',
                         borderTopLeftRadius: 2,
                         borderTopRightRadius: 2,
-                        backgroundColor: colors.destructiveError,
+                        backgroundColor: colors.destructive,
                         height: barHeight(datum.expense),
                       }}
                     />
@@ -176,7 +176,7 @@ export function BarChart({
               <View key={`label-${datum.label}-${index}`} style={{ flex: 1, alignItems: 'center' }}>
                 <NativeBlock>
                   <Text
-                    textStyle={{ fontSize: 10, color: colors.mutedForeground, textAlign: 'center' }}
+                    textStyle={{ fontSize: 10, color: colors.textSecondary, textAlign: 'center' }}
                     numberOfLines={1}
                   >
                     {datum.label}

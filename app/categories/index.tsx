@@ -4,7 +4,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useI18n } from '@/hooks/use-i18n';
 import { categoryIcon } from '@/lib/category-icons';
 import { categoryDisplayName } from '@/lib/i18n';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -43,7 +43,7 @@ const CHEVRON_ICON_SYM = Icon.select({
 });
 
 function SectionLabel({ children }: { children: string }) {
-  const colors = useAppColors();
+  const colors = useTheme();
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
       <NativeBlock>
@@ -51,7 +51,7 @@ function SectionLabel({ children }: { children: string }) {
           textStyle={{
             fontSize: 12,
             fontWeight: '600',
-            color: colors.mutedForeground,
+            color: colors.textSecondary,
           }}
         >
           {children}
@@ -64,7 +64,7 @@ function SectionLabel({ children }: { children: string }) {
 export default function CategoriesScreen() {
   const { categories, loading, refresh } = useCategories();
   const { t, lang } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
 
   useFocusEffect(
     useCallback(() => {
@@ -100,7 +100,7 @@ export default function CategoriesScreen() {
 
       {loading && categories.length === 0 ? (
         <NativeBlock>
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+          <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
             {t('common.loading')}
           </Text>
         </NativeBlock>

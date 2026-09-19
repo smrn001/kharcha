@@ -10,7 +10,7 @@ import { hapticMediumImpact } from '@/lib/haptics';
 import { categoryDisplayName } from '@/lib/i18n';
 import { deleteTransaction, getTransactionById } from '@/lib/db/transactions';
 import { formatAmount } from '@/lib/format';
-import { useAppColors } from '@/lib/colors';
+import { useTheme } from '@/lib/theme';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -26,16 +26,16 @@ function DetailRow({
   value: string;
   separator?: boolean;
 }) {
-  const colors = useAppColors();
+  const colors = useTheme();
   return (
     <View
       style={[
         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
-        separator ? { borderTopWidth: 1, borderTopColor: colors.separator } : null,
+        separator ? { borderTopWidth: 1, borderTopColor: colors.border } : null,
       ]}
     >
       <NativeBlock>
-        <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>{label}</Text>
+        <Text textStyle={{ fontSize: 15, color: colors.textSecondary }}>{label}</Text>
       </NativeBlock>
       <NativeBlock>
         <Text textStyle={{ fontSize: 15, fontWeight: '500', textAlign: 'right' }}>
@@ -52,7 +52,7 @@ export default function TransactionDetailScreen() {
   const { categories } = useCategories();
   const { settings } = useSettings();
   const { t, lang } = useI18n();
-  const colors = useAppColors();
+  const colors = useTheme();
   const detailDate = useDetailDate();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
@@ -88,7 +88,7 @@ export default function TransactionDetailScreen() {
         />
         <View style={{ flex: 1, alignItems: 'center', paddingTop: 64 }}>
           <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
               {t('common.loading')}
             </Text>
           </NativeBlock>
@@ -121,7 +121,7 @@ export default function TransactionDetailScreen() {
 
       <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 24 }}>
         <NativeBlock>
-          <Icon name={categoryIcon(category?.icon)} size={40} color={colors.mutedForeground} />
+          <Icon name={categoryIcon(category?.icon)} size={40} color={colors.textSecondary} />
         </NativeBlock>
         <NativeBlock>
           <Text textStyle={{ fontSize: 36, fontWeight: 'bold' }}>
@@ -134,7 +134,7 @@ export default function TransactionDetailScreen() {
               textStyle={{
                 fontSize: 14,
                 fontWeight: '500',
-                color: isIncome ? colors.positive : colors.mutedForeground,
+                color: isIncome ? colors.success : colors.textSecondary,
               }}
             >
               {isIncome ? t('det.income') : t('det.expense')}

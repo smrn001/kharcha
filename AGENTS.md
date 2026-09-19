@@ -80,6 +80,13 @@ Do not ignore Expo compatibility warnings.
 - Colors: use `platformColor()` from `nativewind/theme` for native system colors in `tailwind.config.js`
 - Units: `vw`/`vh` polyfilled from `Dimensions.get('window')`; `rem` defaults to 14 on native, 16 on web
 
+### Theme & Colors
+- Centralized design tokens live in `lib/theme.ts` — components consume `useTheme()` semantic tokens (`background`, `surface`, `text`, `textSecondary`, `border`, `primary`, `destructive`, `success`, `warning`), never raw colors. Do not reintroduce `lib/colors.ts`.
+- Platform differences stay inside `useTheme()`: Apple system-semantic values on iOS, Material 3-aligned neutrals on Android.
+- `@expo/ui` color props (`textStyle.color`, `Icon color`, `backgroundColor`) take plain `string` colors — opaque `DynamicColorIOS` values are NOT supported there; iOS adapts via `useColorScheme()` + per-scheme string palettes.
+- Pass `colorScheme={useColorScheme() ?? undefined}` to every `Host` (root layout, `NativeBlock`, tab bar) so the Compose Material 3 palette — including Android 12+ dynamic wallpaper colors — always matches the React Native side.
+- `spacing`, `radii`, and `fontSizes` token constants are exported from `lib/theme.ts` for new UI; reuse them instead of arbitrary numbers.
+
 ### React Native Reusables
 - Components live in `components/ui/` — add new ones with `npx rnr add <component-name>`
 - Uses `@rn-primitives` under the hood (accessible UI primitives)
