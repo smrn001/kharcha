@@ -6,4 +6,9 @@ module.exports = defineConfig([
   {
     ignores: ['.expo/**', 'dist/**', 'node_modules/**', '.agents/**'],
   },
+  {
+    rules: {
+      'react/no-children-prop': 'off',
+    },
+  },
 ]);

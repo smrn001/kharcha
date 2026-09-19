@@ -1,19 +1,28 @@
 import { FloatingAddButton } from '@/components/floating-add-button';
 import { PageHeader } from '@/components/page-header';
 import { TransactionRow } from '@/components/transaction-row';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { Button, Icon, ListItem, Text } from '@expo/ui';
 import { useCategories } from '@/hooks/use-categories';
 import { useDashboardSummary } from '@/hooks/use-dashboard';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
+import { useAppColors } from '@/lib/colors';
 import { type TransactionFilters } from '@/lib/db/transactions';
 import { formatAmount } from '@/lib/format';
 import { router, useFocusEffect } from 'expo-router';
-import { ArrowRight, ReceiptText } from 'lucide-react-native';
 import { useCallback, useMemo } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+
+const ARROW_RIGHT_ICON = Icon.select({
+  ios: 'arrow.right',
+  android: import('@expo/material-symbols/arrow_forward.xml'),
+});
+
+const RECEIPT_ICON = Icon.select({
+  ios: 'receipt',
+  android: import('@expo/material-symbols/receipt_long.xml'),
+});
 
 const RECENT_FILTERS: TransactionFilters = { limit: 5 };
 
@@ -27,6 +36,7 @@ function greetingKey(): 'home.greetingMorning' | 'home.greetingAfternoon' | 'hom
 export default function HomeScreen() {
   const { settings } = useSettings();
   const { t } = useI18n();
+  const colors = useAppColors();
   const { summary, refresh: refreshSummary } = useDashboardSummary(settings.startOfWeek);
   const { transactions, refresh: refreshTransactions } = useTransactions(RECENT_FILTERS);
   const { categories } = useCategories();
@@ -43,107 +53,97 @@ export default function HomeScreen() {
     }, [refreshSummary, refreshTransactions])
   );
 
+  const overspend = summary.expense > summary.income;
+
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="pb-28" contentInsetAdjustmentBehavior="automatic">
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 112 }} contentInsetAdjustmentBehavior="automatic">
         <PageHeader title={t(greetingKey())} subtitle={t('home.subtitle')} />
 
-        <View className="px-5 pt-5">
-          <View className="rounded-xl border border-border bg-card p-5">
-            <Text variant="muted" className="text-sm">
-              {t('home.balance')}
-            </Text>
-            <Text selectable className="mt-1 text-3xl font-bold tabular-nums">
+        <ListItem
+          children={t('home.balance')}
+          supportingText={`${t('home.income')} ${formatAmount(summary.income, settings.currency)} · ${t('home.expenses')} ${formatAmount(summary.expense, settings.currency)}`}
+          trailing={
+            <Text
+              textStyle={{
+                fontSize: 22,
+                fontWeight: 'bold',
+                color: overspend ? colors.destructiveError : colors.positive,
+              }}
+            >
               {formatAmount(summary.balance, settings.currency)}
             </Text>
+          }
+        />
 
-            <View className="mt-4 flex-row gap-4">
-              <View className="flex-1">
-                <Text variant="muted" className="text-xs">
-                  {t('home.income')}
-                </Text>
-                <Text className="text-sm font-semibold tabular-nums text-positive">
-                  {formatAmount(summary.income, settings.currency)}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text variant="muted" className="text-xs">
-                  {t('home.expenses')}
-                </Text>
-                <Text className="text-sm font-semibold tabular-nums text-destructive">
-                  {formatAmount(summary.expense, settings.currency)}
-                </Text>
-              </View>
-            </View>
-          </View>
+        <View style={{ marginTop: 8 }}>
+          <ListItem
+            children={t('home.today')}
+            trailing={
+              <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
+                {formatAmount(summary.spentToday, settings.currency)}
+              </Text>
+            }
+          />
+          <ListItem
+            children={t('home.week')}
+            trailing={
+              <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
+                {formatAmount(summary.spentWeek, settings.currency)}
+              </Text>
+            }
+          />
+          <ListItem
+            children={t('home.month')}
+            trailing={
+              <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
+                {formatAmount(summary.spentMonth, settings.currency)}
+              </Text>
+            }
+          />
         </View>
 
-        <View className="flex-row gap-3 px-5 pt-4">
-          <View className="flex-1 rounded-xl border border-border bg-card p-3">
-            <Text variant="muted" className="text-xs">
-              {t('home.today')}
-            </Text>
-            <Text className="mt-1 text-sm font-semibold tabular-nums">
-              {formatAmount(summary.spentToday, settings.currency)}
-            </Text>
-          </View>
-          <View className="flex-1 rounded-xl border border-border bg-card p-3">
-            <Text variant="muted" className="text-xs">
-              {t('home.week')}
-            </Text>
-            <Text className="mt-1 text-sm font-semibold">
-              {formatAmount(summary.spentWeek, settings.currency)}
-            </Text>
-          </View>
-          <View className="flex-1 rounded-xl border border-border bg-card p-3">
-            <Text variant="muted" className="text-xs">
-              {t('home.month')}
-            </Text>
-            <Text className="mt-1 text-sm font-semibold">
-              {formatAmount(summary.spentMonth, settings.currency)}
-            </Text>
-          </View>
-        </View>
-
-        <View className="flex-row items-center justify-between px-5 pt-6">
-          <Text className="text-lg font-bold">{t('home.recent')}</Text>
-          <Pressable
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 20,
+            paddingTop: 24,
+            paddingBottom: 4,
+          }}
+        >
+          <Text textStyle={{ fontSize: 17, fontWeight: 'bold' }}>{t('home.recent')}</Text>
+          <Button
+            variant="text"
             onPress={() => router.push('/transactions')}
-            accessibilityRole="link"
-            className="flex-row items-center gap-1 active:opacity-70"
+            style={{ paddingVertical: 0 }}
           >
-            <Text className="text-primary text-sm font-medium">{t('home.viewAll')}</Text>
-            <Icon as={ArrowRight} size={14} className="text-primary" />
-          </Pressable>
+            <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('home.viewAll')}</Text>
+            <Icon name={ARROW_RIGHT_ICON} size={14} />
+          </Button>
         </View>
 
         {transactions.length === 0 ? (
-          <View className="items-center gap-2 px-5 py-10">
-            <Icon as={ReceiptText} size={40} className="text-muted-foreground" />
-            <Text className="text-base font-semibold">{t('home.emptyTitle')}</Text>
-            <Text variant="muted" className="text-center">
+          <View style={{ alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 40 }}>
+            <Icon name={RECEIPT_ICON} size={40} color={colors.mutedForeground} />
+            <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('home.emptyTitle')}</Text>
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
               {t('home.emptyMsg')}
             </Text>
           </View>
         ) : (
-          <View className="mt-2">
+          <View>
             {transactions.map((transaction) => (
-              <Pressable
+              <TransactionRow
                 key={transaction.id}
+                transaction={transaction}
+                category={
+                  transaction.categoryId ? categoryMap.get(transaction.categoryId) : undefined
+                }
+                currency={settings.currency}
                 onPress={() => router.push(`/transaction/${transaction.id}`)}
-                className="active:bg-muted/60"
-              >
-                <View className="px-5">
-                  <TransactionRow
-                    transaction={transaction}
-                    category={
-                      transaction.categoryId ? categoryMap.get(transaction.categoryId) : undefined
-                    }
-                    currency={settings.currency}
-                  />
-                </View>
-                <View className="bg-border mx-5 h-px" />
-              </Pressable>
+              />
             ))}
           </View>
         )}

@@ -1,19 +1,10 @@
-import '@/global.css';
-
 import { UpdateDialog } from '@/components/update-dialog';
-import { useAppliedTheme } from '@/hooks/use-applied-theme';
-import { SettingsProvider, useSettings } from '@/hooks/use-settings';
+import { SettingsProvider } from '@/hooks/use-settings';
 import { UpdateCheckerProvider, useUpdateChecker } from '@/hooks/use-update-checker';
 import { DatabaseProvider } from '@/lib/db/database';
-import { NAV_THEME } from '@/lib/theme';
 import { Host } from '@expo/ui';
-import { ThemeProvider } from 'expo-router/react-navigation';
-import { PortalHost } from '@rn-primitives/portal';
-import { NavigationBar } from 'expo-navigation-bar';
-import { Stack, usePathname } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme } from 'nativewind';
-import { useEffect } from 'react';
 import { Linking, Platform, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -37,31 +28,18 @@ export default function RootLayout() {
 }
 
 function ThemedRoot() {
-  const { settings, loading } = useSettings();
-  const { colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
-  useAppliedTheme(loading ? 'system' : settings.theme);
-  useBlurOnNavigation();
 
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      {Platform.OS === 'android' && (
-        <NavigationBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      )}
+    <>
+      <StatusBar style="auto" />
       <Host style={{ flex: 1 }}>
-        <View
-          className="flex-1 bg-background web:mx-auto web:h-full web:w-full web:max-w-md web:border-x web:border-border web:shadow-2xl"
-          style={{
-            paddingTop: Platform.OS === 'web' ? 0 : insets.top,
-          }}
-        >
+        <View style={{ flex: 1, paddingTop: insets.top }}>
           <Stack screenOptions={{ headerShown: false }} />
         </View>
       </Host>
-      <PortalHost />
       <AndroidUpdateChecker />
-    </ThemeProvider>
+    </>
   );
 }
 
@@ -81,14 +59,4 @@ function AndroidUpdateChecker() {
       onSkip={skipVersion}
     />
   );
-}
-
-function useBlurOnNavigation() {
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (Platform.OS === 'web' && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  }, [pathname]);
 }

@@ -5,7 +5,6 @@ import type {
   LanguagePreference,
   NumeralsPreference,
   Settings,
-  ThemePreference,
   TransactionType,
 } from '@/types';
 
@@ -16,7 +15,6 @@ interface SettingsRow {
 
 export const DEFAULT_SETTINGS: Settings = {
   currency: 'NPR',
-  theme: 'system',
   defaultTransactionType: 'expense',
   startOfWeek: 0,
   language: 'en',
@@ -61,7 +59,6 @@ export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
   }
   return {
     currency: map.currency ?? DEFAULT_SETTINGS.currency,
-    theme: (map.theme as ThemePreference | null) ?? DEFAULT_SETTINGS.theme,
     defaultTransactionType: (map.defaultTransactionType as TransactionType | null) ?? DEFAULT_SETTINGS.defaultTransactionType,
     startOfWeek: parseStartOfWeek(map.startOfWeek),
     language: map.language ? parseLanguage(map.language) : deviceLanguage(),

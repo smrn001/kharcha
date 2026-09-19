@@ -1,9 +1,7 @@
 import { CategoryPicker } from '@/components/category-picker';
-import { Host, FieldGroup } from '@expo/ui';
 import { DateTimeField } from '@/components/date-time-field';
-import { SegmentedControl } from '@/components/segmented-control';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
+import { SegmentedControl } from '@expo/ui/community/segmented-control';
+import { Button, FieldGroup, Host, Text, TextInput } from '@expo/ui';
 import { useCategories } from '@/hooks/use-categories';
 import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { useI18n } from '@/hooks/use-i18n';
@@ -11,30 +9,19 @@ import { useSettings } from '@/hooks/use-settings';
 import { getTransactionById, createTransaction, updateTransaction } from '@/lib/db/transactions';
 import { ensureDefaultAccount } from '@/lib/db/accounts';
 import { minorUnitsToInput, parseAmountToMinorUnits } from '@/lib/format';
-import { THEME } from '@/lib/theme';
+import { useAppColors } from '@/lib/colors';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import type { TransactionType } from '@/types';
-
-const INPUT_CLASS =
-  'h-12 rounded-md border border-input bg-background px-3 text-base text-foreground';
 
 export default function NewTransactionScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const editingId = id ?? null;
 
   const db = useSQLiteContext();
-  const { colorScheme } = useColorScheme();
-  const colors = THEME[colorScheme ?? 'light'];
+  const colors = useAppColors();
   const { settings } = useSettings();
   const { t } = useI18n();
 
@@ -133,7 +120,7 @@ export default function NewTransactionScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="bg-background flex-1"
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Stack.Screen
@@ -144,84 +131,86 @@ export default function NewTransactionScreen() {
         }}
       />
       <ScrollView
-        className="flex-1"
-        contentContainerClassName="gap-5 px-4 pb-8"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ gap: 20, paddingHorizontal: 16, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
       >
         <SegmentedControl
-          options={[
-            { value: 'expense', label: t('add.expense') },
-            { value: 'income', label: t('add.income') },
-          ]}
-          value={type}
-          onChange={handleTypeChange}
+          values={[t('add.expense'), t('add.income')]}
+          selectedIndex={type === 'income' ? 1 : 0}
+          onValueChange={(label) => {
+            handleTypeChange(label === t('add.income') ? 'income' : 'expense');
+          }}
         />
 
         {/* Host must directly wrap FieldGroup (Android Compose contract). */}
-        <Host>
-          <FieldGroup>
-            <FieldGroup.Section title={t('add.amount')}>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-3xl font-bold">{settings.currency}</Text>
-              <TextInput
-                keyboardType="decimal-pad"
-                value={amountInput}
-                onChangeText={handleAmountChange}
-                placeholder="0.00"
-                placeholderTextColor={colors.mutedForeground}
-                accessibilityLabel={t('add.amount')}
-                className="text-foreground h-16 flex-1 text-3xl font-bold"
-              />
-            </View>
-          </FieldGroup.Section>
-          <FieldGroup.Section title={t('add.category')}>
-            {loadingEdit ? (
-              <Text variant="muted">{t('common.loading')}</Text>
-            ) : (
-              <CategoryPicker categories={categories} selectedId={categoryId} onSelect={setCategoryId} />
-            )}
-          </FieldGroup.Section>
-          <FieldGroup.Section title={t('add.dateTime')}>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <DateTimeField mode="date" value={date} onChange={setDate} />
-              </View>
-              <View className="flex-1">
-                <DateTimeField mode="time" value={date} onChange={setDate} />
-              </View>
-            </View>
-          </FieldGroup.Section>
-          <FieldGroup.Section title={t('add.details')}>
-            <View className="gap-3">
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder={t('add.titlePh')}
-                placeholderTextColor={colors.mutedForeground}
-                accessibilityLabel={t('add.titleLabel')}
-                className={INPUT_CLASS}
-              />
-              <TextInput
-                value={note}
-                onChangeText={setNote}
-                placeholder={t('add.notePh')}
-                placeholderTextColor={colors.mutedForeground}
-                accessibilityLabel={t('add.noteLabel')}
-                className={INPUT_CLASS}
-              />
-            </View>
-          </FieldGroup.Section>
-          </FieldGroup>
-        </Host>
-
-        {error ? <Text selectable className="text-destructive text-sm">{error}</Text> : null}
-
-        <Button onPress={handleSave} disabled={saving} className="mt-2">
-          <Text className="text-primary-foreground font-medium">
-            {saving ? t('common.saving') : editingId ? t('common.saveChanges') : t('add.save')}
+        {loadingEdit ? (
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            {t('common.loading')}
           </Text>
-        </Button>
+        ) : (
+          <Host>
+            <FieldGroup>
+              <FieldGroup.Section title={t('add.amount')}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text textStyle={{ fontSize: 28, fontWeight: 'bold' }}>
+                    {settings.currency}
+                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      keyboardType="decimal-pad"
+                      defaultValue={amountInput}
+                      onChangeText={handleAmountChange}
+                      placeholder="0.00"
+                      textStyle={{ fontSize: 28, fontWeight: 'bold' }}
+                      style={{ height: 64 }}
+                    />
+                  </View>
+                </View>
+              </FieldGroup.Section>
+
+              <FieldGroup.Section title={t('add.category')}>
+                <CategoryPicker categories={categories} selectedId={categoryId} onSelect={setCategoryId} />
+              </FieldGroup.Section>
+
+              <FieldGroup.Section title={t('add.dateTime')}>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <DateTimeField mode="date" value={date} onChange={setDate} style={{ flex: 1 }} />
+                  <DateTimeField mode="time" value={date} onChange={setDate} style={{ flex: 1 }} />
+                </View>
+              </FieldGroup.Section>
+
+              <FieldGroup.Section title={t('add.details')}>
+                <TextInput
+                  defaultValue={title}
+                  onChangeText={setTitle}
+                  placeholder={t('add.titlePh')}
+                  textStyle={{ fontSize: 16 }}
+                  style={{ height: 56 }}
+                />
+                <TextInput
+                  defaultValue={note}
+                  onChangeText={setNote}
+                  placeholder={t('add.notePh')}
+                  multiline
+                  textStyle={{ fontSize: 16 }}
+                  style={{ height: 96 }}
+                />
+              </FieldGroup.Section>
+            </FieldGroup>
+          </Host>
+        )}
+
+        {error ? (
+          <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>{error}</Text>
+        ) : null}
+
+        <Button
+          label={saving ? t('common.saving') : editingId ? t('common.saveChanges') : t('add.save')}
+          onPress={handleSave}
+          disabled={saving || loadingEdit}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );

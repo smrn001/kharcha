@@ -1,8 +1,7 @@
 import { BarChart } from '@/components/bar-chart';
 import { PageHeader } from '@/components/page-header';
-import { SegmentedControl } from '@/components/segmented-control';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { SegmentedControl } from '@expo/ui/community/segmented-control';
+import { Icon, ListItem, Text } from '@expo/ui';
 import {
   useAnalytics,
   type AnalyticsComparison,
@@ -13,10 +12,9 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { categoryDisplayName, type DictionaryKey } from '@/lib/i18n';
 import { categoryIcon } from '@/lib/category-icons';
+import { useAppColors } from '@/lib/colors';
 import { formatAmount, formatAmountCompact } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import { useFocusEffect } from 'expo-router';
-import { Minus, TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
@@ -44,9 +42,26 @@ export default function AnalyticsScreen() {
   const { t } = useI18n();
 
   return (
-    <View className="bg-background flex-1">
+    <View style={{ flex: 1 }}>
       <PageHeader title={t('tabs.analytics')} />
       <AnalyticsContent currency={settings.currency} startOfWeek={settings.startOfWeek} />
+    </View>
+  );
+}
+
+function SectionLabel({ children }: { children: string }) {
+  const colors = useAppColors();
+  return (
+    <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
+      <Text
+        textStyle={{
+          fontSize: 12,
+          fontWeight: '600',
+          color: colors.mutedForeground,
+        }}
+      >
+        {children}
+      </Text>
     </View>
   );
 }
@@ -58,6 +73,9 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
     period,
     startOfWeek
   );
+  const colors = useAppColors();
+  const { t } = useI18n();
+  const { titles: sectionTitles } = usePeriodOptions();
 
   useFocusEffect(
     useCallback(() => {
@@ -65,117 +83,84 @@ function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOf
     }, [refresh])
   );
 
+  const saved = summary.income - summary.expense;
+  const overspent = saved < 0;
+  const savedColor = overspent ? colors.destructiveError : saved > 0 ? colors.positive : undefined;
+
   return (
     <ScrollView
-      className="flex-1"
-      contentContainerClassName="gap-5 px-5 pb-28"
+      style={{ flex: 1 }}
+      contentContainerStyle={{ paddingBottom: 112 }}
       showsVerticalScrollIndicator={false}
       contentInsetAdjustmentBehavior="automatic"
     >
-      <SegmentedControl options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        <SegmentedControl
+          values={PERIOD_OPTIONS.map((o) => o.label)}
+          selectedIndex={PERIOD_OPTIONS.findIndex((o) => o.value === period)}
+          onValueChange={(label) => {
+            const next = PERIOD_OPTIONS.find((o) => o.label === label)?.value;
+            if (next) setPeriod(next);
+          }}
+        />
+      </View>
 
-      <PeriodCards
-        period={period}
-        currency={currency}
-        summary={summary}
-        currentRangeLabel={comparison?.currentRangeLabel}
-        loading={loading}
-      />
+      {loading && summary.income === 0 && summary.expense === 0 ? (
+        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          {t('common.loading')}
+        </Text>
+      ) : (
+        <>
+          <SectionLabel>{sectionTitles[period]}</SectionLabel>
+          <View>
+            <ListItem
+              children={t('an.income')}
+              supportingText={comparison?.currentRangeLabel}
+              trailing={
+                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.positive }}>
+                  {formatAmount(summary.income, currency)}
+                </Text>
+              }
+            />
+            <ListItem
+              children={t('an.expenses')}
+              supportingText={comparison?.currentRangeLabel}
+              trailing={
+                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.destructiveError }}>
+                  {formatAmount(summary.expense, currency)}
+                </Text>
+              }
+            />
+            <ListItem
+              children={overspent ? t('an.overspent') : t('an.saved')}
+              trailing={
+                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: savedColor }}>
+                  {formatAmount(Math.abs(saved), currency)}
+                </Text>
+              }
+            />
+          </View>
+        </>
+      )}
 
-      <ComparisonCard period={period} currency={currency} comparison={comparison} loading={loading} />
+      {comparison ? (
+        <>
+          <SectionLabel>{t('an.vs', { label: t(PREV_KEYS[period]) })}</SectionLabel>
+          <ComparisonCard period={period} currency={currency} comparison={comparison} loading={loading} />
+        </>
+      ) : null}
 
-      <SpendingTrend
-        period={period}
-        currency={currency}
-        trend={trend}
-        loading={loading}
-      />
+      <SectionLabel>{t('an.incomeVsSpending')}</SectionLabel>
+      <View style={{ paddingHorizontal: 20 }}>
+        <SpendingTrend period={period} currency={currency} trend={trend} loading={loading} />
+      </View>
 
+      <SectionLabel>{t('an.biggestChanges')}</SectionLabel>
       <MoversCard currency={currency} movers={movers} loading={loading} />
 
-      <CategoryBreakdown
-        period={period}
-        currency={currency}
-        categories={categories}
-        loading={loading}
-      />
+      <SectionLabel>{t('an.byCategory')}</SectionLabel>
+      <CategoryBreakdown period={period} currency={currency} categories={categories} loading={loading} />
     </ScrollView>
-  );
-}
-
-function PeriodCards({
-  period,
-  currency,
-  summary,
-  currentRangeLabel,
-  loading,
-}: {
-  period: AnalyticsPeriod;
-  currency: string;
-  summary: ReturnType<typeof useAnalytics>['summary'];
-  currentRangeLabel: string | undefined;
-  loading: boolean;
-}) {
-  const { t: tcards } = useI18n();
-  const { titles: cardTitles } = usePeriodOptions();
-  if (loading && summary.income === 0 && summary.expense === 0) {
-    return (
-      <View className="border-border rounded-xl border bg-card p-5">
-        <Text variant="muted">{tcards('common.loading')}</Text>
-      </View>
-    );
-  }
-
-  const overspent = summary.saved < 0;
-  const savedColor = overspent
-    ? 'text-destructive'
-    : summary.saved > 0
-      ? 'text-positive'
-      : 'text-foreground';
-
-  return (
-    <View className="border-border rounded-xl border bg-card p-5">
-      <View className="flex-row items-baseline justify-between">
-        <Text variant="muted" className="text-xs font-semibold uppercase">
-          {cardTitles[period]}
-        </Text>
-        {currentRangeLabel ? (
-          <Text variant="muted" className="text-xs">
-            {currentRangeLabel}
-          </Text>
-        ) : null}
-      </View>
-
-      <View className="mt-4 flex-row justify-between">
-        <View>
-          <Text variant="muted" className="text-xs">
-            {tcards('an.income')}
-          </Text>
-          <Text className="text-positive mt-1 text-lg font-semibold tabular-nums">
-            {formatAmount(summary.income, currency)}
-          </Text>
-        </View>
-        <View>
-          <Text variant="muted" className="text-right text-xs">
-            {tcards('an.expenses')}
-          </Text>
-          <Text className="text-destructive mt-1 text-right text-lg font-semibold tabular-nums">
-            {formatAmount(summary.expense, currency)}
-          </Text>
-        </View>
-      </View>
-
-      <View className="bg-border my-4 h-px" />
-
-      <View className="flex-row items-center justify-between">
-        <Text variant="muted" className="text-xs">
-          {overspent ? tcards('an.overspent') : tcards('an.saved')}
-        </Text>
-        <Text className={cn('text-base font-semibold tabular-nums', savedColor)}>
-          {formatAmount(overspent ? Math.abs(summary.saved) : summary.saved, currency)}
-        </Text>
-      </View>
-    </View>
   );
 }
 
@@ -188,9 +173,9 @@ const UNIT_KEYS: Record<AnalyticsPeriod, DictionaryKey> = {
 };
 
 const PREV_KEYS: Record<AnalyticsPeriod, DictionaryKey> = {
-  week: 'an.prevWeek',
-  month: 'an.prevMonth',
-  year: 'an.prevYear',
+  week: 'an.lastWeek',
+  month: 'an.lastMonth',
+  year: 'an.lastYear',
 };
 
 function buildInsight(
@@ -245,45 +230,22 @@ function ComparisonCard({
 }: {
   period: AnalyticsPeriod;
   currency: string;
-  comparison: AnalyticsComparison | null;
+  comparison: AnalyticsComparison;
   loading: boolean;
 }) {
   const { t } = useI18n();
-  if (loading && !comparison) {
-    return (
-      <View className="border-border rounded-xl border bg-card p-5">
-        <Text variant="muted">{t('common.loading')}</Text>
-      </View>
-    );
-  }
-  if (!comparison) return null;
-
-  const prevLabel = t(PREV_KEYS[period]);
-  const hasHistory =
-    comparison.previous.income !== 0 || comparison.previous.expense !== 0;
-  if (!hasHistory) {
-    return (
-      <View className="border-border rounded-xl border bg-card p-5">
-        <Text className="text-base font-semibold">{t('an.vs', { label: prevLabel })}</Text>
-        <Text variant="muted" className="mt-2 text-sm">
-          {buildInsight(t, period, comparison, currency)}
-        </Text>
-      </View>
-    );
-  }
+  void loading;
+  const prevLabel = t(UNIT_KEYS[period]);
+  const hasHistory = comparison.previous.income !== 0 || comparison.previous.expense !== 0;
+  const insight = buildInsight(t, period, comparison, currency);
 
   return (
-    <View className="border-border rounded-xl border bg-card p-5">
-      <View className="flex-row items-baseline justify-between">
-        <Text className="text-base font-semibold">{t('an.vs', { label: prevLabel })}</Text>
-        <Text variant="muted" className="text-xs">
-          {comparison.previousRangeLabel}
-        </Text>
-      </View>
-
-      <Text className="mt-2 text-sm">{buildInsight(t, period, comparison, currency)}</Text>
-
-      <View className="mt-4 gap-4">
+    <View>
+      <ListItem
+        children={t('an.vs', { label: prevLabel })}
+        supportingText={hasHistory ? insight : undefined}
+      />
+      {hasHistory ? (
         <ComparisonRow
           label={t('an.expenses')}
           current={comparison.previous.expense + comparison.expense.diff}
@@ -292,6 +254,8 @@ function ComparisonCard({
           goodWhenDown
           currency={currency}
         />
+      ) : null}
+      {hasHistory ? (
         <ComparisonRow
           label={t('an.income')}
           current={comparison.previous.income + comparison.income.diff}
@@ -300,6 +264,8 @@ function ComparisonCard({
           goodWhenDown={false}
           currency={currency}
         />
+      ) : null}
+      {hasHistory ? (
         <ComparisonRow
           label={
             comparison.previous.saved + comparison.saved.diff < 0
@@ -312,9 +278,26 @@ function ComparisonCard({
           goodWhenDown={false}
           currency={currency}
         />
-      </View>
+      ) : null}
     </View>
   );
+}
+
+function DeltaBadge({
+  delta,
+  goodWhenDown,
+}: {
+  delta: AnalyticsComparison['expense'];
+  goodWhenDown: boolean;
+}) {
+  const colors = useAppColors();
+  const up = delta.diff > 0;
+  const flat = delta.diff === 0;
+  const good = flat ? null : goodWhenDown ? !up : up;
+  const color = flat ? colors.mutedForeground : good ? colors.positive : colors.destructiveError;
+  const label = flat ? '0%' : delta.pct === null ? 'new' : `${up ? '+' : '−'}${Math.abs(Math.round(delta.pct))}%`;
+
+  return <Text textStyle={{ fontSize: 13, fontWeight: '600', color }}>{label}</Text>;
 }
 
 function ComparisonRow({
@@ -333,43 +316,12 @@ function ComparisonRow({
   currency: string;
 }) {
   const { t: trow } = useI18n();
-  const up = delta.diff > 0;
-  const flat = delta.diff === 0;
-  const good = flat ? null : goodWhenDown ? !up : up;
-
   return (
-    <View className="flex-row items-center justify-between gap-3">
-      <View className="flex-1">
-        <Text className="text-sm font-medium">{label}</Text>
-        <Text variant="muted" className="mt-0.5 text-xs">
-          {formatAmount(current, currency)} · {trow('an.was', { amount: formatAmount(previous, currency) })}
-        </Text>
-      </View>
-      <View
-        className={cn(
-          'flex-row items-center gap-1 rounded-full border px-2.5 py-1',
-          flat
-            ? 'border-border'
-            : good
-              ? 'border-positive/30 bg-positive/10'
-              : 'border-destructive/30 bg-destructive/10'
-        )}
-      >
-        <Icon
-          as={flat ? Minus : up ? TrendingUp : TrendingDown}
-          size={12}
-          className={flat ? 'text-muted-foreground' : good ? 'text-positive' : 'text-destructive'}
-        />
-        <Text
-          className={cn(
-            'text-xs font-semibold',
-            flat ? 'text-muted-foreground' : good ? 'text-positive' : 'text-destructive'
-          )}
-        >
-          {flat ? '0%' : delta.pct === null ? 'new' : `${up ? '+' : '−'}${Math.abs(Math.round(delta.pct))}%`}
-        </Text>
-      </View>
-    </View>
+    <ListItem
+      children={label}
+      supportingText={`${formatAmount(current, currency)} · ${trow('an.was', { amount: formatAmount(previous, currency) })}`}
+      trailing={<DeltaBadge delta={delta} goodWhenDown={goodWhenDown} />}
+    />
   );
 }
 
@@ -383,39 +335,35 @@ function MoversCard({
   loading: boolean;
 }) {
   const { t: tmovers, lang: mlang } = useI18n();
+  const colors = useAppColors();
   const visible = movers.filter((mover) => mover.diff !== 0);
   if (loading && movers.length === 0) return null;
   if (visible.length === 0) return null;
 
   return (
-    <View className="border-border rounded-xl border bg-card p-5">
-      <Text className="text-base font-semibold">{tmovers('an.biggestChanges')}</Text>
-      <View className="mt-2">
-        {visible.map((mover) => {
-          const IconComponent = categoryIcon(mover.icon);
-          const up = mover.diff > 0;
-          return (
-            <View
-              key={mover.categoryId}
-              className="flex-row items-center gap-2 border-b border-border/50 py-3 last:border-b-0"
-            >
-              <Icon as={IconComponent} size={14} className="text-muted-foreground" />
-              <View className="flex-1">
-                <Text className="text-sm font-medium" numberOfLines={1}>
-                  {categoryDisplayName(mover, mlang)}
-                </Text>
-                <Text variant="muted" className="text-xs">
-                  {tmovers('an.was', { amount: formatAmount(mover.previous, currency) })}
-                </Text>
-              </View>
-              <Text className={cn('text-sm font-semibold tabular-nums', up ? 'text-destructive' : 'text-positive')}>
-                {up ? '+' : '−'}
-                {formatAmount(Math.abs(mover.diff), currency)}
+    <View>
+      {visible.map((mover) => {
+        const up = mover.diff > 0;
+        return (
+          <ListItem
+            key={mover.categoryId}
+            leading={<Icon name={categoryIcon(mover.icon)} size={18} />}
+            children={categoryDisplayName(mover, mlang)}
+            supportingText={tmovers('an.was', { amount: formatAmount(mover.previous, currency) })}
+            trailing={
+              <Text
+                textStyle={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: up ? colors.destructiveError : colors.positive,
+                }}
+              >
+                {`${up ? '+' : '−'}${formatAmount(Math.abs(mover.diff), currency)}`}
               </Text>
-            </View>
-          );
-        })}
-      </View>
+            }
+          />
+        );
+      })}
     </View>
   );
 }
@@ -432,33 +380,25 @@ function SpendingTrend({
   loading: boolean;
 }) {
   const { t: ttrend } = useI18n();
-  const { titles: trendTitles } = usePeriodOptions();
-  return (
-    <View className="border-border rounded-xl border bg-card p-5">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-base font-semibold">{ttrend('an.incomeVsSpending')}</Text>
-        <Text variant="muted" className="text-xs">
-          {trendTitles[period]}
-        </Text>
-      </View>
+  const colors = useAppColors();
 
-      {loading && trend.length === 0 ? (
-        <Text variant="muted" className="mt-4">
-          {ttrend('common.loading')}
-        </Text>
-      ) : trend.every((point) => point.income === 0 && point.expense === 0) ? (
-        <Text variant="muted" className="mt-4">
-          {ttrend(period === 'week' ? 'an.noTrendWeek' : period === 'month' ? 'an.noTrendMonth' : 'an.noTrendYear')}
-        </Text>
-      ) : (
-        <View className="mt-4">
-          <BarChart
-            data={trend}
-            formatValue={(value) => formatAmountCompact(value, currency)}
-          />
-        </View>
-      )}
-    </View>
+  if (loading && trend.length === 0) {
+    return (
+      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        {ttrend('common.loading')}
+      </Text>
+    );
+  }
+  if (trend.every((point) => point.income === 0 && point.expense === 0)) {
+    return (
+      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        {ttrend(period === 'week' ? 'an.noTrendWeek' : period === 'month' ? 'an.noTrendMonth' : 'an.noTrendYear')}
+      </Text>
+    );
+  }
+
+  return (
+    <BarChart data={trend} formatValue={(value) => formatAmountCompact(value, currency)} />
   );
 }
 
@@ -474,48 +414,33 @@ function CategoryBreakdown({
   loading: boolean;
 }) {
   const { t: tcat, lang: clang } = useI18n();
-  return (
-    <View className="border-border rounded-xl border bg-card p-5">
-      <Text className="text-base font-semibold">{tcat('an.byCategory')}</Text>
+  const colors = useAppColors();
 
-      {loading && categories.length === 0 ? (
-        <Text variant="muted" className="mt-4">
-          {tcat('common.loading')}
-        </Text>
-      ) : categories.length === 0 ? (
-        <Text variant="muted" className="mt-4">
-          {tcat(period === 'week' ? 'an.noCatWeek' : period === 'month' ? 'an.noCatMonth' : 'an.noCatYear')}
-        </Text>
-      ) : (
-        <View className="mt-2">
-          {categories.map((category) => {
-            const IconComponent = categoryIcon(category.icon);
-            return (
-              <View
-                key={category.categoryId}
-                className="gap-1.5 border-b border-border/50 py-3 last:border-b-0"
-              >
-                <View className="flex-row items-center gap-2">
-                  <Icon as={IconComponent} size={14} className="text-muted-foreground" />
-                  <Text className="flex-1 text-sm font-medium" numberOfLines={1}>
-                    {categoryDisplayName(category, clang)}
-                  </Text>
-                  <Text className="text-sm tabular-nums">{formatAmount(category.amount, currency)}</Text>
-                  <Text variant="muted" className="w-10 text-right text-xs">
-                    {category.percentage}%
-                  </Text>
-                </View>
-                <View className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-                  <View
-                    className="bg-primary h-full rounded-full"
-                    style={{ width: `${category.percentage}%` }}
-                  />
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      )}
+  if (loading && categories.length === 0) {
+    return (
+      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        {tcat('common.loading')}
+      </Text>
+    );
+  }
+  if (categories.length === 0) {
+    return (
+      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+        {tcat(period === 'week' ? 'an.noCatWeek' : period === 'month' ? 'an.noCatMonth' : 'an.noCatYear')}
+      </Text>
+    );
+  }
+
+  return (
+    <View>
+      {categories.map((category) => (
+        <ListItem
+          key={category.categoryId}
+          leading={<Icon name={categoryIcon(category.icon)} size={18} />}
+          children={categoryDisplayName(category, clang)}
+          supportingText={`${formatAmount(category.amount, currency)} · ${category.percentage}%`}
+        />
+      ))}
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import { BottomSheet, Button, Icon, ScrollView, Text } from '@expo/ui';
+import { BottomSheet, Button, Icon, Text } from '@expo/ui';
 import { useAppColors } from '@/lib/colors';
 import { useI18n } from '@/hooks/use-i18n';
 import type { UpdateState } from '@/hooks/use-update-checker';
@@ -50,7 +50,12 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
   const { bullets, changelogUrl } = parseReleaseNotes(state.notes);
 
   return (
-    <BottomSheet isPresented detents={['half', 'full']} contentPadding={24}>
+    <BottomSheet
+      isPresented
+      onDismiss={onLater}
+      snapPoints={['half', 'full']}
+      contentPadding={24}
+    >
       <View style={{ gap: 20 }}>
         <View style={{ gap: 4 }}>
           <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{t('upd.title')}</Text>
@@ -59,54 +64,50 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
           </Text>
         </View>
 
-        <ScrollView style={{ maxHeight: 320 }}>
-          <View style={{ gap: 16 }}>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1, gap: 4, borderRadius: 10, backgroundColor: colors.mutedBackground, padding: 14 }}>
-                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
-                  {t('upd.installed')}
-                </Text>
-                <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>v{state.currentVersion}</Text>
-              </View>
-              <View style={{ flex: 1, gap: 4, borderRadius: 10, padding: 14 }}>
-                <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
-                  {t('upd.available')}
-                </Text>
-                <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>v{state.latestVersion}</Text>
-              </View>
+        <View style={{ gap: 16 }}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flex: 1, gap: 4, borderRadius: 10, backgroundColor: colors.mutedBackground, padding: 14 }}>
+              <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
+                {t('upd.installed')}
+              </Text>
+              <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.currentVersion}`}</Text>
             </View>
+            <View style={{ flex: 1, gap: 4, borderRadius: 10, padding: 14 }}>
+              <Text textStyle={{ fontSize: 12, fontWeight: '500', color: colors.mutedForeground }}>
+                {t('upd.available')}
+              </Text>
+              <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.latestVersion}`}</Text>
+            </View>
+          </View>
 
-            <View style={{ gap: 8 }}>
-              <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.whatsNew')}</Text>
-              {bullets.length > 0 ? (
-                <View style={{ gap: 10 }}>
-                  {bullets.map((bullet, index) => (
-                    <View key={index} style={{ flexDirection: 'row', gap: 10 }}>
-                      <Icon name={CHECK_ICON} size={16} />
-                      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-                        {bullet}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-                  {t('upd.noNotes')}
-                </Text>
-              )}
-              {changelogUrl ? (
-                <Button
-                  variant="text"
-                  onPress={() => onOpenLink(changelogUrl)}
-                  style={{ alignSelf: 'flex-start' }}
-                >
+          <View style={{ gap: 8 }}>
+            <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.whatsNew')}</Text>
+            {bullets.length > 0 ? (
+              <View style={{ gap: 10 }}>
+                {bullets.map((bullet, index) => (
+                  <View key={index} style={{ flexDirection: 'row', gap: 10 }}>
+                    <Icon name={CHECK_ICON} size={16} />
+                    <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                      {bullet}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                {t('upd.noNotes')}
+              </Text>
+            )}
+            {changelogUrl ? (
+              <View style={{ alignItems: 'flex-start' }}>
+                <Button variant="text" onPress={() => onOpenLink(changelogUrl)}>
                   <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.changelog')}</Text>
                   <Icon name={ARROW_RIGHT_ICON} size={14} />
                 </Button>
-              ) : null}
-            </View>
+              </View>
+            ) : null}
           </View>
-        </ScrollView>
+        </View>
 
         <View style={{ gap: 16 }}>
           <Button

@@ -1,6 +1,5 @@
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { Icon, Host, ListItem, Picker, Switch, Text } from '@expo/ui';
 import { PageHeader } from '@/components/page-header';
 import { BackupError, useBackup, type ImportSummary } from '@/hooks/use-backup';
 import { useI18n } from '@/hooks/use-i18n';
@@ -9,28 +8,29 @@ import { useUpdateChecker } from '@/hooks/use-update-checker';
 import { resetAllTransactions } from '@/lib/db/transactions';
 import { SUPPORTED_CURRENCIES } from '@/lib/format';
 import { hapticError, hapticMediumImpact, hapticSuccess } from '@/lib/haptics';
-import { cn } from '@/lib/utils';
-import { Host, Picker, Switch } from '@expo/ui';
+import { useAppColors } from '@/lib/colors';
 import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { ChevronRight, RefreshCw } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, View } from 'react-native';
 import type {
   CalendarPreference,
   LanguagePreference,
   NumeralsPreference,
-  ThemePreference,
   TransactionType,
 } from '@/types';
 import type { DictionaryKey } from '@/lib/i18n/en';
 
-const THEME_OPTIONS: { value: ThemePreference; labelKey: DictionaryKey }[] = [
-  { value: 'system', labelKey: 'set.system' },
-  { value: 'light', labelKey: 'set.light' },
-  { value: 'dark', labelKey: 'set.dark' },
-];
+const CHEVRON_ICON = Icon.select({
+  ios: 'chevron.right',
+  android: import('@expo/material-symbols/chevron_right.xml'),
+});
+
+const REFRESH_ICON = Icon.select({
+  ios: 'arrow.clockwise',
+  android: import('@expo/material-symbols/refresh.xml'),
+});
 
 const TYPE_OPTIONS: { value: TransactionType; labelKey: DictionaryKey }[] = [
   { value: 'expense', labelKey: 'set.expense' },
@@ -63,61 +63,20 @@ const NUMERALS_OPTIONS: { value: NumeralsPreference; labelKey: DictionaryKey }[]
   { value: 'devanagari', labelKey: 'set.devanagari' },
 ];
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionLabel({ children }: { children: string }) {
+  const colors = useAppColors();
   return (
-    <View className="gap-2 px-5">
-      <Text variant="muted" className="text-xs font-semibold uppercase">
-        {title}
+    <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
+      <Text
+        textStyle={{
+          fontSize: 12,
+          fontWeight: '600',
+          color: colors.mutedForeground,
+        }}
+      >
+        {children}
       </Text>
-      <View className="border-border bg-card rounded-xl border">{children}</View>
     </View>
-  );
-}
-
-function Divider() {
-  return <View className="bg-border mx-4 h-px" />;
-}
-
-function Row({
-  label,
-  value,
-  onPress,
-  destructive,
-  children,
-}: {
-  label: string;
-  value?: string;
-  onPress?: () => void;
-  destructive?: boolean;
-  children?: React.ReactNode;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center justify-between gap-3 px-4 py-3.5 active:bg-muted/60"
-      disabled={!onPress}
-    >
-      <Text className={cn('flex-1 text-sm', destructive && 'text-destructive font-medium')}>
-        {label}
-      </Text>
-      {children ? (
-        // Native Compose views (Switch/Picker) need <Host> as their immediate parent.
-        Platform.OS === 'web' ? (
-          children
-        ) : (
-          <Host>{children}</Host>
-        )
-      ) : (
-        <View className="flex-row items-center gap-1">
-          {value ? (
-            <Text variant="muted" className="text-sm">
-              {value}
-            </Text>
-          ) : null}
-          {onPress ? <Icon as={ChevronRight} size={16} className="text-muted-foreground" /> : null}
-        </View>
-      )}
-    </Pressable>
   );
 }
 
@@ -125,6 +84,7 @@ export default function SettingsScreen() {
   const db = useSQLiteContext();
   const { settings, updateSetting } = useSettings();
   const { t, plural } = useI18n();
+  const colors = useAppColors();
   const { state: updateState, isChecking, checkNow } = useUpdateChecker();
   const { busy: backupBusy, exportJson, exportCsv, importFile } = useBackup();
   const [resetOpen, setResetOpen] = useState(false);
@@ -132,10 +92,6 @@ export default function SettingsScreen() {
   const [backupMsg, setBackupMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(
     null
   );
-
-  const handleThemeChange = async (theme: ThemePreference) => {
-    await updateSetting('theme', theme);
-  };
 
   const handleTypeChange = async (type: TransactionType) => {
     await updateSetting('defaultTransactionType', type);
@@ -153,32 +109,6 @@ export default function SettingsScreen() {
   };
 
   const backupDisabled = busy || backupBusy !== null;
-
-  const handleExportJson = async () => {
-    if (backupDisabled) return;
-    setBackupMsg(null);
-    try {
-      await exportJson();
-      void hapticSuccess();
-      setBackupMsg({ kind: 'success', text: t('set.exportDone') });
-    } catch (error) {
-      void hapticError();
-      setBackupMsg({ kind: 'error', text: messageFor(error) });
-    }
-  };
-
-  const handleExportCsv = async () => {
-    if (backupDisabled) return;
-    setBackupMsg(null);
-    try {
-      await exportCsv();
-      void hapticSuccess();
-      setBackupMsg({ kind: 'success', text: t('set.exportDone') });
-    } catch (error) {
-      void hapticError();
-      setBackupMsg({ kind: 'error', text: messageFor(error) });
-    }
-  };
 
   const messageFor = (error: unknown): string => {
     if (error instanceof BackupError) {
@@ -222,6 +152,32 @@ export default function SettingsScreen() {
     });
   };
 
+  const handleExportJson = async () => {
+    if (backupDisabled) return;
+    setBackupMsg(null);
+    try {
+      await exportJson();
+      void hapticSuccess();
+      setBackupMsg({ kind: 'success', text: t('set.exportDone') });
+    } catch (error) {
+      void hapticError();
+      setBackupMsg({ kind: 'error', text: messageFor(error) });
+    }
+  };
+
+  const handleExportCsv = async () => {
+    if (backupDisabled) return;
+    setBackupMsg(null);
+    try {
+      await exportCsv();
+      void hapticSuccess();
+      setBackupMsg({ kind: 'success', text: t('set.exportDone') });
+    } catch (error) {
+      void hapticError();
+      setBackupMsg({ kind: 'error', text: messageFor(error) });
+    }
+  };
+
   const handleImport = async () => {
     if (backupDisabled) return;
     setBackupMsg(null);
@@ -238,193 +194,212 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View className="bg-background flex-1">
+    <View style={{ flex: 1 }}>
       <PageHeader title={t('set.title')} />
-      <ScrollView contentContainerClassName="gap-6 pb-28" showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="automatic">
-        <Section title={t('set.general')}>
-          <Row label={t('set.currency')}>
-            <Picker
-              appearance="menu"
-              selectedValue={settings.currency}
-              onValueChange={(value) => updateSetting('currency', value)}
-            >
-              {SUPPORTED_CURRENCIES.map((currency) => (
-                <Picker.Item
-                  key={currency.code}
-                  label={`${currency.name} (${currency.symbol})`}
-                  value={currency.code}
-                />
-              ))}
-            </Picker>
-          </Row>
-          <Divider />
-          <Row label={t('set.language')}>
-            <Picker
-              appearance="menu"
-              selectedValue={settings.language}
-              onValueChange={(value: LanguagePreference) => updateSetting('language', value)}
-            >
-              {LANGUAGE_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </Picker>
-          </Row>
-          <Divider />
-          <Row label={t('set.calendar')}>
-            <Picker
-              appearance="menu"
-              selectedValue={settings.calendar}
-              onValueChange={(value: CalendarPreference) => updateSetting('calendar', value)}
-            >
-              {CALENDAR_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </Picker>
-          </Row>
-          <Divider />
-          <Row label={t('set.numerals')}>
-            <Picker
-              appearance="menu"
-              selectedValue={settings.numerals}
-              onValueChange={(value: NumeralsPreference) => updateSetting('numerals', value)}
-            >
-              {NUMERALS_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </Picker>
-          </Row>
-          <Divider />
-          <Row label={t('set.theme')}>
-            <Picker appearance="menu" selectedValue={settings.theme} onValueChange={handleThemeChange}>
-              {THEME_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </Picker>
-          </Row>
-        </Section>
 
-        <Section title={t('set.preferences')}>
-          <Row label={t('set.defaultType')}>
-            <Picker
-              appearance="menu"
-              selectedValue={settings.defaultTransactionType}
-              onValueChange={handleTypeChange}
-            >
-              {TYPE_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </Picker>
-          </Row>
-          <Divider />
-          <Row label={t('set.startWeek')}>
-            <Picker
-              appearance="menu"
-              selectedValue={settings.startOfWeek}
-              onValueChange={(value: number) => updateSetting('startOfWeek', value)}
-            >
-              {WEEKDAY_OPTIONS.map((option) => (
-                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-              ))}
-            </Picker>
-          </Row>
-          <Divider />
-          <Row label={t('set.haptics')}>
-            <Switch
-              value={settings.haptics}
-              onValueChange={(value) => updateSetting('haptics', value ? 'true' : 'false')}
-            />
-          </Row>
-        </Section>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 48 }}
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+      >
+        <SectionLabel>{t('set.general')}</SectionLabel>
+        <ListItem
+          children={t('set.currency')}
+          trailing={
+            <Host>
+              <Picker
+                appearance="menu"
+                selectedValue={settings.currency}
+                onValueChange={(value) => updateSetting('currency', value)}
+              >
+                {SUPPORTED_CURRENCIES.map((currency) => (
+                  <Picker.Item
+                    key={currency.code}
+                    label={`${currency.name} (${currency.symbol})`}
+                    value={currency.code}
+                  />
+                ))}
+              </Picker>
+            </Host>
+          }
+        />
+        <ListItem
+          children={t('set.language')}
+          trailing={
+            <Host>
+              <Picker
+                appearance="menu"
+                selectedValue={settings.language}
+                onValueChange={(value) => updateSetting('language', value as LanguagePreference)}
+              >
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                ))}
+              </Picker>
+            </Host>
+          }
+        />
+        <ListItem
+          children={t('set.calendar')}
+          trailing={
+            <Host>
+              <Picker
+                appearance="menu"
+                selectedValue={settings.calendar}
+                onValueChange={(value) => updateSetting('calendar', value as CalendarPreference)}
+              >
+                {CALENDAR_OPTIONS.map((option) => (
+                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                ))}
+              </Picker>
+            </Host>
+          }
+        />
+        <ListItem
+          children={t('set.numerals')}
+          trailing={
+            <Host>
+              <Picker
+                appearance="menu"
+                selectedValue={settings.numerals}
+                onValueChange={(value) => updateSetting('numerals', value as NumeralsPreference)}
+              >
+                {NUMERALS_OPTIONS.map((option) => (
+                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                ))}
+              </Picker>
+            </Host>
+          }
+        />
 
-        <Section title={t('set.categories')}>
-          <Row
-            label={t('set.manageCategories')}
-            value={t('set.manageDesc')}
-            onPress={() => router.push('/categories')}
-          />
-        </Section>
+        <SectionLabel>{t('set.preferences')}</SectionLabel>
+        <ListItem
+          children={t('set.defaultType')}
+          trailing={
+            <Host>
+              <Picker
+                appearance="menu"
+                selectedValue={settings.defaultTransactionType}
+                onValueChange={(value) => handleTypeChange(value as TransactionType)}
+              >
+                {TYPE_OPTIONS.map((option) => (
+                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                ))}
+              </Picker>
+            </Host>
+          }
+        />
+        <ListItem
+          children={t('set.startWeek')}
+          trailing={
+            <Host>
+              <Picker
+                appearance="menu"
+                selectedValue={settings.startOfWeek}
+                onValueChange={(value) => updateSetting('startOfWeek', Number(value))}
+              >
+                {WEEKDAY_OPTIONS.map((option) => (
+                  <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+                ))}
+              </Picker>
+            </Host>
+          }
+        />
+        <ListItem
+          children={t('set.haptics')}
+          trailing={
+            <Host>
+              <Switch
+                value={settings.haptics}
+                onValueChange={(value) => updateSetting('haptics', value ? 'true' : 'false')}
+              />
+            </Host>
+          }
+        />
 
-        <Section title={t('set.data')}>
-          <Row
-            label={t('set.exportBackup')}
-            value={backupBusy === 'export-json' ? t('common.working') : t('set.jsonFile')}
-            onPress={backupDisabled ? undefined : handleExportJson}
-          />
-          <Divider />
-          <Row
-            label={t('set.exportTx')}
-            value={backupBusy === 'export-csv' ? t('common.working') : t('set.csvFile')}
-            onPress={backupDisabled ? undefined : handleExportCsv}
-          />
-          <Divider />
-          <Row
-            label={t('set.importData')}
-            value={backupBusy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
-            onPress={backupDisabled ? undefined : handleImport}
-          />
-          <Divider />
-          <Row label={t('set.resetData')} destructive onPress={() => setResetOpen(true)} />
-          {backupMsg ? (
-            <>
-              <Divider />
-              <View className="px-4 py-3">
-                <Text
-                  selectable
-                  className={cn(
-                    'text-sm',
-                    backupMsg.kind === 'success' ? 'text-positive' : 'text-destructive'
-                  )}
-                >
-                  {backupMsg.text}
-                </Text>
-              </View>
-            </>
-          ) : null}
-        </Section>
+        <SectionLabel>{t('set.categories')}</SectionLabel>
+        <ListItem
+          children={t('set.manageCategories')}
+          supportingText={t('set.manageDesc')}
+          trailing={<Icon name={CHEVRON_ICON} size={16} />}
+          onPress={() => router.push('/categories')}
+        />
 
-        <Section title={t('set.about')}>
-          <View className="gap-1 px-4 py-3.5">
-            <Text className="text-sm font-semibold">{t('set.aboutName')}</Text>
-            <Text variant="muted" className="text-sm">
-              {t('set.aboutDesc')}
-            </Text>
-            <Text variant="muted" className="text-xs">
-              {t('set.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
-            </Text>
-          </View>
-          {Platform.OS === 'android' ? (
-            <>
-              <Divider />
-              <Row label={t('set.checkUpdates')} onPress={checkNow}>
-                {isChecking ? (
-                  <View className="flex-row items-center gap-2">
-                    <ActivityIndicator size="small" />
-                    <Text variant="muted" className="text-sm">
-                      {t('set.checking')}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="flex-row items-center gap-1">
-                    {updateState.status === 'available' ? (
-                      <Text className="text-primary text-sm font-medium">
-                        {t('set.available', { version: updateState.latestVersion })}
-                      </Text>
-                    ) : updateState.status === 'error' ? (
-                      <Text variant="muted" className="text-sm">
-                        {t('set.checkFailed')}
-                      </Text>
-                    ) : (
-                      <Text variant="muted" className="text-sm">
-                        {t('set.upToDate')}
-                      </Text>
-                    )}
-                    <Icon as={RefreshCw} size={16} className="text-muted-foreground" />
-                  </View>
-                )}
-              </Row>
-            </>
-          ) : null}
-        </Section>
+        <SectionLabel>{t('set.data')}</SectionLabel>
+        <ListItem
+          children={t('set.exportBackup')}
+          supportingText={backupBusy === 'export-json' ? t('common.working') : t('set.jsonFile')}
+          onPress={backupDisabled ? undefined : handleExportJson}
+        />
+        <ListItem
+          children={t('set.exportTx')}
+          supportingText={backupBusy === 'export-csv' ? t('common.working') : t('set.csvFile')}
+          onPress={backupDisabled ? undefined : handleExportCsv}
+        />
+        <ListItem
+          children={t('set.importData')}
+          supportingText={backupBusy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
+          onPress={backupDisabled ? undefined : handleImport}
+        />
+        <ListItem children={t('set.resetData')} onPress={() => setResetOpen(true)} />
+        {backupMsg ? (
+          <ListItem
+            children={
+              <Text
+                textStyle={{
+                  fontSize: 14,
+                  color: backupMsg.kind === 'success' ? colors.positive : colors.destructiveError,
+                }}
+              >
+                {backupMsg.text}
+              </Text>
+            }
+            onPress={undefined}
+          />
+        ) : null}
+
+        <SectionLabel>{t('set.about')}</SectionLabel>
+        <ListItem
+          children={
+            <View style={{ gap: 2 }}>
+              <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>{t('set.aboutName')}</Text>
+              <Text textStyle={{ fontSize: 13, color: colors.mutedForeground }}>
+                {t('set.aboutDesc')}
+              </Text>
+              <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+                {t('set.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
+              </Text>
+            </View>
+          }
+          onPress={undefined}
+        />
+        {Platform.OS === 'android' ? (
+          <ListItem
+            children={t('set.checkUpdates')}
+            trailing={
+              isChecking ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <ActivityIndicator size="small" />
+                  <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                    {t('set.checking')}
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+                    {updateState.status === 'available'
+                      ? t('set.available', { version: updateState.latestVersion })
+                      : updateState.status === 'error'
+                        ? t('set.checkFailed')
+                        : t('set.upToDate')}
+                  </Text>
+                  <Icon name={REFRESH_ICON} size={16} color={colors.mutedForeground} />
+                </View>
+              )
+            }
+            onPress={checkNow}
+          />
+        ) : null}
       </ScrollView>
 
       <ConfirmSheet

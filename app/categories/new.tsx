@@ -26,7 +26,7 @@ export default function NewCategoryScreen() {
   };
 
   return (
-    <View className="bg-background flex-1">
+    <View style={{ flex: 1 }}>
       <Stack.Screen
         options={{
           title: t('cat.newTitle'),

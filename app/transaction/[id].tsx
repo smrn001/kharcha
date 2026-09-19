@@ -1,7 +1,5 @@
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { Button, Icon, Text } from '@expo/ui';
 import { useCategories } from '@/hooks/use-categories';
 import { useDetailDate } from '@/hooks/use-day-heading';
 import { useI18n } from '@/hooks/use-i18n';
@@ -11,18 +9,32 @@ import { hapticMediumImpact } from '@/lib/haptics';
 import { categoryDisplayName } from '@/lib/i18n';
 import { deleteTransaction, getTransactionById } from '@/lib/db/transactions';
 import { formatAmount } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { useAppColors } from '@/lib/colors';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import type { Transaction } from '@/types';
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  label,
+  value,
+  separator,
+}: {
+  label: string;
+  value: string;
+  separator?: boolean;
+}) {
+  const colors = useAppColors();
   return (
-    <View className="flex-row items-center justify-between gap-3 py-3">
-      <Text variant="muted">{label}</Text>
-      <Text selectable className="text-right text-sm font-medium">
+    <View
+      style={[
+        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
+        separator ? { borderTopWidth: 1, borderTopColor: colors.separator } : null,
+      ]}
+    >
+      <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>{label}</Text>
+      <Text textStyle={{ fontSize: 15, fontWeight: '500', textAlign: 'right' }}>
         {value}
       </Text>
     </View>
@@ -35,6 +47,7 @@ export default function TransactionDetailScreen() {
   const { categories } = useCategories();
   const { settings } = useSettings();
   const { t, lang } = useI18n();
+  const colors = useAppColors();
   const detailDate = useDetailDate();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
@@ -60,7 +73,7 @@ export default function TransactionDetailScreen() {
 
   if (loading || !transaction) {
     return (
-      <View className="bg-background flex-1">
+      <View style={{ flex: 1 }}>
         <Stack.Screen
           options={{
             title: t('det.title'),
@@ -68,15 +81,16 @@ export default function TransactionDetailScreen() {
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
-        <View className="flex-1 items-center pt-16">
-          <Text variant="muted">{t('common.loading')}</Text>
+        <View style={{ flex: 1, alignItems: 'center', paddingTop: 64 }}>
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            {t('common.loading')}
+          </Text>
         </View>
       </View>
     );
   }
 
   const isIncome = transaction.type === 'income';
-  const IconComponent = categoryIcon(category?.icon);
 
   const handleDelete = async () => {
     try {
@@ -89,7 +103,7 @@ export default function TransactionDetailScreen() {
   };
 
   return (
-    <View className="bg-background flex-1">
+    <View style={{ flex: 1 }}>
       <Stack.Screen
         options={{
           title: t('det.title'),
@@ -98,38 +112,43 @@ export default function TransactionDetailScreen() {
         }}
       />
 
-      <View className="flex-1 items-center px-6 pt-8">
-        <View className="bg-muted h-16 w-16 items-center justify-center rounded-full">
-          <Icon as={IconComponent} size={28} />
-        </View>
-        <Text selectable className="mt-4 text-4xl font-bold tabular-nums">
-          {isIncome ? '+' : '-'}
-          {formatAmount(transaction.amount, settings.currency)}
+      <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 24 }}>
+        <Icon name={categoryIcon(category?.icon)} size={40} color={colors.mutedForeground} />
+        <Text textStyle={{ fontSize: 36, fontWeight: 'bold' }}>
+          {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, settings.currency)}`}
         </Text>
-        <Text className={cn('mt-1 text-sm font-medium', isIncome ? 'text-positive' : 'text-muted-foreground')}>
-          {isIncome ? t('det.income') : t('det.expense')}
-        </Text>
-
-        <View className="mt-8 w-full rounded-xl border border-border bg-card px-4">
-          <DetailRow label={t('det.category')} value={category ? categoryDisplayName(category, lang) : t('common.unknown')} />
-          <View className="bg-border mx-4 h-px" />
-          <DetailRow label={t('det.titleRow')} value={transaction.title || '—'} />
-          <View className="bg-border mx-4 h-px" />
-          <DetailRow label={t('det.note')} value={transaction.note || '—'} />
-          <View className="bg-border mx-4 h-px" />
-          <DetailRow label={t('det.dateTime')} value={detailDate(transaction)} />
-        </View>
-
-        <View className="mt-8 w-full gap-3">
-          <Button
-            onPress={() => router.push(`/transaction/new?id=${transaction.id}`)}
-            className="w-full"
+        <View style={{ marginTop: 4 }}>
+          <Text
+            textStyle={{
+              fontSize: 14,
+              fontWeight: '500',
+              color: isIncome ? colors.positive : colors.mutedForeground,
+            }}
           >
-            <Text className="text-primary-foreground font-medium">{t('det.edit')}</Text>
-          </Button>
-          <Pressable onPress={() => setConfirmDelete(true)} hitSlop={8} className="active:opacity-60">
-            <Text className="text-destructive py-3 text-center text-sm font-medium">{t('det.delete')}</Text>
-          </Pressable>
+            {isIncome ? t('det.income') : t('det.expense')}
+          </Text>
+        </View>
+
+        <View style={{ width: '100%', marginTop: 24, paddingHorizontal: 12 }}>
+          <DetailRow
+            label={t('det.category')}
+            value={category ? categoryDisplayName(category, lang) : t('common.unknown')}
+          />
+          <DetailRow separator label={t('det.titleRow')} value={transaction.title || '—'} />
+          <DetailRow separator label={t('det.note')} value={transaction.note || '—'} />
+          <DetailRow separator label={t('det.dateTime')} value={detailDate(transaction)} />
+        </View>
+
+        <View style={{ width: '100%', gap: 12, marginTop: 24, paddingHorizontal: 12 }}>
+          <Button
+            label={t('det.edit')}
+            onPress={() => router.push(`/transaction/new?id=${transaction.id}`)}
+          />
+          <Button
+            variant="text"
+            label={t('det.delete')}
+            onPress={() => setConfirmDelete(true)}
+          />
         </View>
       </View>
 

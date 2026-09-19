@@ -3,7 +3,7 @@ import { formatFullDate, formatTime } from '@/lib/dates';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useAppColors } from '@/lib/colors';
 import { useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 
 export interface DateTimeFieldProps {
   mode: 'date' | 'time';
@@ -11,6 +11,7 @@ export interface DateTimeFieldProps {
   onChange: (date: Date) => void;
   label?: string;
   placeholder?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function DateTimeField({
@@ -19,6 +20,7 @@ export function DateTimeField({
   onChange,
   label,
   placeholder,
+  style,
 }: DateTimeFieldProps) {
   const [showPicker, setShowPicker] = useState(false);
   const colors = useAppColors();
@@ -44,7 +46,7 @@ export function DateTimeField({
   };
 
   return (
-    <View>
+    <View style={style}>
       <Pressable
         onPress={openPicker}
         style={{

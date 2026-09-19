@@ -1,6 +1,5 @@
 import { Button, Icon } from '@expo/ui';
 import { FloatingActionButton, Host, Icon as ComposeIcon } from '@expo/ui/jetpack-compose';
-import { useI18n } from '@/hooks/use-i18n';
 import { router } from 'expo-router';
 import { Platform, View } from 'react-native';
 
@@ -14,7 +13,6 @@ const PLUS_ICON = Icon.select({
  * `FloatingActionButton`; iOS renders a circular accent-filled `Button`.
  */
 export function FloatingAddButton() {
-  const { t } = useI18n();
   const onPress = () => router.push('/transaction/new');
 
   if (Platform.OS === 'android') {

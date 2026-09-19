@@ -1,6 +1,13 @@
 import { Icon } from '@expo/ui';
-import type { NativeIconSource } from '@/lib/icons';
-import { ELLIPSIS } from '@/lib/icons';
+import type { ImageSourcePropType } from 'react-native';
+import type { SFSymbol } from 'sf-symbols-typescript';
+
+type NativeIconSource = SFSymbol | ImageSourcePropType;
+
+const ELLIPSIS = Icon.select({
+  ios: 'ellipsis',
+  android: import('@expo/material-symbols/more_horiz.xml'),
+});
 
 export const CATEGORY_ICONS = [
   'Utensils',

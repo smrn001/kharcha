@@ -37,7 +37,7 @@ function DatabaseGate({ children }: { children: ReactNode }) {
 
 function DatabaseLoadingScreen() {
   return (
-    <View className="flex-1 items-center justify-center bg-background">
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <ActivityIndicator size="large" />
     </View>
   );

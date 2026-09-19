@@ -63,7 +63,7 @@ export function BarChart({
               textStyle={{ fontSize: 9, color: colors.mutedForeground, textAlign: 'right' }}
               numberOfLines={1}
             >
-              {formatValue ? formatValue(Math.round(max * fraction)) : Math.round(max * fraction)}
+              {formatValue ? formatValue(Math.round(max * fraction)) : `${Math.round(max * fraction)}`}
             </Text>
           ))}
         </View>
@@ -79,11 +79,11 @@ export function BarChart({
                   {datum.expense > 0
                     ? formatValue
                       ? formatValue(datum.expense)
-                      : datum.expense
+                      : `${datum.expense}`
                     : datum.income > 0
                       ? formatValue
                         ? formatValue(datum.income)
-                        : datum.income
+                        : `${datum.income}`
                       : ''}
                 </Text>
               </View>

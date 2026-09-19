@@ -37,8 +37,7 @@ export function TransactionRow({
             color: isIncome ? colors.positive : undefined,
           }}
         >
-          {isIncome ? '+' : '-'}
-          {formatAmount(transaction.amount, currency)}
+          {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, currency)}`}
         </Text>
       }
       onPress={onPress}

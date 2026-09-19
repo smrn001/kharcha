@@ -1,11 +1,12 @@
 import { CategoryForm } from '@/components/category-form';
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { Text } from '@/components/ui/text';
+import { Button, Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
+import { useAppColors } from '@/lib/colors';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import {
   countCategoryUsage,
   deleteCategory,
@@ -18,6 +19,7 @@ export default function EditCategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   const { t, plural } = useI18n();
+  const colors = useAppColors();
 
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export default function EditCategoryScreen() {
 
   if (loading) {
     return (
-      <View className="bg-background flex-1">
+      <View style={{ flex: 1 }}>
         <Stack.Screen
           options={{
             title: t('cat.editTitle'),
@@ -50,16 +52,18 @@ export default function EditCategoryScreen() {
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
-        <Text variant="muted" className="px-5 py-16 text-center">
-          {t('common.loading')}
-        </Text>
+        <View style={{ paddingVertical: 64, alignItems: 'center' }}>
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+            {t('common.loading')}
+          </Text>
+        </View>
       </View>
     );
   }
 
   if (!category) {
     return (
-      <View className="bg-background flex-1">
+      <View style={{ flex: 1 }}>
         <Stack.Screen
           options={{
             title: t('cat.editTitle'),
@@ -67,9 +71,11 @@ export default function EditCategoryScreen() {
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
-        <Text variant="muted" className="px-5 py-16 text-center">
-          {t('cat.notFound')}
-        </Text>
+        <View style={{ paddingVertical: 64, alignItems: 'center' }}>
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
+            {t('cat.notFound')}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -92,9 +98,7 @@ export default function EditCategoryScreen() {
     try {
       const usage = await countCategoryUsage(db, id);
       if (usage > 0) {
-        setDeleteError(
-          t('cat.usedMsg', { count: usage, plural: plural(usage) })
-        );
+        setDeleteError(t('cat.usedMsg', { count: usage, plural: plural(usage) }));
         return;
       }
       await deleteCategory(db, id);
@@ -107,7 +111,7 @@ export default function EditCategoryScreen() {
   };
 
   return (
-    <View className="bg-background flex-1">
+    <View style={{ flex: 1 }}>
       <Stack.Screen
         options={{
           title: t('cat.editTitle'),
@@ -122,11 +126,13 @@ export default function EditCategoryScreen() {
         error={error}
         onSubmit={handleSubmit}
         footer={
-          <Pressable onPress={() => setDeleteOpen(true)} hitSlop={8} className="active:opacity-60">
-            <Text className="text-destructive py-2 text-center text-sm font-medium">
-              {t('cat.deleteBtn')}
-            </Text>
-          </Pressable>
+          <View style={{ alignItems: 'center' }}>
+            <Button variant="text" onPress={() => setDeleteOpen(true)}>
+              <Text textStyle={{ fontSize: 15, fontWeight: '500', color: colors.destructiveError }}>
+                {t('cat.deleteBtn')}
+              </Text>
+            </Button>
+          </View>
         }
       />
 

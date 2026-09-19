@@ -2,11 +2,9 @@ import { FilterChip } from '@/components/filter-chip';
 import { DateTimeField } from '@/components/date-time-field';
 import { FloatingAddButton } from '@/components/floating-add-button';
 import { PageHeader } from '@/components/page-header';
-import { SegmentedControl } from '@/components/segmented-control';
+import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { TransactionRow } from '@/components/transaction-row';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { Button, Icon, Text, TextInput } from '@expo/ui';
 import { useCategories } from '@/hooks/use-categories';
 import { useDayHeading } from '@/hooks/use-day-heading';
 import { useI18n } from '@/hooks/use-i18n';
@@ -14,14 +12,22 @@ import { categoryDisplayName } from '@/lib/i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { endOfDay, startOfDay, startOfMonth, startOfWeek, toDateKey } from '@/lib/dates';
-import { THEME } from '@/lib/theme';
-import { useColorScheme } from 'nativewind';
+import { useAppColors } from '@/lib/colors';
 import { router, useFocusEffect } from 'expo-router';
-import { Search, X } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, SectionList, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, SectionList, View } from 'react-native';
 import type { Transaction, TransactionType } from '@/types';
 import type { TransactionFilters } from '@/lib/db/transactions';
+
+const SEARCH_ICON = Icon.select({
+  ios: 'magnifyingglass',
+  android: import('@expo/material-symbols/search.xml'),
+});
+
+const X_ICON = Icon.select({
+  ios: 'xmark',
+  android: import('@expo/material-symbols/close.xml'),
+});
 
 type TypeFilter = 'all' | TransactionType;
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
@@ -54,8 +60,7 @@ interface Section {
 }
 
 export default function TransactionsScreen() {
-  const { colorScheme } = useColorScheme();
-  const colors = THEME[colorScheme ?? 'light'];
+  const colors = useAppColors();
   const { settings } = useSettings();
 
   const [query, setQuery] = useState('');
@@ -148,33 +153,51 @@ export default function TransactionsScreen() {
   };
 
   return (
-    <View className="bg-background flex-1">
+    <View style={{ flex: 1 }}>
       <PageHeader title={t('txns.title')} />
 
-      <View className="gap-3 px-5 pb-3">
-        <View className="border-border bg-card h-10 flex-row items-center gap-2 rounded-md border px-3">
-          <Icon as={Search} size={16} className="text-muted-foreground" />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t('txns.searchPh')}
-            placeholderTextColor={colors.mutedForeground}
-            accessibilityLabel={t('txns.searchPh')}
-            className="text-foreground flex-1 text-sm"
-          />
+      <View style={{ gap: 12, paddingHorizontal: 16, paddingBottom: 4 }}>
+        <View
+          style={{
+            height: 40,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            borderRadius: 10,
+            backgroundColor: colors.mutedBackground,
+            paddingHorizontal: 12,
+          }}
+        >
+          <Icon name={SEARCH_ICON} size={16} color={colors.mutedForeground} />
+          <View style={{ flex: 1 }}>
+            <TextInput
+              onChangeText={setQuery}
+              placeholder={t('txns.searchPh')}
+              autoCapitalize="none"
+              textStyle={{ fontSize: 15 }}
+              style={{ height: '100%' }}
+            />
+          </View>
           {query ? (
             <Pressable onPress={() => setQuery('')} accessibilityLabel={t('txns.searchClear')} hitSlop={8}>
-              <Icon as={X} size={16} className="text-muted-foreground" />
+              <Icon name={X_ICON} size={16} color={colors.mutedForeground} />
             </Pressable>
           ) : null}
         </View>
 
-        <SegmentedControl options={TYPE_OPTS} value={type} onChange={handleTypeChange} />
+        <SegmentedControl
+          values={TYPE_OPTS.map((o) => o.label)}
+          selectedIndex={TYPE_OPTS.findIndex((o) => o.value === type)}
+          onValueChange={(label) => {
+            const next = TYPE_OPTS.find((o) => o.label === label)?.value;
+            if (next) handleTypeChange(next);
+          }}
+        />
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2"
+          contentContainerStyle={{ gap: 8 }}
         >
           {DATE_OPTS.map((option) => (
             <FilterChip
@@ -187,14 +210,14 @@ export default function TransactionsScreen() {
         </ScrollView>
 
         {dateFilter === 'custom' ? (
-          <View className="flex-row gap-3">
+          <View style={{ flexDirection: 'row', gap: 12 }}>
             <DateTimeField
               mode="date"
               value={customFrom}
               onChange={setCustomFrom}
               label={t('common.from')}
               placeholder={t('common.selectDate')}
-              className="flex-1"
+              style={{ flex: 1 }}
             />
             <DateTimeField
               mode="date"
@@ -202,7 +225,7 @@ export default function TransactionsScreen() {
               onChange={setCustomTo}
               label={t('common.to')}
               placeholder={t('common.selectDate')}
-              className="flex-1"
+              style={{ flex: 1 }}
             />
           </View>
         ) : null}
@@ -210,7 +233,7 @@ export default function TransactionsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2"
+          contentContainerStyle={{ gap: 8 }}
         >
           <FilterChip
             label={t('txns.allCategories')}
@@ -228,8 +251,10 @@ export default function TransactionsScreen() {
         </ScrollView>
 
         {hasActiveFilters ? (
-          <Pressable onPress={clearFilters} className="self-start" hitSlop={8}>
-            <Text className="text-destructive text-sm">{t('txns.clearFilters')}</Text>
+          <Pressable onPress={clearFilters} style={{ alignSelf: 'flex-start' }} hitSlop={8}>
+            <Text textStyle={{ fontSize: 14, color: colors.destructiveError }}>
+              {t('txns.clearFilters')}
+            </Text>
           </Pressable>
         ) : null}
       </View>
@@ -239,48 +264,53 @@ export default function TransactionsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         sections={sections}
         keyExtractor={(item) => item.id}
-        className="flex-1"
-        contentContainerClassName="pb-28"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 112 }}
         stickySectionHeadersEnabled={false}
         keyboardShouldPersistTaps="handled"
         renderSectionHeader={({ section }) => (
-          <Text variant="muted" className="bg-background px-5 pb-2 pt-6 text-xs font-semibold uppercase">
-            {section.title}
-          </Text>
-        )}
-        renderItem={({ item }) => (
-          <View className="px-5">
-            <Pressable onPress={() => router.push(`/transaction/${item.id}`)} className="active:bg-muted/60">
-              <TransactionRow
-                transaction={item}
-                category={item.categoryId ? categoryMap.get(item.categoryId) : undefined}
-                currency={settings.currency}
-              />
-            </Pressable>
+          <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 }}>
+            <Text
+              textStyle={{
+                fontSize: 12,
+                fontWeight: '600',
+                color: colors.mutedForeground,
+              }}
+            >
+              {section.title}
+            </Text>
           </View>
         )}
-        ItemSeparatorComponent={() => <View className="bg-border mx-5 h-px" />}
+        renderItem={({ item }) => (
+          <TransactionRow
+            transaction={item}
+            category={item.categoryId ? categoryMap.get(item.categoryId) : undefined}
+            currency={settings.currency}
+            onPress={() => router.push(`/transaction/${item.id}`)}
+          />
+        )}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: 1, backgroundColor: colors.separator, marginLeft: 72, marginRight: 20 }} />
+        )}
         ListEmptyComponent={
           loading ? (
-            <Text variant="muted" className="px-5 py-16 text-center">
+            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
               {t('common.loading')}
             </Text>
           ) : hasActiveFilters ? (
-            <View className="items-center gap-2 px-5 py-16">
-              <Icon as={Search} size={40} className="text-muted-foreground" />
-              <Text className="text-base font-semibold">{t('txns.noMatchTitle')}</Text>
-              <Text variant="muted" className="text-center">
+            <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
+              <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
+              <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.noMatchTitle')}</Text>
+              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
                 {t('txns.noMatchMsg')}
               </Text>
-              <Button variant="outline" onPress={clearFilters} className="mt-2">
-                <Text>{t('txns.clearFilters')}</Text>
-              </Button>
+              <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
             </View>
           ) : (
-            <View className="items-center gap-2 px-5 py-16">
-              <Icon as={Search} size={40} className="text-muted-foreground" />
-              <Text className="text-base font-semibold">{t('txns.emptyTitle')}</Text>
-              <Text variant="muted" className="text-center">
+            <View style={{ alignItems: 'center', gap: 8, paddingVertical: 64, paddingHorizontal: 20 }}>
+              <Icon name={SEARCH_ICON} size={40} color={colors.mutedForeground} />
+              <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{t('txns.emptyTitle')}</Text>
+              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground, textAlign: 'center' }}>
                 {t('txns.emptyMsg')}
               </Text>
             </View>
