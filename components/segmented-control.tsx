@@ -1,4 +1,5 @@
 import { Text } from '@/components/ui/text';
+import { hapticSelection } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { Pressable, View } from 'react-native';
 
@@ -23,8 +24,14 @@ export function SegmentedControl<T extends string>({
         return (
           <Pressable
             key={option.value}
-            onPress={() => onChange(option.value)}
-            className={cn('flex-1 items-center rounded-md py-2', active && 'bg-background')}
+            onPress={() => {
+              if (option.value !== value) void hapticSelection();
+              onChange(option.value);
+            }}
+            className={cn(
+              'flex-1 items-center rounded-md py-2 active:opacity-70',
+              active && 'bg-background'
+            )}
           >
             <Text
               className={cn('text-sm font-medium', active ? 'text-foreground' : 'text-muted-foreground')}

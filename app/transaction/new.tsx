@@ -6,6 +6,7 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { useCategories } from '@/hooks/use-categories';
+import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { getTransactionById, createTransaction, updateTransaction } from '@/lib/db/transactions';
@@ -122,8 +123,10 @@ export default function NewTransactionScreen() {
       } else {
         await createTransaction(db, payload);
       }
+      void hapticSuccess();
       router.back();
     } catch {
+      void hapticError();
       setError(t('add.errSave'));
       setSaving(false);
     }
@@ -139,6 +142,7 @@ export default function NewTransactionScreen() {
         className="flex-1"
         contentContainerClassName="gap-5 px-4 pb-8"
         keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="automatic"
       >
         <SegmentedControl
           options={[
@@ -162,7 +166,7 @@ export default function NewTransactionScreen() {
           />
         </View>
 
-        {error ? <Text className="text-destructive text-sm">{error}</Text> : null}
+        {error ? <Text selectable className="text-destructive text-sm">{error}</Text> : null}
 
         <Field label={t('add.category')}>
           {loadingEdit ? (

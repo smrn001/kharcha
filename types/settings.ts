@@ -14,4 +14,5 @@ export interface Settings {
   language: LanguagePreference;
   calendar: CalendarPreference;
   numerals: NumeralsPreference;
+  haptics: boolean;
 }

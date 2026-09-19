@@ -17,6 +17,7 @@ import { useDetailDate } from '@/hooks/use-day-heading';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { categoryIcon } from '@/lib/category-icons';
+import { hapticMediumImpact } from '@/lib/haptics';
 import { categoryDisplayName } from '@/lib/i18n';
 import { deleteTransaction, getTransactionById } from '@/lib/db/transactions';
 import { formatAmount } from '@/lib/format';
@@ -82,6 +83,7 @@ export default function TransactionDetailScreen() {
   const handleDelete = async () => {
     try {
       await deleteTransaction(db, transaction.id);
+      void hapticMediumImpact();
       router.back();
     } catch {
       setConfirmDelete(false);
@@ -96,7 +98,7 @@ export default function TransactionDetailScreen() {
         <View className="bg-muted h-16 w-16 items-center justify-center rounded-full">
           <Icon as={IconComponent} size={28} />
         </View>
-        <Text className="mt-4 text-4xl font-bold">
+        <Text selectable className="mt-4 text-4xl font-bold tabular-nums">
           {isIncome ? '+' : '-'}
           {formatAmount(transaction.amount, settings.currency)}
         </Text>
@@ -121,7 +123,7 @@ export default function TransactionDetailScreen() {
           >
             <Text className="text-primary-foreground font-medium">{t('det.edit')}</Text>
           </Button>
-          <Pressable onPress={() => setConfirmDelete(true)}>
+          <Pressable onPress={() => setConfirmDelete(true)} hitSlop={8} className="active:opacity-60">
             <Text className="text-destructive py-3 text-center text-sm font-medium">{t('det.delete')}</Text>
           </Pressable>
         </View>

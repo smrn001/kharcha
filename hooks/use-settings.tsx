@@ -2,6 +2,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_SETTINGS, getSettings, setSetting } from '@/lib/db/settings';
 import { setDefaultFormatLocale } from '@/lib/format-locale';
+import { setDefaultHapticsEnabled } from '@/lib/haptics-locale';
 import type { Settings } from '@/types';
 
 interface SettingsContextValue {
@@ -26,6 +27,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       .then((settings) => {
         if (active) {
           setDefaultFormatLocale({ lang: settings.language, numerals: settings.numerals });
+          setDefaultHapticsEnabled(settings.haptics);
           setState({ settings, loading: false });
         }
       })
@@ -43,6 +45,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     try {
       const settings = await getSettings(db);
       setDefaultFormatLocale({ lang: settings.language, numerals: settings.numerals });
+      setDefaultHapticsEnabled(settings.haptics);
       setState({ settings, loading: false });
     } catch {
       setState((prev) => ({ ...prev, loading: false }));
@@ -53,11 +56,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     async (key: keyof Settings, value: string | number) => {
       const stored = String(value);
       await setSetting(db, key, stored);
-      const parsed = key === 'startOfWeek' ? Number(stored) : stored;
+      const parsed =
+        key === 'startOfWeek' ? Number(stored) : key === 'haptics' ? stored !== 'false' : stored;
       setState((prev) => {
         const settings = { ...prev.settings, [key]: parsed as never };
         if (key === 'language' || key === 'numerals') {
           setDefaultFormatLocale({ lang: settings.language, numerals: settings.numerals });
+        }
+        if (key === 'haptics') {
+          setDefaultHapticsEnabled(stored !== 'false');
         }
         return { ...prev, settings };
       });

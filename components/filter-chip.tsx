@@ -1,4 +1,5 @@
 import { Text } from '@/components/ui/text';
+import { hapticSelection } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { Pressable } from 'react-native';
 
@@ -13,9 +14,12 @@ export function FilterChip({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        void hapticSelection();
+        onPress();
+      }}
       className={cn(
-        'rounded-full border px-3 py-1.5',
+        'rounded-full border px-3 py-1.5 active:opacity-70',
         selected ? 'border-primary bg-primary/10' : 'border-border bg-card'
       )}
     >

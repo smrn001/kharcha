@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: 'en',
   calendar: 'ad',
   numerals: 'latin',
+  haptics: true,
 };
 
 /** Device language, falling back to English when detection fails. */
@@ -66,6 +67,7 @@ export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
     language: map.language ? parseLanguage(map.language) : deviceLanguage(),
     calendar: parseCalendar(map.calendar),
     numerals: parseNumerals(map.numerals),
+    haptics: map.haptics == null ? DEFAULT_SETTINGS.haptics : map.haptics !== 'false',
   };
 }
 
