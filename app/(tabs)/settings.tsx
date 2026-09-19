@@ -1,7 +1,5 @@
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { Column, Icon, Host, ListItem, Picker, Switch, Text } from '@expo/ui';
-import { NativeBlock } from '@/components/native-block';
-import { PageHeader } from '@/components/page-header';
+import { Button, Column, FieldGroup, Host, Icon, Picker, Row, Spacer, Switch, Text } from '@expo/ui';
 import { BackupError, useBackup, type ImportSummary } from '@/hooks/use-backup';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
@@ -14,7 +12,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, View } from 'react-native';
+import { Platform, View, useColorScheme } from 'react-native';
 import type {
   CalendarPreference,
   LanguagePreference,
@@ -64,22 +62,61 @@ const NUMERALS_OPTIONS: { value: NumeralsPreference; labelKey: DictionaryKey }[]
   { value: 'devanagari', labelKey: 'set.devanagari' },
 ];
 
-function SectionLabel({ children }: { children: string }) {
+function PickerRow<T extends string | number>({
+  label,
+  value,
+  onValueChange,
+  children,
+}: {
+  label: string;
+  value: T;
+  onValueChange: (value: T) => void;
+  children: React.ReactNode;
+}) {
   const colors = useTheme();
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
-      <NativeBlock>
-        <Text
-          textStyle={{
-            fontSize: 12,
-            fontWeight: '600',
-            color: colors.textSecondary,
-          }}
-        >
-          {children}
-        </Text>
-      </NativeBlock>
-    </View>
+    <Row alignment="center" spacing={16}>
+      <Text textStyle={{ fontSize: 16, color: colors.text }}>{label}</Text>
+      <Spacer flexible />
+      <Picker appearance="menu" selectedValue={value} onValueChange={onValueChange}>
+        {children}
+      </Picker>
+    </Row>
+  );
+}
+
+function ActionRow({
+  label,
+  supporting,
+  onPress,
+  disabled,
+  trailing,
+}: {
+  label: string;
+  supporting?: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  trailing?: React.ReactNode;
+}) {
+  const colors = useTheme();
+  return (
+    <Button
+      variant="text"
+      onPress={onPress}
+      disabled={disabled}
+      style={{ paddingVertical: 0, paddingHorizontal: 0, borderRadius: 12 }}
+    >
+      <Row alignment="center" spacing={12}>
+        <Column spacing={2}>
+          <Text textStyle={{ fontSize: 16, color: colors.text }}>{label}</Text>
+          {supporting ? (
+            <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{supporting}</Text>
+          ) : null}
+        </Column>
+        <Spacer flexible />
+        {trailing ?? <Icon name={CHEVRON_ICON} size={16} color={colors.textSecondary} />}
+      </Row>
+    </Button>
   );
 }
 
@@ -88,6 +125,7 @@ export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
   const { t, plural } = useI18n();
   const colors = useTheme();
+  const scheme = useColorScheme();
   const { state: updateState, isChecking, checkNow } = useUpdateChecker();
   const { busy: backupBusy, exportJson, exportCsv, importFile } = useBackup();
   const [resetOpen, setResetOpen] = useState(false);
@@ -198,201 +236,132 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <PageHeader title={t('set.title')} />
+      <Host style={{ flex: 1 }} colorScheme={scheme ?? 'light'}>
+        <FieldGroup>
+          <FieldGroup.Section>
+            <FieldGroup.SectionHeader>
+              <Text textStyle={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}>
+                {t('set.title')}
+              </Text>
+            </FieldGroup.SectionHeader>
 
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 48 }}
-        showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
-      >
-        <SectionLabel>{t('set.general')}</SectionLabel>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.currency')}
-            trailing={
-              <Host>
-                <Picker
-                  appearance="menu"
-                  selectedValue={settings.currency}
-                  onValueChange={(value) => updateSetting('currency', value)}
-                >
-                  {SUPPORTED_CURRENCIES.map((currency) => (
-                    <Picker.Item
-                      key={currency.code}
-                      label={`${currency.name} (${currency.symbol})`}
-                      value={currency.code}
-                    />
-                  ))}
-                </Picker>
-              </Host>
-            }
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.language')}
-            trailing={
-              <Host>
-                <Picker
-                  appearance="menu"
-                  selectedValue={settings.language}
-                  onValueChange={(value) => updateSetting('language', value as LanguagePreference)}
-                >
-                  {LANGUAGE_OPTIONS.map((option) => (
-                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                  ))}
-                </Picker>
-              </Host>
-            }
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.calendar')}
-            trailing={
-              <Host>
-                <Picker
-                  appearance="menu"
-                  selectedValue={settings.calendar}
-                  onValueChange={(value) => updateSetting('calendar', value as CalendarPreference)}
-                >
-                  {CALENDAR_OPTIONS.map((option) => (
-                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                  ))}
-                </Picker>
-              </Host>
-            }
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.numerals')}
-            trailing={
-              <Host>
-                <Picker
-                  appearance="menu"
-                  selectedValue={settings.numerals}
-                  onValueChange={(value) => updateSetting('numerals', value as NumeralsPreference)}
-                >
-                  {NUMERALS_OPTIONS.map((option) => (
-                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                  ))}
-                </Picker>
-              </Host>
-            }
-          />
-        </NativeBlock>
-
-        <SectionLabel>{t('set.preferences')}</SectionLabel>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.defaultType')}
-            trailing={
-              <Host>
-                <Picker
-                  appearance="menu"
-                  selectedValue={settings.defaultTransactionType}
-                  onValueChange={(value) => handleTypeChange(value as TransactionType)}
-                >
-                  {TYPE_OPTIONS.map((option) => (
-                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                  ))}
-                </Picker>
-              </Host>
-            }
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.startWeek')}
-            trailing={
-              <Host>
-                <Picker
-                  appearance="menu"
-                  selectedValue={settings.startOfWeek}
-                  onValueChange={(value) => updateSetting('startOfWeek', Number(value))}
-                >
-                  {WEEKDAY_OPTIONS.map((option) => (
-                    <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
-                  ))}
-                </Picker>
-              </Host>
-            }
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.haptics')}
-            trailing={
-              <Host>
-                <Switch
-                  value={settings.haptics}
-                  onValueChange={(value) => updateSetting('haptics', value ? 'true' : 'false')}
+            <PickerRow
+              label={t('set.currency')}
+              value={settings.currency}
+              onValueChange={(value) => updateSetting('currency', value)}
+            >
+              {SUPPORTED_CURRENCIES.map((currency) => (
+                <Picker.Item
+                  key={currency.code}
+                  label={`${currency.name} (${currency.symbol})`}
+                  value={currency.code}
                 />
-              </Host>
-            }
-          />
-        </NativeBlock>
+              ))}
+            </PickerRow>
+            <PickerRow
+              label={t('set.language')}
+              value={settings.language}
+              onValueChange={(value) => updateSetting('language', value as LanguagePreference)}
+            >
+              {LANGUAGE_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </PickerRow>
+            <PickerRow
+              label={t('set.calendar')}
+              value={settings.calendar}
+              onValueChange={(value) => updateSetting('calendar', value as CalendarPreference)}
+            >
+              {CALENDAR_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </PickerRow>
+            <PickerRow
+              label={t('set.numerals')}
+              value={settings.numerals}
+              onValueChange={(value) => updateSetting('numerals', value as NumeralsPreference)}
+            >
+              {NUMERALS_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </PickerRow>
+          </FieldGroup.Section>
 
-        <SectionLabel>{t('set.categories')}</SectionLabel>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.manageCategories')}
-            supportingText={t('set.manageDesc')}
-            trailing={<Icon name={CHEVRON_ICON} size={16} />}
-            onPress={() => router.push('/categories')}
-          />
-        </NativeBlock>
+          <FieldGroup.Section title={t('set.preferences')}>
+            <PickerRow
+              label={t('set.defaultType')}
+              value={settings.defaultTransactionType}
+              onValueChange={(value) => handleTypeChange(value as TransactionType)}
+            >
+              {TYPE_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </PickerRow>
+            <PickerRow
+              label={t('set.startWeek')}
+              value={settings.startOfWeek}
+              onValueChange={(value) => updateSetting('startOfWeek', Number(value))}
+            >
+              {WEEKDAY_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={t(option.labelKey)} value={option.value} />
+              ))}
+            </PickerRow>
+            <Switch
+              label={t('set.haptics')}
+              value={settings.haptics}
+              onValueChange={(value) => updateSetting('haptics', value ? 'true' : 'false')}
+            />
+          </FieldGroup.Section>
 
-        <SectionLabel>{t('set.data')}</SectionLabel>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.exportBackup')}
-            supportingText={backupBusy === 'export-json' ? t('common.working') : t('set.jsonFile')}
-            onPress={backupDisabled ? undefined : handleExportJson}
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.exportTx')}
-            supportingText={backupBusy === 'export-csv' ? t('common.working') : t('set.csvFile')}
-            onPress={backupDisabled ? undefined : handleExportCsv}
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={t('set.importData')}
-            supportingText={backupBusy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
-            onPress={backupDisabled ? undefined : handleImport}
-          />
-        </NativeBlock>
-        <NativeBlock matchContents={false}>
-          <ListItem children={t('set.resetData')} onPress={() => setResetOpen(true)} />
-        </NativeBlock>
-        {backupMsg ? (
-          <NativeBlock matchContents={false}>
-            <ListItem
-              children={
+          <FieldGroup.Section title={t('set.categories')}>
+            <ActionRow
+              label={t('set.manageCategories')}
+              supporting={t('set.manageDesc')}
+              onPress={() => router.push('/categories')}
+            />
+          </FieldGroup.Section>
+
+          <FieldGroup.Section title={t('set.data')}>
+            <ActionRow
+              label={t('set.exportBackup')}
+              supporting={backupBusy === 'export-json' ? t('common.working') : t('set.jsonFile')}
+              onPress={backupDisabled ? undefined : handleExportJson}
+              disabled={backupDisabled}
+            />
+            <ActionRow
+              label={t('set.exportTx')}
+              supporting={backupBusy === 'export-csv' ? t('common.working') : t('set.csvFile')}
+              onPress={backupDisabled ? undefined : handleExportCsv}
+              disabled={backupDisabled}
+            />
+            <ActionRow
+              label={t('set.importData')}
+              supporting={backupBusy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
+              onPress={backupDisabled ? undefined : handleImport}
+              disabled={backupDisabled}
+            />
+            <ActionRow label={t('set.resetData')} onPress={() => setResetOpen(true)} />
+            {backupMsg ? (
+              <Row alignment="center" spacing={8}>
                 <Text
                   textStyle={{
                     fontSize: 14,
+                    fontWeight: '500',
                     color: backupMsg.kind === 'success' ? colors.success : colors.destructive,
                   }}
                 >
                   {backupMsg.text}
                 </Text>
-              }
-              onPress={undefined}
-            />
-          </NativeBlock>
-        ) : null}
+              </Row>
+            ) : null}
+          </FieldGroup.Section>
 
-        <SectionLabel>{t('set.about')}</SectionLabel>
-        <NativeBlock matchContents={false}>
-          <ListItem
-            children={
+          <FieldGroup.Section title={t('set.about')}>
+            <Row alignment="center" spacing={8}>
               <Column spacing={2}>
-                <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>{t('set.aboutName')}</Text>
+                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
+                  {t('set.aboutName')}
+                </Text>
                 <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
                   {t('set.aboutDesc')}
                 </Text>
@@ -400,46 +369,27 @@ export default function SettingsScreen() {
                   {t('set.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
                 </Text>
               </Column>
-            }
-            onPress={undefined}
-          />
-        </NativeBlock>
-        {Platform.OS === 'android' ? (
-          <NativeBlock matchContents={false}>
-            <ListItem
-              children={t('set.checkUpdates')}
-              trailing={
-                isChecking ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <ActivityIndicator size="small" />
-                    <NativeBlock>
-                      <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
-                        {t('set.checking')}
-                      </Text>
-                    </NativeBlock>
-                  </View>
-                ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <NativeBlock>
-                      <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
-                        {updateState.status === 'available'
-                          ? t('set.available', { version: updateState.latestVersion })
-                          : updateState.status === 'error'
-                            ? t('set.checkFailed')
-                            : t('set.upToDate')}
-                      </Text>
-                    </NativeBlock>
-                    <NativeBlock>
-                      <Icon name={REFRESH_ICON} size={16} color={colors.textSecondary} />
-                    </NativeBlock>
-                  </View>
-                )
-              }
-              onPress={checkNow}
-            />
-          </NativeBlock>
-        ) : null}
-      </ScrollView>
+            </Row>
+            {Platform.OS === 'android' ? (
+              <ActionRow
+                label={t('set.checkUpdates')}
+                supporting={
+                  isChecking
+                    ? t('set.checking')
+                    : updateState.status === 'available'
+                      ? t('set.available', { version: updateState.latestVersion })
+                      : updateState.status === 'error'
+                        ? t('set.checkFailed')
+                        : t('set.upToDate')
+                }
+                trailing={<Icon name={REFRESH_ICON} size={16} color={colors.textSecondary} />}
+                onPress={checkNow}
+                disabled={isChecking}
+              />
+            ) : null}
+          </FieldGroup.Section>
+        </FieldGroup>
+      </Host>
 
       <ConfirmSheet
         open={resetOpen}

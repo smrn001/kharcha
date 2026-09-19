@@ -38,7 +38,7 @@ export function ConfirmSheet({
     >
       <Column spacing={20}>
         <Column spacing={6}>
-          <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{title}</Text>
+          <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>{title}</Text>
           {description ? (
             <Text textStyle={{ fontSize: 14, color: colors.textSecondary, lineHeight: 20 }}>
               {description}

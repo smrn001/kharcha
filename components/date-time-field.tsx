@@ -68,7 +68,7 @@ export function DateTimeField({
             <Text
               textStyle={{
                 fontSize: 14,
-                color: value ? undefined : colors.textSecondary,
+                color: value ? colors.text : colors.textSecondary,
               }}
             >
               {display}

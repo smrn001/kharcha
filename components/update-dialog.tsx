@@ -60,7 +60,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
       <View style={{ gap: 20 }}>
         <View style={{ gap: 4 }}>
           <NativeBlock>
-            <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{t('upd.title')}</Text>
+            <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>{t('upd.title')}</Text>
           </NativeBlock>
           <NativeBlock>
             <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
@@ -78,7 +78,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
                 </Text>
               </NativeBlock>
               <NativeBlock>
-                <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.currentVersion}`}</Text>
+                <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>{`v${state.currentVersion}`}</Text>
               </NativeBlock>
             </View>
             <View style={{ flex: 1, gap: 4, borderRadius: 10, padding: 14 }}>
@@ -88,14 +88,14 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
                 </Text>
               </NativeBlock>
               <NativeBlock>
-                <Text textStyle={{ fontSize: 18, fontWeight: '600' }}>{`v${state.latestVersion}`}</Text>
+                <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>{`v${state.latestVersion}`}</Text>
               </NativeBlock>
             </View>
           </View>
 
           <View style={{ gap: 8 }}>
             <NativeBlock>
-              <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('upd.whatsNew')}</Text>
+              <Text textStyle={{ fontSize: 14, fontWeight: '500', color: colors.text }}>{t('upd.whatsNew')}</Text>
             </NativeBlock>
             {bullets.length > 0 ? (
               <View style={{ gap: 10 }}>
