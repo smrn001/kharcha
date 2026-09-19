@@ -62,14 +62,14 @@ export default function TransactionsScreen() {
     if (trimmed) next.search = trimmed;
     if (type !== 'all') next.type = type;
     if (dateFilter === 'today') {
-      next.from = startOfDay(new Date()).toISOString();
+      next.from = toDateKey(startOfDay(new Date()));
     } else if (dateFilter === 'week') {
-      next.from = startOfWeek(new Date(), settings.startOfWeek).toISOString();
+      next.from = toDateKey(startOfWeek(new Date(), settings.startOfWeek));
     } else if (dateFilter === 'month') {
-      next.from = startOfMonth(new Date()).toISOString();
+      next.from = toDateKey(startOfMonth(new Date()));
     } else if (dateFilter === 'custom') {
-      if (customFrom) next.from = startOfDay(customFrom).toISOString();
-      if (customTo) next.to = endOfDay(customTo).toISOString();
+      if (customFrom) next.from = toDateKey(startOfDay(customFrom));
+      if (customTo) next.to = toDateKey(endOfDay(customTo));
     }
     if (categoryIds.length > 0) next.categoryIds = categoryIds;
     return next;
@@ -88,7 +88,7 @@ export default function TransactionsScreen() {
   const sections = useMemo(() => {
     const grouped = new Map<string, Transaction[]>();
     for (const transaction of transactions) {
-      const key = toDateKey(new Date(transaction.date));
+      const key = transaction.localDate;
       const group = grouped.get(key) ?? [];
       group.push(transaction);
       grouped.set(key, group);
@@ -228,7 +228,7 @@ export default function TransactionsScreen() {
             <Pressable onPress={() => router.push(`/transaction/${item.id}`)}>
               <TransactionRow
                 transaction={item}
-                category={categoryMap.get(item.categoryId)}
+                category={item.categoryId ? categoryMap.get(item.categoryId) : undefined}
                 currency={settings.currency}
               />
             </Pressable>

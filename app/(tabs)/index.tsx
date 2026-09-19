@@ -133,7 +133,9 @@ export default function HomeScreen() {
                 <View className="px-5">
                   <TransactionRow
                     transaction={transaction}
-                    category={categoryMap.get(transaction.categoryId)}
+                    category={
+                      transaction.categoryId ? categoryMap.get(transaction.categoryId) : undefined
+                    }
                     currency={settings.currency}
                   />
                 </View>

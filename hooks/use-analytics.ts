@@ -7,7 +7,7 @@ import {
   type AnalyticsSummary,
   type CategorySpending,
 } from '@/lib/db/transactions';
-import { endOfDay, endOfMonth, startOfDay, startOfMonth, startOfWeek, startOfYear } from '@/lib/dates';
+import { endOfDay, endOfMonth, startOfDay, startOfMonth, startOfWeek, startOfYear, toDateKey } from '@/lib/dates';
 
 export type AnalyticsPeriod = 'week' | 'month' | 'year';
 
@@ -218,8 +218,10 @@ export function useAnalytics(period: AnalyticsPeriod, startOfWeekDay = 1) {
     return {
       from: current.from.toISOString(),
       to: current.to.toISOString(),
-      prevFrom: previous.from.toISOString(),
-      prevTo: previous.to.toISOString(),
+      fromKey: toDateKey(current.from),
+      toKey: toDateKey(current.to),
+      prevFromKey: toDateKey(previous.from),
+      prevToKey: toDateKey(previous.to),
       currentLabel: rangeLabel(current.from, current.to),
       previousLabel: rangeLabel(previous.from, previous.to),
     };
@@ -227,13 +229,14 @@ export function useAnalytics(period: AnalyticsPeriod, startOfWeekDay = 1) {
 
   useEffect(() => {
     let active = true;
-    const { from, to, prevFrom, prevTo, currentLabel, previousLabel } = rangeKeys;
+    const { from, to, fromKey, toKey, prevFromKey, prevToKey, currentLabel, previousLabel } =
+      rangeKeys;
     Promise.all([
-      getAnalyticsSummary(db, from, to),
-      getCategorySpending(db, from, to),
-      getSpendingTrend(db, from, to),
-      getAnalyticsSummary(db, prevFrom, prevTo),
-      getCategorySpending(db, prevFrom, prevTo),
+      getAnalyticsSummary(db, fromKey, toKey),
+      getCategorySpending(db, fromKey, toKey),
+      getSpendingTrend(db, fromKey, toKey),
+      getAnalyticsSummary(db, prevFromKey, prevToKey),
+      getCategorySpending(db, prevFromKey, prevToKey),
     ])
       .then(([summary, categories, points, prevSummary, prevCategories]) => {
         if (active) {
@@ -259,13 +262,14 @@ export function useAnalytics(period: AnalyticsPeriod, startOfWeekDay = 1) {
 
   const refresh = useCallback(async () => {
     try {
-      const { from, to, prevFrom, prevTo, currentLabel, previousLabel } = rangeKeys;
+      const { from, to, fromKey, toKey, prevFromKey, prevToKey, currentLabel, previousLabel } =
+        rangeKeys;
       const [summary, categories, points, prevSummary, prevCategories] = await Promise.all([
-        getAnalyticsSummary(db, from, to),
-        getCategorySpending(db, from, to),
-        getSpendingTrend(db, from, to),
-        getAnalyticsSummary(db, prevFrom, prevTo),
-        getCategorySpending(db, prevFrom, prevTo),
+        getAnalyticsSummary(db, fromKey, toKey),
+        getCategorySpending(db, fromKey, toKey),
+        getSpendingTrend(db, fromKey, toKey),
+        getAnalyticsSummary(db, prevFromKey, prevToKey),
+        getCategorySpending(db, prevFromKey, prevToKey),
       ]);
       setState({
         summary,

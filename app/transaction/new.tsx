@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/text';
 import { useCategories } from '@/hooks/use-categories';
 import { useSettings } from '@/hooks/use-settings';
 import { getTransactionById, createTransaction, updateTransaction } from '@/lib/db/transactions';
+import { ensureDefaultAccount } from '@/lib/db/accounts';
 import { minorUnitsToInput, parseAmountToMinorUnits } from '@/lib/format';
 import { THEME } from '@/lib/theme';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -38,6 +39,7 @@ export default function NewTransactionScreen() {
   const [type, setType] = useState<TransactionType>(settings.defaultTransactionType);
   const [amountInput, setAmountInput] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [accountId, setAccountId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date());
@@ -48,13 +50,24 @@ export default function NewTransactionScreen() {
   const { categories } = useCategories(type);
 
   useEffect(() => {
-    if (!editingId) return;
+    if (!editingId) {
+      let active = true;
+      ensureDefaultAccount(db)
+        .then((account) => {
+          if (active) setAccountId(account.id);
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }
     let active = true;
     getTransactionById(db, editingId).then((transaction) => {
       if (!active || !transaction) return;
       setType(transaction.type);
       setAmountInput(minorUnitsToInput(transaction.amount));
-      setCategoryId(transaction.categoryId);
+      setCategoryId(transaction.categoryId ?? null);
+      setAccountId(transaction.accountId);
       setTitle(transaction.title ?? '');
       setNote(transaction.note ?? '');
       setDate(new Date(transaction.date));
@@ -85,6 +98,10 @@ export default function NewTransactionScreen() {
       setError('Select a category.');
       return;
     }
+    if (!accountId) {
+      setError('Could not load accounts. Please try again.');
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -92,6 +109,7 @@ export default function NewTransactionScreen() {
       const payload = {
         type,
         amount,
+        accountId,
         categoryId,
         title: title.trim() || undefined,
         note: note.trim() || undefined,
