@@ -33,8 +33,8 @@ afterEach(() => {
   db?.close();
 });
 
-const FOOD = 'expense-food';
-const INCOME_OTHER = 'income-other';
+const FOOD = 'food';
+const INCOME_OTHER = 'other-income';
 
 async function cashId(sql: SQLiteDatabase): Promise<string> {
   return (await ensureDefaultAccount(sql)).id;
@@ -212,5 +212,21 @@ describe('transactions repository (v2)', () => {
     await createAccount(sql, { name: 'Bank', kind: 'bank', openingBalance: 500000 });
     const dashboard = await getDashboardSummary(sql, 1);
     expect(dashboard.balance).toBe(500000);
+  });
+
+  it('searches Roman-Nepali aliases and Nepali names', async () => {
+    const sql = await setup();
+    const accountId = await cashId(sql);
+    await createTransaction(sql, {
+      type: 'expense',
+      amount: 100,
+      accountId,
+      categoryId: FOOD,
+      date: '2026-09-18T10:00:00.000Z',
+    });
+    expect(await getTransactions(sql, { search: 'khana' })).toHaveLength(1);
+    expect(await getTransactions(sql, { search: 'खाना' })).toHaveLength(1);
+    expect(await getTransactions(sql, { search: 'KHA' })).toHaveLength(1);
+    expect(await getTransactions(sql, { search: 'zzz-no-match' })).toHaveLength(0);
   });
 });

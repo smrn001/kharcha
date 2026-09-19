@@ -36,7 +36,7 @@ describe('backup round-trip (v2)', () => {
       type: 'expense',
       amount: 25000,
       accountId: cash.id,
-      categoryId: 'expense-food',
+      categoryId: 'food',
       title: 'Lunch',
       date: '2026-09-18T10:00:00.000Z',
     });
@@ -80,7 +80,7 @@ describe('backup round-trip (v2)', () => {
       exportedAt: new Date().toISOString(),
       categories: [
         {
-          id: 'expense-food',
+          id: 'food',
           name: 'Food',
           type: 'expense',
           createdAt: '2026-01-01T00:00:00.000Z',
@@ -91,7 +91,7 @@ describe('backup round-trip (v2)', () => {
           id: 'old-1',
           type: 'expense',
           amount: 999,
-          categoryId: 'expense-food',
+          categoryId: 'food',
           date: '2026-09-18T10:00:00.000Z',
           createdAt: '2026-09-18T10:00:00.000Z',
           updatedAt: '2026-09-18T10:00:00.000Z',

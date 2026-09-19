@@ -1,9 +1,15 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { NPT_OFFSET_MIN, splitTransactionDate } from '@/lib/dates';
 import { DEFAULT_CASH_ACCOUNT_ID } from './accounts';
-import { DEFAULT_CATEGORIES, slugForDefaultCategoryId } from './categories';
+import {
+  NEPAL_CATEGORY_DEFS,
+  V1_DEFAULT_CATEGORIES,
+  V1_ID_TO_NEPAL_SLUG,
+  nepalDefForSlug,
+  slugForDefaultCategoryId,
+} from './categories';
 
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 
 const V2_ACCOUNTS_TABLE = `
   CREATE TABLE accounts (
@@ -121,8 +127,13 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     if (currentVersion < 1) {
       await createV2Schema(db);
       await seedV2Defaults(db);
-    } else if (currentVersion < 2) {
-      await migrateV1ToV2(db);
+    } else {
+      if (currentVersion < 2) {
+        await migrateV1ToV2(db);
+      }
+      if (currentVersion < 3) {
+        await migrateV2ToV3(db);
+      }
     }
 
     await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
@@ -152,18 +163,18 @@ async function seedV2Defaults(db: SQLiteDatabase): Promise<void> {
      VALUES ($id, $slug, $name, $icon, $color, $type, $isDefault, $sortOrder, $createdAt, $updatedAt)`
   );
   try {
-    for (const category of DEFAULT_CATEGORIES) {
+    for (const [index, category] of NEPAL_CATEGORY_DEFS.entries()) {
       await insertCategory.executeAsync({
-        $id: category.id,
-        $slug: category.slug ?? null,
+        $id: category.slug,
+        $slug: category.slug,
         $name: category.name,
-        $icon: category.icon ?? null,
-        $color: category.color ?? null,
+        $icon: category.icon,
+        $color: category.color,
         $type: category.type,
         $isDefault: 1,
-        $sortOrder: category.sortOrder,
-        $createdAt: category.createdAt,
-        $updatedAt: category.updatedAt,
+        $sortOrder: index,
+        $createdAt: now,
+        $updatedAt: now,
       });
     }
   } finally {
@@ -207,15 +218,17 @@ async function migrateV1ToV2(db: SQLiteDatabase): Promise<void> {
   );
 
   // --- Categories: rebuild with slugs; custom categories keep slug NULL. ---
-  const defaultIds = new Set(DEFAULT_CATEGORIES.map((category) => category.id));
-  const defaultOrder = new Map(DEFAULT_CATEGORIES.map((category, index) => [category.id, index]));
+  const defaultIds = new Set(V1_DEFAULT_CATEGORIES.map((category) => category.id));
+  const defaultOrder = new Map(
+    V1_DEFAULT_CATEGORIES.map((category, index) => [category.id, index])
+  );
   await db.execAsync(V2_CATEGORIES_TABLE.replace('CREATE TABLE categories', 'CREATE TABLE categories_new'));
   const insertCategory = await db.prepareAsync(
     `INSERT INTO categories_new
        (id, slug, name, icon, color, type, is_default, sort_order, created_at, updated_at)
      VALUES ($id, $slug, $name, $icon, $color, $type, $isDefault, $sortOrder, $createdAt, $updatedAt)`
   );
-  let customOrder = DEFAULT_CATEGORIES.length;
+  let customOrder = V1_DEFAULT_CATEGORIES.length;
   try {
     for (const row of v1Categories) {
       const isDefault = defaultIds.has(row.id);
@@ -245,7 +258,7 @@ async function migrateV1ToV2(db: SQLiteDatabase): Promise<void> {
      VALUES ($id, $slug, $name, $icon, $color, $type, 1, $sortOrder, $createdAt, $updatedAt)`
   );
   try {
-    for (const category of DEFAULT_CATEGORIES) {
+    for (const category of V1_DEFAULT_CATEGORIES) {
       if (!existingIds.has(category.id)) {
         await insertMissing.executeAsync({
           $id: category.id,
@@ -355,6 +368,108 @@ async function migrateV1ToV2(db: SQLiteDatabase): Promise<void> {
   await db.runAsync(
     'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
     MIGRATION_REPORT_KEY,
+    JSON.stringify(report)
+  );
+}
+
+export interface NepalMigrationReport {
+  from: number;
+  to: number;
+  mapped: number;
+  archived: number;
+  added: number;
+}
+
+/**
+ * Adopt the Nepal default set: map old defaults to Nepal slugs (keeping a
+ * user-renamed display name), archive obsolete defaults, insert missing
+ * Nepal defaults. Custom categories and all transactions are untouched.
+ */
+async function migrateV2ToV3(db: SQLiteDatabase): Promise<void> {
+  const now = new Date().toISOString();
+  const rows = await db.getAllAsync<{
+    id: string;
+    slug: string | null;
+    name: string;
+    icon: string | null;
+    is_default: number;
+  }>(
+    'SELECT id, slug, name, icon, is_default FROM categories WHERE deleted_at IS NULL'
+  );
+
+  const oldNames = new Map(V1_DEFAULT_CATEGORIES.map((category) => [category.id, category.name]));
+  const oldIcons = new Map(V1_DEFAULT_CATEGORIES.map((category) => [category.id, category.icon]));
+  const nepalOrder = new Map(NEPAL_CATEGORY_DEFS.map((def, index) => [def.slug, index]));
+  const presentSlugs = new Set(
+    rows.map((row) => row.slug).filter((slug): slug is string => slug !== null)
+  );
+
+  let mapped = 0;
+  let archived = 0;
+  for (const row of rows) {
+    const slug = V1_ID_TO_NEPAL_SLUG[row.id];
+    if (slug && row.is_default === 1) {
+      const def = nepalDefForSlug(slug);
+      if (!def) continue;
+      // Preserve user overrides: only reset fields still holding v1 defaults.
+      const name = row.name === (oldNames.get(row.id) ?? null) ? def.name : row.name;
+      const icon = row.icon === (oldIcons.get(row.id) ?? null) ? def.icon : row.icon;
+      await db.runAsync(
+        `UPDATE categories
+         SET slug = ?, name = ?, icon = ?, color = ?, sort_order = ?, updated_at = ?
+         WHERE id = ?`,
+        slug,
+        name,
+        icon,
+        def.color,
+        nepalOrder.get(slug) ?? 999,
+        now,
+        row.id
+      );
+      presentSlugs.add(slug);
+      mapped += 1;
+    } else if (row.is_default === 1 && !Object.values(V1_ID_TO_NEPAL_SLUG).includes(row.slug ?? '')) {
+      // Obsolete default (e.g. Bills): archive so its history stays readable.
+      await db.runAsync(
+        'UPDATE categories SET archived_at = ?, updated_at = ? WHERE id = ?',
+        now,
+        now,
+        row.id
+      );
+      archived += 1;
+    }
+  }
+
+  let added = 0;
+  for (const def of NEPAL_CATEGORY_DEFS) {
+    if (presentSlugs.has(def.slug)) continue;
+    await db.runAsync(
+      `INSERT INTO categories
+         (id, slug, name, icon, color, type, is_default, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+      def.slug,
+      def.slug,
+      def.name,
+      def.icon,
+      def.color,
+      def.type,
+      nepalOrder.get(def.slug) ?? 999,
+      now,
+      now
+    );
+    added += 1;
+  }
+
+  // Push custom categories after the defaults in pickers.
+  await db.runAsync(
+    'UPDATE categories SET sort_order = sort_order + 1000, updated_at = ? WHERE is_default = 0 AND deleted_at IS NULL',
+    now
+  );
+
+  const report: NepalMigrationReport = { from: 2, to: 3, mapped, archived, added };
+  await db.runAsync(
+    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    'migration_report_v3',
     JSON.stringify(report)
   );
 }

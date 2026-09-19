@@ -1,9 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { splitTransactionDate, startOfMonth, startOfWeek, toDateKey } from '@/lib/dates';
+import { MAX_TRANSACTION_MINOR } from '@/lib/format';
 import { generateId } from '@/lib/id';
 import type { NewTransaction, Transaction, TransactionType, UpdateTransaction } from '@/types';
 import { getAccountById } from './accounts';
-import { getCategoryById } from './categories';
+import { getCategoryById, resolveCategoryIdsForSearch } from './categories';
 
 interface TransactionRow {
   id: string;
@@ -111,8 +112,18 @@ export async function getTransactions(
     );
   }
   if (filters.search) {
-    conditions.push('(t.title LIKE ? OR t.note LIKE ? OR c.name LIKE ?)');
-    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`);
+    const term = filters.search.normalize('NFC');
+    const aliasIds = await resolveCategoryIdsForSearch(db, term);
+    if (aliasIds.length > 0) {
+      const placeholders = aliasIds.map(() => '?').join(', ');
+      conditions.push(
+        `(t.title LIKE ? OR t.note LIKE ? OR c.name LIKE ? OR t.category_id IN (${placeholders}))`
+      );
+      params.push(`%${term}%`, `%${term}%`, `%${term}%`, ...aliasIds);
+    } else {
+      conditions.push('(t.title LIKE ? OR t.note LIKE ? OR c.name LIKE ?)');
+      params.push(`%${term}%`, `%${term}%`, `%${term}%`);
+    }
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -141,6 +152,9 @@ export async function getTransactionById(
 function validateAmount(amount: number): void {
   if (!Number.isInteger(amount) || amount <= 0) {
     throw new Error('Enter an amount greater than zero.');
+  }
+  if (amount > MAX_TRANSACTION_MINOR) {
+    throw new Error('That amount is too large.');
   }
 }
 
@@ -321,6 +335,7 @@ export interface CategorySpending {
   categoryId: string;
   name: string;
   icon: string | undefined;
+  slug: string | undefined;
   amount: number;
   percentage: number;
 }
@@ -370,9 +385,10 @@ export async function getCategorySpending(
     category_id: string;
     name: string | null;
     icon: string | null;
+    slug: string | null;
     amount: number;
   }>(
-    `SELECT t.category_id, c.name, c.icon, SUM(t.amount_minor) AS amount
+    `SELECT t.category_id, c.name, c.icon, c.slug, SUM(t.amount_minor) AS amount
      FROM transactions t
      LEFT JOIN categories c ON c.id = t.category_id
      WHERE t.type = 'expense' AND t.deleted_at IS NULL AND t.local_date >= ? AND t.local_date <= ?
@@ -386,6 +402,7 @@ export async function getCategorySpending(
     categoryId: row.category_id,
     name: row.name ?? 'Other',
     icon: row.icon ?? undefined,
+    slug: row.slug ?? undefined,
     amount: row.amount,
     percentage: Math.round((row.amount / total) * 100),
   }));

@@ -42,6 +42,7 @@ async function createV1Db(): Promise<TestDatabase> {
   await db.runAsync(
     `INSERT INTO categories (id, name, icon, type, created_at) VALUES
      ('expense-food', 'Food', 'Utensils', 'expense', '2026-01-01T00:00:00.000Z'),
+     ('expense-bills', 'Bills', 'Receipt', 'expense', '2026-01-01T00:00:00.000Z'),
      ('expense-other', 'Other', 'MoreHorizontal', 'expense', '2026-01-01T00:00:00.000Z'),
      ('income-other', 'Other', 'MoreHorizontal', 'income', '2026-01-01T00:00:00.000Z'),
      ('custom-coffee', 'Coffee', 'Coffee', 'expense', '2026-02-01T00:00:00.000Z')`
@@ -75,12 +76,12 @@ async function insertV1Tx(
 }
 
 describe('v2 migration', () => {
-  it('creates a fresh v2 database with Cash and slugs', async () => {
+  it('creates a fresh v3 database with Cash and Nepal slugs', async () => {
     const db = createTestDb();
     await migrateDbIfNeeded(asSql(db));
 
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    expect(version?.user_version).toBe(2);
+    expect(version?.user_version).toBe(3);
 
     const accounts = await db.getAllAsync<{ id: string; name: string }>(
       'SELECT id, name FROM accounts'
@@ -90,9 +91,10 @@ describe('v2 migration', () => {
     const slugs = await db.getAllAsync<{ id: string; slug: string }>(
       'SELECT id, slug FROM categories WHERE slug IS NOT NULL'
     );
-    expect(slugs.find((row) => row.id === 'expense-food')?.slug).toBe('food');
-    expect(slugs.find((row) => row.id === 'expense-other')?.slug).toBe('other-expense');
-    expect(slugs.find((row) => row.id === 'income-other')?.slug).toBe('other-income');
+    expect(slugs.find((row) => row.id === 'food')?.slug).toBe('food');
+    expect(slugs.find((row) => row.id === 'other-expense')?.slug).toBe('other-expense');
+    expect(slugs.find((row) => row.id === 'other-income')?.slug).toBe('other-income');
+    expect(slugs.find((row) => row.id === 'electricity')?.slug).toBe('electricity');
     db.close();
   });
 
@@ -134,6 +136,13 @@ describe('v2 migration', () => {
       category: 'expense-food',
       date: '2026-09-14T10:00:00.000Z',
     });
+    await insertV1Tx(db, {
+      id: 't6',
+      type: 'expense',
+      amount: 750,
+      category: 'expense-bills',
+      date: '2026-09-13T10:00:00.000Z',
+    });
 
     await migrateDbIfNeeded(asSql(db));
 
@@ -149,7 +158,7 @@ describe('v2 migration', () => {
       'SELECT id, amount_minor, account_id, category_id, local_date, occurred_at, tz_offset_min FROM transactions ORDER BY id'
     );
     // t5 (negative amount) is quarantined.
-    expect(txs.map((row) => row.id)).toEqual(['t1', 't2', 't3', 't4']);
+    expect(txs.map((row) => row.id)).toEqual(['t1', 't2', 't3', 't4', 't6']);
 
     const byId = Object.fromEntries(txs.map((row) => [row.id, row]));
     expect(byId.t1.amount_minor).toBe(25000);
@@ -165,18 +174,40 @@ describe('v2 migration', () => {
     expect(byId.t4.occurred_at).toBe('2026-09-14T18:15:00.000Z');
 
     const summary = await getAnalyticsSummary(asSql(db), '2026-01-01', '2026-12-31');
-    expect(summary).toEqual({ income: 1500000, expense: 25000 + 1250 + 500, saved: 1500000 - 26750 });
+    expect(summary).toEqual({
+      income: 1500000,
+      expense: 25000 + 1250 + 500 + 750,
+      saved: 1500000 - 27500,
+    });
 
     const reportRow = await db.getFirstAsync<{ value: string }>(
       "SELECT value FROM settings WHERE key = 'migration_report'"
     );
     const report = JSON.parse(reportRow?.value ?? '{}') as MigrationReport;
-    expect(report.migrated).toBe(4);
+    expect(report.migrated).toBe(5);
     expect(report.skippedInvalid).toBe(1);
     expect(report.skippedIdsSample).toEqual(['t5']);
 
+    // v2 → v3 Nepal cutover.
     const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-    expect(version?.user_version).toBe(2);
+    expect(version?.user_version).toBe(3);
+
+    const cats = await db.getAllAsync<{
+      id: string;
+      slug: string | null;
+      name: string;
+      archived_at: string | null;
+    }>('SELECT id, slug, name, archived_at FROM categories');
+    const byCatId = Object.fromEntries(cats.map((row) => [row.id, row]));
+    expect(byCatId['expense-food'].slug).toBe('food');
+    expect(byCatId['expense-bills'].archived_at).not.toBeNull();
+    // Obsolete category history stays readable.
+    expect(byId.t6.category_id).toBe('expense-bills');
+    // Custom categories keep a NULL slug.
+    expect(byCatId['custom-coffee'].slug).toBeNull();
+    // New Nepal defaults are seeded.
+    expect(byCatId['electricity'].slug).toBe('electricity');
+    expect(byCatId['remittance'].slug).toBe('remittance');
     db.close();
   });
 

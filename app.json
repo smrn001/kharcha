@@ -45,7 +45,8 @@
         }
       ],
       "./plugins/with-abi-splits",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

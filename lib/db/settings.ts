@@ -1,5 +1,13 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import type { Settings, ThemePreference, TransactionType } from '@/types';
+import { getLocales } from 'expo-localization';
+import type {
+  CalendarPreference,
+  LanguagePreference,
+  NumeralsPreference,
+  Settings,
+  ThemePreference,
+  TransactionType,
+} from '@/types';
 
 interface SettingsRow {
   key: string;
@@ -10,12 +18,38 @@ export const DEFAULT_SETTINGS: Settings = {
   currency: 'NPR',
   theme: 'system',
   defaultTransactionType: 'expense',
-  startOfWeek: 1,
+  startOfWeek: 0,
+  language: 'en',
+  calendar: 'ad',
+  numerals: 'latin',
 };
+
+/** Device language, falling back to English when detection fails. */
+export function deviceLanguage(): LanguagePreference {
+  try {
+    const code = getLocales()[0]?.languageCode?.toLowerCase() ?? '';
+    if (code === 'ne' || code.startsWith('ne-') || code.startsWith('ne_')) return 'ne';
+  } catch {
+    // Detection is best-effort; settings carry the default.
+  }
+  return 'en';
+}
 
 function parseStartOfWeek(value: string | null | undefined): number {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 0 && parsed <= 6 ? parsed : DEFAULT_SETTINGS.startOfWeek;
+}
+
+function parseLanguage(value: string | null | undefined): LanguagePreference {
+  return value === 'ne' ? 'ne' : 'en';
+}
+
+function parseCalendar(value: string | null | undefined): CalendarPreference {
+  return value === 'bs' || value === 'both' ? value : 'ad';
+}
+
+function parseNumerals(value: string | null | undefined): NumeralsPreference {
+  return value === 'devanagari' ? 'devanagari' : 'latin';
 }
 
 export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
@@ -29,6 +63,9 @@ export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
     theme: (map.theme as ThemePreference | null) ?? DEFAULT_SETTINGS.theme,
     defaultTransactionType: (map.defaultTransactionType as TransactionType | null) ?? DEFAULT_SETTINGS.defaultTransactionType,
     startOfWeek: parseStartOfWeek(map.startOfWeek),
+    language: map.language ? parseLanguage(map.language) : deviceLanguage(),
+    calendar: parseCalendar(map.calendar),
+    numerals: parseNumerals(map.numerals),
   };
 }
 
