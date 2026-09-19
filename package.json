@@ -9,7 +9,8 @@
     "web": "expo start -c --web",
     "clean": "rm -rf .expo node_modules",
     "ts:check": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dietrichgebert/ponytail": "^4.8.4",
@@ -49,12 +50,14 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
+    "@types/node": "^26.6.2",
     "@types/react": "~19.2.10",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~57.0.2",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
   },
   "private": true
 }
