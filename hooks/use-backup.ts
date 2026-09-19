@@ -94,7 +94,8 @@ export function useBackup() {
       return (
         `Imported ${result.imported} transaction${result.imported === 1 ? '' : 's'}. ` +
         `Skipped ${result.skipped} duplicate${result.skipped === 1 ? '' : 's'}. ` +
-        `Added ${result.categoriesAdded} categor${result.categoriesAdded === 1 ? 'y' : 'ies'}.`
+        `Added ${result.categoriesAdded} categor${result.categoriesAdded === 1 ? 'y' : 'ies'}` +
+        (result.accountsAdded > 0 ? ` and ${result.accountsAdded} account${result.accountsAdded === 1 ? '' : 's'}.` : '.')
       );
     } finally {
       setBusy(null);

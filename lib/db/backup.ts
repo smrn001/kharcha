@@ -1,6 +1,8 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { NPT_OFFSET_MIN, splitTransactionDate } from '@/lib/dates';
 import { generateId } from '@/lib/id';
-import type { TransactionType } from '@/types';
+import type { AccountKind, TransactionType } from '@/types';
+import { getAccounts } from './accounts';
 import { getCategories } from './categories';
 import { getTransactions } from './transactions';
 
@@ -32,11 +34,20 @@ export interface BackupCategory {
   createdAt: string;
 }
 
+export interface BackupAccount {
+  id: string;
+  name: string;
+  kind: AccountKind;
+  openingBalance: number;
+}
+
 export interface BackupTransaction {
   id: string;
   type: TransactionType;
   amount: number;
-  categoryId: string;
+  accountId?: string;
+  toAccountId?: string;
+  categoryId?: string;
   title?: string;
   note?: string;
   date: string;
@@ -48,12 +59,14 @@ export interface BackupData {
   version: number;
   app: string;
   exportedAt: string;
+  accounts: BackupAccount[];
   categories: BackupCategory[];
   transactions: BackupTransaction[];
 }
 
 export async function collectBackup(db: SQLiteDatabase): Promise<BackupData> {
-  const [categories, transactions] = await Promise.all([
+  const [accounts, categories, transactions] = await Promise.all([
+    getAccounts(db, { includeArchived: true }),
     getCategories(db),
     getTransactions(db),
   ]);
@@ -61,6 +74,12 @@ export async function collectBackup(db: SQLiteDatabase): Promise<BackupData> {
     version: BACKUP_VERSION,
     app: BACKUP_APP,
     exportedAt: new Date().toISOString(),
+    accounts: accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      kind: account.kind,
+      openingBalance: account.openingBalance,
+    })),
     categories: categories.map((category) => ({
       id: category.id,
       name: category.name,
@@ -72,6 +91,8 @@ export async function collectBackup(db: SQLiteDatabase): Promise<BackupData> {
       id: transaction.id,
       type: transaction.type,
       amount: transaction.amount,
+      accountId: transaction.accountId,
+      toAccountId: transaction.toAccountId,
       categoryId: transaction.categoryId,
       title: transaction.title,
       note: transaction.note,
@@ -95,7 +116,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isTransactionType(value: unknown): value is TransactionType {
+  return value === 'income' || value === 'expense' || value === 'transfer';
+}
+
+function isCategoryType(value: unknown): value is TransactionType {
   return value === 'income' || value === 'expense';
+}
+
+function isAccountKind(value: unknown): value is AccountKind {
+  return (
+    value === 'cash' ||
+    value === 'bank' ||
+    value === 'wallet' ||
+    value === 'card' ||
+    value === 'savings' ||
+    value === 'other'
+  );
 }
 
 function isValidDate(value: unknown): value is string {
@@ -125,6 +161,28 @@ export function validateBackup(parsed: unknown): ValidationResult {
   if (parsed.transactions.length > MAX_TRANSACTIONS) {
     return { ok: false, error: 'Backup contains too many transactions to import safely.' };
   }
+  if (parsed.accounts !== undefined && !Array.isArray(parsed.accounts)) {
+    return { ok: false, error: 'Backup contains invalid accounts.' };
+  }
+
+  const accounts: BackupAccount[] = [];
+  for (const raw of parsed.accounts ?? []) {
+    if (
+      !isRecord(raw) ||
+      typeof raw.id !== 'string' ||
+      raw.id.length === 0 ||
+      typeof raw.name !== 'string' ||
+      raw.name.length === 0 ||
+      !isAccountKind(raw.kind)
+    ) {
+      return { ok: false, error: 'Backup contains an invalid account.' };
+    }
+    const openingBalance =
+      typeof raw.openingBalance === 'number' && Number.isInteger(raw.openingBalance)
+        ? raw.openingBalance
+        : 0;
+    accounts.push({ id: raw.id, name: raw.name, kind: raw.kind, openingBalance });
+  }
 
   const categories: BackupCategory[] = [];
   for (const raw of parsed.categories) {
@@ -134,7 +192,7 @@ export function validateBackup(parsed: unknown): ValidationResult {
       raw.id.length === 0 ||
       typeof raw.name !== 'string' ||
       raw.name.length === 0 ||
-      !isTransactionType(raw.type)
+      !isCategoryType(raw.type)
     ) {
       return { ok: false, error: 'Backup contains an invalid category.' };
     }
@@ -149,26 +207,31 @@ export function validateBackup(parsed: unknown): ValidationResult {
 
   const transactions: BackupTransaction[] = [];
   for (const raw of parsed.transactions) {
+    const type = raw.type;
     if (
       !isRecord(raw) ||
       typeof raw.id !== 'string' ||
       raw.id.length === 0 ||
-      !isTransactionType(raw.type) ||
+      !isTransactionType(type) ||
       typeof raw.amount !== 'number' ||
       !Number.isInteger(raw.amount) ||
       raw.amount <= 0 ||
       raw.amount > MAX_AMOUNT_MINOR ||
-      typeof raw.categoryId !== 'string' ||
-      raw.categoryId.length === 0 ||
+      (type !== 'transfer' &&
+        (typeof raw.categoryId !== 'string' || raw.categoryId.length === 0)) ||
+      (raw.accountId !== undefined && (typeof raw.accountId !== 'string' || raw.accountId.length === 0)) ||
+      (raw.toAccountId !== undefined && (typeof raw.toAccountId !== 'string' || raw.toAccountId.length === 0)) ||
       !isValidDate(raw.date)
     ) {
       return { ok: false, error: 'Backup contains an invalid transaction.' };
     }
     transactions.push({
       id: raw.id,
-      type: raw.type,
+      type,
       amount: raw.amount,
-      categoryId: raw.categoryId,
+      accountId: raw.accountId,
+      toAccountId: raw.toAccountId,
+      categoryId: typeof raw.categoryId === 'string' ? raw.categoryId : undefined,
       title: typeof raw.title === 'string' ? raw.title : undefined,
       note: typeof raw.note === 'string' ? raw.note : undefined,
       date: raw.date,
@@ -185,6 +248,7 @@ export function validateBackup(parsed: unknown): ValidationResult {
       exportedAt: isValidDate(parsed.exportedAt)
         ? (parsed.exportedAt as string)
         : new Date().toISOString(),
+      accounts,
       categories,
       transactions,
     },
@@ -195,6 +259,7 @@ export interface ImportResult {
   imported: number;
   skipped: number;
   categoriesAdded: number;
+  accountsAdded: number;
 }
 
 async function ensureFallbackCategory(
@@ -209,11 +274,14 @@ async function ensureFallbackCategory(
   const placeholder = `imported-${type}-other`;
   if (!categoryIds.has(placeholder)) {
     await db.runAsync(
-      'INSERT OR IGNORE INTO categories (id, name, icon, type, created_at) VALUES (?, ?, ?, ?, ?)',
+      `INSERT OR IGNORE INTO categories
+         (id, name, icon, type, is_default, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 0, 9999, ?, ?)`,
       placeholder,
       'Other',
       'MoreHorizontal',
       type,
+      now,
       now
     );
     categoryIds.add(placeholder);
@@ -223,28 +291,76 @@ async function ensureFallbackCategory(
 }
 
 /**
- * Merge a backup into the database. Existing transactions and categories
- * are left untouched; only new ids are inserted. Runs in a single
+ * Merge a backup into the database. Existing transactions, categories and
+ * accounts are left untouched; only new ids are inserted. Runs in a single
  * transaction so a failure cannot leave a half-imported database.
  */
 export async function importBackup(db: SQLiteDatabase, data: BackupData): Promise<ImportResult> {
   let imported = 0;
   let skipped = 0;
   const counter = { added: 0 };
+  let accountsAdded = 0;
 
   await db.withTransactionAsync(async () => {
     const now = new Date().toISOString();
+
+    const existingAccounts = await db.getAllAsync<{ id: string }>(
+      'SELECT id FROM accounts WHERE deleted_at IS NULL'
+    );
+    const accountIds = new Set(existingAccounts.map((row) => row.id));
+    for (const account of data.accounts) {
+      if (!accountIds.has(account.id)) {
+        const existing = await db.getAllAsync<{ sort_order: number }>(
+          'SELECT sort_order FROM accounts ORDER BY sort_order DESC LIMIT 1'
+        );
+        const sortOrder = (existing[0]?.sort_order ?? -1) + 1;
+        await db.runAsync(
+          `INSERT OR IGNORE INTO accounts
+             (id, name, kind, icon, opening_balance_minor, include_in_total,
+              sort_order, created_at, updated_at)
+           VALUES (?, ?, ?, NULL, ?, 1, ?, ?, ?)`,
+          account.id,
+          account.name,
+          account.kind,
+          account.openingBalance,
+          sortOrder,
+          now,
+          now
+        );
+        accountIds.add(account.id);
+        accountsAdded += 1;
+      }
+    }
+    // Backups predating accounts carry no account: fall back to Cash.
+    if (accountIds.size === 0) {
+      await db.runAsync(
+        `INSERT OR IGNORE INTO accounts
+           (id, name, kind, icon, opening_balance_minor, include_in_total,
+            sort_order, created_at, updated_at)
+         VALUES ('account-cash', 'Cash', 'cash', NULL, 0, 1, 0, ?, ?)`,
+        now,
+        now
+      );
+      accountIds.add('account-cash');
+      accountsAdded += 1;
+    }
+    const defaultAccountId =
+      [...accountIds].find((id) => id === 'account-cash') ?? [...accountIds][0];
+
     const existingCategories = await getCategories(db);
     const categoryIds = new Set(existingCategories.map((category) => category.id));
 
     for (const category of data.categories) {
       if (!categoryIds.has(category.id)) {
         await db.runAsync(
-          'INSERT OR IGNORE INTO categories (id, name, icon, type, created_at) VALUES (?, ?, ?, ?, ?)',
+          `INSERT OR IGNORE INTO categories
+             (id, name, icon, type, is_default, sort_order, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 0, 9999, ?, ?)`,
           category.id,
           category.name,
           category.icon ?? null,
           category.type,
+          category.createdAt,
           category.createdAt
         );
         categoryIds.add(category.id);
@@ -260,21 +376,50 @@ export async function importBackup(db: SQLiteDatabase, data: BackupData): Promis
         skipped += 1;
         continue;
       }
+      const accountId =
+        transaction.accountId && accountIds.has(transaction.accountId)
+          ? transaction.accountId
+          : defaultAccountId;
       let categoryId = transaction.categoryId;
-      if (!categoryIds.has(categoryId)) {
+      if (transaction.type !== 'transfer' && (!categoryId || !categoryIds.has(categoryId))) {
         categoryId = await ensureFallbackCategory(db, categoryIds, transaction.type, now, counter);
+      }
+      let toAccountId: string | null = null;
+      if (transaction.type === 'transfer') {
+        const candidate =
+          transaction.toAccountId && accountIds.has(transaction.toAccountId)
+            ? transaction.toAccountId
+            : defaultAccountId;
+        // A transfer needs two distinct accounts; skip otherwise.
+        if (candidate === accountId) {
+          skipped += 1;
+          continue;
+        }
+        toAccountId = candidate;
+      }
+      let dates: { localDate: string; occurredAt: string; tzOffsetMin: number };
+      try {
+        dates = splitTransactionDate(transaction.date, NPT_OFFSET_MIN);
+      } catch {
+        skipped += 1;
+        continue;
       }
       await db.runAsync(
         `INSERT OR IGNORE INTO transactions
-           (id, type, amount, category_id, title, note, date, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, type, amount_minor, account_id, to_account_id, category_id, title, note,
+            local_date, occurred_at, tz_offset_min, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         transaction.id,
         transaction.type,
         transaction.amount,
-        categoryId,
+        accountId,
+        toAccountId,
+        transaction.type === 'transfer' ? null : (categoryId ?? null),
         transaction.title ?? null,
         transaction.note ?? null,
-        transaction.date,
+        dates.localDate,
+        dates.occurredAt,
+        dates.tzOffsetMin,
         transaction.createdAt,
         transaction.updatedAt
       );
@@ -283,7 +428,7 @@ export async function importBackup(db: SQLiteDatabase, data: BackupData): Promis
     }
   });
 
-  return { imported, skipped, categoriesAdded: counter.added };
+  return { imported, skipped, categoriesAdded: counter.added, accountsAdded };
 }
 
 // ---------------------------------------------------------------------------
@@ -306,7 +451,7 @@ export function backupToCsv(data: BackupData): string {
       [
         escapeCsvField(transaction.date),
         transaction.type,
-        escapeCsvField(names.get(transaction.categoryId) ?? ''),
+        escapeCsvField(transaction.categoryId ? (names.get(transaction.categoryId) ?? '') : ''),
         escapeCsvField(transaction.title ?? ''),
         escapeCsvField(transaction.note ?? ''),
         major,
@@ -470,6 +615,23 @@ export async function importCsvRows(
       if (!byName.has(key)) byName.set(key, category.id);
     }
 
+    const accountRows = await db.getAllAsync<{ id: string }>(
+      'SELECT id FROM accounts WHERE deleted_at IS NULL AND archived_at IS NULL ORDER BY sort_order LIMIT 1'
+    );
+    let defaultAccountId = accountRows[0]?.id;
+    if (!defaultAccountId) {
+      defaultAccountId = 'account-cash';
+      await db.runAsync(
+        `INSERT OR IGNORE INTO accounts
+           (id, name, kind, icon, opening_balance_minor, include_in_total,
+            sort_order, created_at, updated_at)
+         VALUES (?, 'Cash', 'cash', NULL, 0, 1, 0, ?, ?)`,
+        defaultAccountId,
+        now,
+        now
+      );
+    }
+
     for (const row of rows) {
       let categoryId = row.categoryName
         ? byName.get(`${row.type}:${row.categoryName.toLowerCase()}`)
@@ -478,17 +640,22 @@ export async function importCsvRows(
         if (row.categoryName) unmapped += 1;
         categoryId = await ensureFallbackCategory(db, categoryIds, row.type, now, counter);
       }
+      const dates = splitTransactionDate(row.date, NPT_OFFSET_MIN);
       await db.runAsync(
         `INSERT INTO transactions
-           (id, type, amount, category_id, title, note, date, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, type, amount_minor, account_id, category_id, title, note,
+            local_date, occurred_at, tz_offset_min, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         generateId(),
         row.type,
         row.amount,
+        defaultAccountId,
         categoryId,
         row.title ?? null,
         row.note ?? null,
-        row.date,
+        dates.localDate,
+        dates.occurredAt,
+        dates.tzOffsetMin,
         now,
         now
       );
