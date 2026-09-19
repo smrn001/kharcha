@@ -20,6 +20,39 @@ export function toDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Nepal Standard Time offset in minutes. */
+export const NPT_OFFSET_MIN = 345;
+
+const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export interface SplitTransactionDate {
+  /** AD calendar date as experienced in the given zone ('YYYY-MM-DD'). */
+  localDate: string;
+  /** Exact instant in UTC (ISO 8601). */
+  occurredAt: string;
+  tzOffsetMin: number;
+}
+
+/**
+ * Split a stored/input date into the v2 pair. Values carrying an explicit
+ * offset (or `Z`) denote an exact instant; values without one are wall time
+ * in `offsetMin`. Throws on unparseable input.
+ */
+export function splitTransactionDate(input: string, offsetMin: number): SplitTransactionDate {
+  const trimmed = input.trim();
+  const parsed = Date.parse(trimmed);
+  if (trimmed === '' || Number.isNaN(parsed)) {
+    throw new Error(`Invalid date: ${input}`);
+  }
+  const hasOffset = /([zZ]|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  const instant = hasOffset ? parsed : parsed - offsetMin * 60_000;
+  const localDate = new Date(instant + offsetMin * 60_000).toISOString().slice(0, 10);
+  if (!LOCAL_DATE_PATTERN.test(localDate)) {
+    throw new Error(`Invalid date: ${input}`);
+  }
+  return { localDate, occurredAt: new Date(instant).toISOString(), tzOffsetMin: offsetMin };
+}
+
 export function startOfDay(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
