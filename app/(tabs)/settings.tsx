@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useBackup } from '@/hooks/use-backup';
 import { useSettings } from '@/hooks/use-settings';
 import { useUpdateChecker } from '@/hooks/use-update-checker';
 import { resetAllTransactions } from '@/lib/db/transactions';
@@ -22,7 +23,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Check, ChevronRight, RefreshCw } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, View } from 'react-native';
 import type { ThemePreference, TransactionType } from '@/types';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
@@ -87,10 +88,15 @@ function Row({
   );
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+}
+
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const { settings, updateSetting } = useSettings();
   const { state: updateState, isChecking, checkNow } = useUpdateChecker();
+  const { busy: backupBusy, exportJson, exportCsv, importFile } = useBackup();
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [startOfWeekOpen, setStartOfWeekOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -118,6 +124,35 @@ export default function SettingsScreen() {
       setResetOpen(false);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const backupDisabled = busy || backupBusy !== null;
+
+  const handleExportJson = async () => {
+    try {
+      await exportJson();
+    } catch (error) {
+      Alert.alert('Export failed', errorMessage(error));
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      await exportCsv();
+    } catch (error) {
+      Alert.alert('Export failed', errorMessage(error));
+    }
+  };
+
+  const handleImport = async () => {
+    try {
+      const message = await importFile();
+      if (message) {
+        Alert.alert('Import complete', message);
+      }
+    } catch (error) {
+      Alert.alert('Import failed', errorMessage(error));
     }
   };
 
@@ -165,6 +200,24 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title="Data">
+          <Row
+            label="Export backup"
+            value={backupBusy === 'export-json' ? 'Working…' : 'JSON file'}
+            onPress={backupDisabled ? undefined : handleExportJson}
+          />
+          <View className="bg-border mx-4 h-px" />
+          <Row
+            label="Export transactions"
+            value={backupBusy === 'export-csv' ? 'Working…' : 'CSV file'}
+            onPress={backupDisabled ? undefined : handleExportCsv}
+          />
+          <View className="bg-border mx-4 h-px" />
+          <Row
+            label="Import data"
+            value={backupBusy === 'import' ? 'Working…' : 'JSON or CSV'}
+            onPress={backupDisabled ? undefined : handleImport}
+          />
+          <View className="bg-border mx-4 h-px" />
           <Row label="Reset all data" destructive onPress={() => setResetOpen(true)} />
         </Section>
 
