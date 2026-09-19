@@ -18,7 +18,7 @@ export function FloatingAddButton() {
   if (Platform.OS === 'android') {
     return (
       <View style={{ position: 'absolute', right: 24, bottom: 24, zIndex: 10 }}>
-        <Host matchContents={{ vertical: true }}>
+        <Host matchContents style={{ width: 56, height: 56 }}>
           <FloatingActionButton onClick={onPress}>
             <FloatingActionButton.Icon>
               <ComposeIcon source={require('@expo/material-symbols/add.xml')} />
