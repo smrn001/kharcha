@@ -798,6 +798,9 @@ Saved
 Rs. 42,850
 ```
 
+When expenses exceed income, the card shows `Overspent` with the
+positive shortfall amount instead of `Saved`.
+
 ---
 
 # 23. Spending by Category
@@ -862,19 +865,27 @@ The visualization should remain understandable without relying entirely on color
 
 # 26. Comparison
 
-Future analytics can show:
+Analytics compares the current period against the previous one:
 
 ```text
-You spent 12% less than last month.
+vs Last month
+Aug 1 – Aug 31
+
+You spent 12% less than last month. You kept Rs. 1,200 more.
 ```
 
-or:
+Each of Spending, Income and Saved shows the current total, the
+previous total, and the percentage change. A "Biggest changes" list
+highlights the categories with the largest swings, for example:
 
 ```text
 Food spending increased by Rs. 1,200.
 ```
 
-These insights should be generated locally.
+Comparisons are calendar-aligned: this week vs full last week, this
+month so far vs full last month, this year so far vs full last year.
+
+These insights are generated locally.
 
 ---
 
@@ -916,9 +927,9 @@ Biometric Unlock
 ## Data
 
 ```text
-Export Data
-Import Data
-Backup
+Export backup (JSON)
+Export transactions (CSV)
+Import data (JSON or CSV)
 Reset Data
 ```
 
@@ -1349,53 +1360,69 @@ Receipt images should not automatically upload anywhere.
 
 # 46. Export
 
-Users should eventually be able to export their information.
+Users can export their information offline from Settings → Data.
 
-Supported initial export target:
-
-```text
-CSV
-```
-
-Possible future formats:
+Supported export targets:
 
 ```text
-JSON
-PDF
+JSON backup (full backup: transactions + categories)
+CSV (transactions)
 ```
 
 CSV example:
 
 ```csv
-date,type,category,title,amount
-2026-07-30,expense,Food,Lunch,250
-2026-07-30,income,Freelance,Website Project,15000
+date,type,category,title,note,amount
+2026-07-30T14:30:00.000Z,expense,Food,Lunch,,250.00
+2026-07-30T14:30:00.000Z,income,Freelance,Website Project,,15000.00
+```
+
+Amounts are exported in major units with two decimals. On native
+platforms the file is shared through the system share sheet; on web it
+is downloaded.
+
+Possible future formats:
+
+```text
+PDF
 ```
 
 ---
 
 # 47. Import
 
-Future versions may allow restoring exported data.
+Users can restore exported data from Settings → Data by picking a
+JSON backup or CSV file.
 
-Import must validate:
+Import validates:
 
 * File structure
 * Transaction types
-* Amounts
+* Amounts (must be greater than 0)
 * Dates
 * Categories
 
-Invalid information should not corrupt the local database.
+Import is merge-only: existing transactions and categories are never
+modified or deleted, duplicate transaction ids are skipped, and
+transactions with unknown categories fall back to the matching "Other"
+category. Settings (currency, theme, …) are not overwritten.
+
+Invalid information is reported per row (CSV) or rejected with an
+explanation (JSON) and never corrupts the local database.
 
 ---
 
 # 48. Backup
 
+Available backup option:
+
+```text
+Local file (JSON backup via Export, restored via Import)
+```
+
 Potential future backup options:
 
 ```text
-Local file
 Google Drive
 iCloud
 Kharcha Cloud
@@ -2135,13 +2162,13 @@ Kharcha V1
 ├── V1.1
 │   ├── Biometrics
 │   ├── Notifications
-│   ├── CSV Export
+│   ├── CSV Export (shipped: CSV export + JSON backup/restore)
 │   └── Custom Categories
 │
 ├── V1.2
 │   ├── Budgets
 │   ├── Recurring Transactions
-│   └── Better Analytics
+│   └── Better Analytics (shipped: previous-period comparison)
 │
 ├── V2
 │   ├── Optional Accounts
