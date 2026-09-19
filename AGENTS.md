@@ -82,7 +82,7 @@ Do not ignore Expo compatibility warnings.
 
 ### Theme & Colors
 - Centralized design tokens live in `lib/theme.ts` — components consume `useTheme()` semantic tokens (`background`, `surface`, `text`, `textSecondary`, `border`, `primary`, `destructive`, `success`, `warning`), never raw colors. Do not reintroduce `lib/colors.ts`.
-- Platform differences stay inside `useTheme()`: Apple system-semantic values on iOS, Material 3-aligned neutrals on Android.
+- Platform differences stay inside `useTheme()`: Apple system-semantic values on iOS; on Android the tokens are derived from `getMaterialColors()` from `@expo/ui/jetpack-compose`, so the RN canvas uses the same Material 3 palette as the Compose components — wallpaper-derived (Material You) on Android 12+, Material 3 baseline otherwise. `getMaterialColors` doesn't subscribe to system changes; `app/_layout.tsx` forces a re-render on foreground to resync.
 - `@expo/ui` color props (`textStyle.color`, `Icon color`, `backgroundColor`) take plain `string` colors — opaque `DynamicColorIOS` values are NOT supported there; iOS adapts via `useColorScheme()` + per-scheme string palettes.
 - Pass `colorScheme={useColorScheme() ?? undefined}` to every `Host` (root layout, `NativeBlock`, tab bar) so the Compose Material 3 palette — including Android 12+ dynamic wallpaper colors — always matches the React Native side.
 - `spacing`, `radii`, and `fontSizes` token constants are exported from `lib/theme.ts` for new UI; reuse them instead of arbitrary numbers.

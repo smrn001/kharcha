@@ -1,4 +1,5 @@
-import { Platform, useColorScheme } from 'react-native';
+import { useColorScheme, Platform } from 'react-native';
+import { getMaterialColors } from '@expo/ui/jetpack-compose';
 
 /**
  * Centralized design tokens. Components consume these semantic tokens rather
@@ -99,11 +100,29 @@ const androidDark: ThemeTokens = {
 
 export function useTheme(): ThemeTokens {
   const scheme = useColorScheme();
-  const dark = scheme === 'dark';
 
   if (Platform.OS === 'ios') {
-    return dark ? iosDark : iosLight;
+    return scheme === 'dark' ? iosDark : iosLight;
   }
 
-  return dark ? androidDark : androidLight;
+  // Mirror the palette the Compose `Host`s are themed with: on Android 12+
+  // this is the wallpaper-derived (Material You) scheme, otherwise the Material
+  // 3 baseline. `scheme` is pushed into every `Host` too, so the React Native
+  // canvas and the Compose components always agree.
+  if (Platform.OS === 'android') {
+    const m3 = getMaterialColors({ scheme: scheme === 'dark' ? 'dark' : 'light' });
+    return {
+      background: m3.background,
+      surface: m3.surfaceVariant,
+      text: m3.onSurface,
+      textSecondary: m3.onSurfaceVariant,
+      border: m3.outlineVariant,
+      primary: m3.primary,
+      destructive: m3.error,
+      success: scheme === 'dark' ? androidDark.success : androidLight.success,
+      warning: scheme === 'dark' ? androidDark.warning : androidLight.warning,
+    };
+  }
+
+  return scheme === 'dark' ? androidDark : androidLight;
 }
