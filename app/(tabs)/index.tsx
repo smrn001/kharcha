@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useCategories } from '@/hooks/use-categories';
 import { useDashboardSummary } from '@/hooks/use-dashboard';
+import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { type TransactionFilters } from '@/lib/db/transactions';
@@ -16,15 +17,16 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 const RECENT_FILTERS: TransactionFilters = { limit: 5 };
 
-function greeting(): string {
+function greetingKey(): 'home.greetingMorning' | 'home.greetingAfternoon' | 'home.greetingEvening' {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'home.greetingMorning';
+  if (hour < 17) return 'home.greetingAfternoon';
+  return 'home.greetingEvening';
 }
 
 export default function HomeScreen() {
   const { settings } = useSettings();
+  const { t } = useI18n();
   const { summary, refresh: refreshSummary } = useDashboardSummary(settings.startOfWeek);
   const { transactions, refresh: refreshTransactions } = useTransactions(RECENT_FILTERS);
   const { categories } = useCategories();
@@ -44,12 +46,12 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-background">
       <ScrollView contentContainerClassName="pb-28">
-        <PageHeader title={greeting()} subtitle="Here is your spending overview." />
+        <PageHeader title={t(greetingKey())} subtitle={t('home.subtitle')} />
 
         <View className="px-5 pt-5">
           <View className="rounded-xl border border-border bg-card p-5">
             <Text variant="muted" className="text-sm">
-              Current Balance
+              {t('home.balance')}
             </Text>
             <Text className="mt-1 text-3xl font-bold">
               {formatAmount(summary.balance, settings.currency)}
@@ -58,7 +60,7 @@ export default function HomeScreen() {
             <View className="mt-4 flex-row gap-4">
               <View className="flex-1">
                 <Text variant="muted" className="text-xs">
-                  Income
+                  {t('home.income')}
                 </Text>
                 <Text className="text-sm font-semibold text-positive">
                   {formatAmount(summary.income, settings.currency)}
@@ -66,7 +68,7 @@ export default function HomeScreen() {
               </View>
               <View className="flex-1">
                 <Text variant="muted" className="text-xs">
-                  Expenses
+                  {t('home.expenses')}
                 </Text>
                 <Text className="text-sm font-semibold text-destructive">
                   {formatAmount(summary.expense, settings.currency)}
@@ -79,7 +81,7 @@ export default function HomeScreen() {
         <View className="flex-row gap-3 px-5 pt-4">
           <View className="flex-1 rounded-xl border border-border bg-card p-3">
             <Text variant="muted" className="text-xs">
-              Today
+              {t('home.today')}
             </Text>
             <Text className="mt-1 text-sm font-semibold">
               {formatAmount(summary.spentToday, settings.currency)}
@@ -87,7 +89,7 @@ export default function HomeScreen() {
           </View>
           <View className="flex-1 rounded-xl border border-border bg-card p-3">
             <Text variant="muted" className="text-xs">
-              This Week
+              {t('home.week')}
             </Text>
             <Text className="mt-1 text-sm font-semibold">
               {formatAmount(summary.spentWeek, settings.currency)}
@@ -95,7 +97,7 @@ export default function HomeScreen() {
           </View>
           <View className="flex-1 rounded-xl border border-border bg-card p-3">
             <Text variant="muted" className="text-xs">
-              This Month
+              {t('home.month')}
             </Text>
             <Text className="mt-1 text-sm font-semibold">
               {formatAmount(summary.spentMonth, settings.currency)}
@@ -104,13 +106,13 @@ export default function HomeScreen() {
         </View>
 
         <View className="flex-row items-center justify-between px-5 pt-6">
-          <Text className="text-lg font-bold">Recent Transactions</Text>
+          <Text className="text-lg font-bold">{t('home.recent')}</Text>
           <Pressable
             onPress={() => router.push('/transactions')}
             accessibilityRole="link"
             className="flex-row items-center gap-1"
           >
-            <Text className="text-primary text-sm font-medium">View All</Text>
+            <Text className="text-primary text-sm font-medium">{t('home.viewAll')}</Text>
             <Icon as={ArrowRight} size={14} className="text-primary" />
           </Pressable>
         </View>
@@ -118,9 +120,9 @@ export default function HomeScreen() {
         {transactions.length === 0 ? (
           <View className="items-center gap-2 px-5 py-10">
             <Icon as={ReceiptText} size={40} className="text-muted-foreground" />
-            <Text className="text-base font-semibold">No transactions yet</Text>
+            <Text className="text-base font-semibold">{t('home.emptyTitle')}</Text>
             <Text variant="muted" className="text-center">
-              Tap the + button to add your first expense or income.
+              {t('home.emptyMsg')}
             </Text>
           </View>
         ) : (

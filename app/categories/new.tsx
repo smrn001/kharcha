@@ -1,5 +1,6 @@
 import { CategoryForm } from '@/components/category-form';
 import { ScreenHeader } from '@/components/screen-header';
+import { useI18n } from '@/hooks/use-i18n';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import type { NewCategory } from '@/types';
 
 export default function NewCategoryScreen() {
   const db = useSQLiteContext();
+  const { t } = useI18n();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,16 +21,16 @@ export default function NewCategoryScreen() {
       await createCategory(db, input);
       router.back();
     } catch {
-      setError('Could not create the category. Please try again.');
+      setError(t('cat.errCreate'));
       setSubmitting(false);
     }
   };
 
   return (
     <View className="bg-background flex-1">
-      <ScreenHeader title="New Category" />
+      <ScreenHeader title={t('cat.newTitle')} />
       <CategoryForm
-        submitLabel="Create Category"
+        submitLabel={t('cat.create')}
         submitting={submitting}
         error={error}
         onSubmit={handleSubmit}

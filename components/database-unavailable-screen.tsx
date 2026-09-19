@@ -1,3 +1,4 @@
+import { useI18n } from '@/hooks/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { PanelsTopLeft, TriangleAlert } from 'lucide-react-native';
@@ -9,11 +10,10 @@ type DatabaseUnavailableScreenProps = {
 };
 
 export function DatabaseUnavailableScreen({ kind, onRetry }: DatabaseUnavailableScreenProps) {
+  const { t } = useI18n();
   const isOtherTab = kind === 'other-tab';
-  const title = isOtherTab ? 'Already open in another tab' : "Kharcha couldn't be opened";
-  const message = isOtherTab
-    ? 'Kharcha keeps its data in a private browser file that only one tab can use at a time. Switch to the tab that is already open, or close it and try again.'
-    : 'Something went wrong while opening your expense database. Please try again.';
+  const title = isOtherTab ? t('dberr.tabTitle') : t('dberr.errTitle');
+  const message = isOtherTab ? t('dberr.tabMsg') : t('dberr.errMsg');
 
   return (
     <View className="flex-1 items-center justify-center bg-background p-6">
@@ -29,7 +29,7 @@ export function DatabaseUnavailableScreen({ kind, onRetry }: DatabaseUnavailable
         <Text className="text-center text-muted-foreground">{message}</Text>
         {onRetry && (
           <Button onPress={onRetry} className="mt-2">
-            <Text>Try again</Text>
+            <Text>{t('common.retry')}</Text>
           </Button>
         )}
       </View>

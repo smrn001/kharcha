@@ -41,6 +41,7 @@ export interface CategoryMover {
   categoryId: string;
   name: string;
   icon: string | undefined;
+  slug: string | undefined;
   current: number;
   previous: number;
   /** Current minus previous, in minor units. */
@@ -165,6 +166,7 @@ function buildMovers(current: CategorySpending[], previous: CategorySpending[]):
       categoryId: category.categoryId,
       name: category.name,
       icon: category.icon,
+      slug: category.slug,
       current: category.amount,
       previous: prevAmount,
       diff: category.amount - prevAmount,
@@ -177,6 +179,7 @@ function buildMovers(current: CategorySpending[], previous: CategorySpending[]):
         categoryId: prev.categoryId,
         name: prev.name,
         icon: prev.icon,
+        slug: prev.slug,
         current: 0,
         previous: prev.amount,
         diff: -prev.amount,

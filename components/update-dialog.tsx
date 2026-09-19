@@ -8,6 +8,7 @@ import {
 import { Text } from '@/components/ui/text';
 import { ArrowRight, Check, Download } from 'lucide-react-native';
 import { Pressable, ScrollView, View } from 'react-native';
+import { useI18n } from '@/hooks/use-i18n';
 import type { UpdateState } from '@/hooks/use-update-checker';
 
 type UpdateDialogProps = {
@@ -41,6 +42,7 @@ function parseReleaseNotes(notes: string): { bullets: string[]; changelogUrl: st
 }
 
 export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }: UpdateDialogProps) {
+  const { t } = useI18n();
   const { bullets, changelogUrl } = parseReleaseNotes(state.notes);
 
   return (
@@ -48,9 +50,9 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
       <DialogContent className="max-h-[75%] p-0 sm:max-w-md">
         <View className="border-border flex-row items-start justify-between gap-4 border-b px-6 py-5 pr-14">
           <View className="gap-1">
-            <DialogTitle>Update available</DialogTitle>
+            <DialogTitle>{t('upd.title')}</DialogTitle>
             <DialogDescription>
-              Version {state.latestVersion} is ready to install.
+              {t('upd.desc', { version: state.latestVersion })}
             </DialogDescription>
           </View>
         </View>
@@ -63,17 +65,17 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
           <View className="flex-row gap-3">
             <View className="bg-muted/50 flex-1 gap-1 rounded-lg px-4 py-3">
               <Text variant="muted" className="text-xs font-medium uppercase">
-                Installed
+                {t('upd.installed')}
               </Text>
               <Text className="text-lg font-semibold">v{state.currentVersion}</Text>
             </View>
             <View className="border-primary/30 bg-primary/10 flex-1 gap-1 rounded-lg border px-4 py-3">
-              <Text className="text-primary text-xs font-medium uppercase">Available</Text>
+              <Text className="text-primary text-xs font-medium uppercase">{t('upd.available')}</Text>
               <View className="flex-row items-center gap-1.5">
                 <Text className="text-primary text-lg font-semibold">v{state.latestVersion}</Text>
                 <View className="bg-primary rounded-full px-1.5 py-0.5">
                   <Text className="text-primary-foreground text-[10px] font-semibold uppercase">
-                    New
+                    {t('upd.new')}
                   </Text>
                 </View>
               </View>
@@ -81,7 +83,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
           </View>
 
           <View className="gap-2">
-            <Text className="text-sm font-medium">What&apos;s new</Text>
+            <Text className="text-sm font-medium">{t('upd.whatsNew')}</Text>
             {bullets.length > 0 ? (
               <View className="gap-2.5">
                 {bullets.map((bullet, index) => (
@@ -95,7 +97,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
               </View>
             ) : (
               <Text variant="muted" className="text-sm">
-                No release notes provided.
+                {t('upd.noNotes')}
               </Text>
             )}
             {changelogUrl ? (
@@ -104,7 +106,7 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
                 hitSlop={8}
                 className="mt-1 flex-row items-center gap-1 self-start"
               >
-                <Text className="text-primary text-sm font-medium">View full changelog</Text>
+                <Text className="text-primary text-sm font-medium">{t('upd.changelog')}</Text>
                 <ArrowRight className="text-primary size-3.5" />
               </Pressable>
             ) : null}
@@ -114,16 +116,16 @@ export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }:
         <View className="border-border gap-4 border-t px-6 py-5">
           <View className="flex-row items-center justify-center gap-4">
             <Pressable onPress={onLater} hitSlop={8}>
-              <Text className="text-sm font-medium text-foreground">Later</Text>
+              <Text className="text-sm font-medium text-foreground">{t('upd.later')}</Text>
             </Pressable>
             <View className="bg-border h-3 w-px" />
             <Pressable onPress={onSkip} hitSlop={8}>
-              <Text className="text-muted-foreground text-sm">Skip this version</Text>
+              <Text className="text-muted-foreground text-sm">{t('upd.skip')}</Text>
             </Pressable>
           </View>
           <Button onPress={() => onDownload(state.downloadUrl)} size="lg" className="w-full">
             <Download className="size-4" />
-            <Text>Download Update</Text>
+            <Text>{t('upd.download')}</Text>
           </Button>
         </View>
       </DialogContent>

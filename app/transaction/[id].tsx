@@ -13,10 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useCategories } from '@/hooks/use-categories';
+import { useDetailDate } from '@/hooks/use-day-heading';
+import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { categoryIcon } from '@/lib/category-icons';
+import { categoryDisplayName } from '@/lib/i18n';
 import { deleteTransaction, getTransactionById } from '@/lib/db/transactions';
-import { formatDateTime } from '@/lib/dates';
 import { formatAmount } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -39,6 +41,8 @@ export default function TransactionDetailScreen() {
   const db = useSQLiteContext();
   const { categories } = useCategories();
   const { settings } = useSettings();
+  const { t, lang } = useI18n();
+  const detailDate = useDetailDate();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,9 +68,9 @@ export default function TransactionDetailScreen() {
   if (loading || !transaction) {
     return (
       <View className="bg-background flex-1">
-        <ScreenHeader title="Transaction" />
+        <ScreenHeader title={t('det.title')} />
         <View className="flex-1 items-center pt-16">
-          <Text variant="muted">Loading…</Text>
+          <Text variant="muted">{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -86,7 +90,7 @@ export default function TransactionDetailScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <ScreenHeader title="Transaction" />
+      <ScreenHeader title={t('det.title')} />
 
       <View className="flex-1 items-center px-6 pt-8">
         <View className="bg-muted h-16 w-16 items-center justify-center rounded-full">
@@ -97,17 +101,17 @@ export default function TransactionDetailScreen() {
           {formatAmount(transaction.amount, settings.currency)}
         </Text>
         <Text className={cn('mt-1 text-sm font-medium', isIncome ? 'text-positive' : 'text-muted-foreground')}>
-          {isIncome ? 'Income' : 'Expense'}
+          {isIncome ? t('det.income') : t('det.expense')}
         </Text>
 
         <View className="mt-8 w-full rounded-xl border border-border bg-card px-4">
-          <DetailRow label="Category" value={category?.name ?? 'Unknown'} />
+          <DetailRow label={t('det.category')} value={category ? categoryDisplayName(category, lang) : t('common.unknown')} />
           <View className="bg-border mx-4 h-px" />
-          <DetailRow label="Title" value={transaction.title || '—'} />
+          <DetailRow label={t('det.titleRow')} value={transaction.title || '—'} />
           <View className="bg-border mx-4 h-px" />
-          <DetailRow label="Note" value={transaction.note || '—'} />
+          <DetailRow label={t('det.note')} value={transaction.note || '—'} />
           <View className="bg-border mx-4 h-px" />
-          <DetailRow label="Date & Time" value={formatDateTime(transaction.date)} />
+          <DetailRow label={t('det.dateTime')} value={detailDate(transaction)} />
         </View>
 
         <View className="mt-8 w-full gap-3">
@@ -115,10 +119,10 @@ export default function TransactionDetailScreen() {
             onPress={() => router.push(`/transaction/new?id=${transaction.id}`)}
             className="w-full"
           >
-            <Text className="text-primary-foreground font-medium">Edit</Text>
+            <Text className="text-primary-foreground font-medium">{t('det.edit')}</Text>
           </Button>
           <Pressable onPress={() => setConfirmDelete(true)}>
-            <Text className="text-destructive py-3 text-center text-sm font-medium">Delete</Text>
+            <Text className="text-destructive py-3 text-center text-sm font-medium">{t('det.delete')}</Text>
           </Pressable>
         </View>
       </View>
@@ -126,20 +130,20 @@ export default function TransactionDetailScreen() {
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
+            <AlertDialogTitle>{t('det.delTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The transaction will be permanently removed.
+              {t('det.delDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>
-              <Text>Cancel</Text>
+              <Text>{t('det.cancel')}</Text>
             </AlertDialogCancel>
             <AlertDialogAction
               onPress={handleDelete}
               className="bg-destructive dark:bg-destructive/60"
             >
-              <Text className="text-white font-medium">Delete</Text>
+              <Text className="text-white font-medium">{t('common.delete')}</Text>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

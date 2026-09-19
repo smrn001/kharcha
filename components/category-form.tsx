@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text';
 import { CATEGORY_ICONS, categoryIcon } from '@/lib/category-icons';
 import { THEME } from '@/lib/theme';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/hooks/use-i18n';
 import type { NewCategory, TransactionType } from '@/types';
 import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
@@ -13,10 +14,13 @@ import { Pressable, ScrollView, TextInput, View } from 'react-native';
 const INPUT_CLASS =
   'h-12 rounded-md border border-input bg-background px-3 text-base text-foreground';
 
-const TYPE_OPTIONS: { value: TransactionType; label: string }[] = [
-  { value: 'expense', label: 'Expense' },
-  { value: 'income', label: 'Income' },
-];
+function useTypeOptions(): { value: TransactionType; label: string }[] {
+  const { t } = useI18n();
+  return [
+    { value: 'expense', label: t('cat.formTypeExpense') },
+    { value: 'income', label: t('cat.formTypeIncome') },
+  ];
+}
 
 export function CategoryForm({
   initial,
@@ -36,6 +40,8 @@ export function CategoryForm({
   const { colorScheme } = useColorScheme();
   const colors = THEME[colorScheme ?? 'light'];
 
+  const { t } = useI18n();
+  const typeOptions = useTypeOptions();
   const [name, setName] = useState(initial?.name ?? '');
   const [icon, setIcon] = useState<string | undefined>(initial?.icon);
   const [type, setType] = useState<TransactionType>(initial?.type ?? 'expense');
@@ -58,22 +64,22 @@ export function CategoryForm({
         contentContainerClassName="gap-5 px-4 pb-8"
         keyboardShouldPersistTaps="handled"
       >
-        <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={handleTypeChange} />
+        <SegmentedControl options={typeOptions} value={type} onChange={handleTypeChange} />
 
         <View className="gap-2">
-          <Text className="text-sm font-medium">Name</Text>
+          <Text className="text-sm font-medium">{t('cat.formName')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="e.g. Coffee"
+            placeholder={t('cat.formNamePh')}
             placeholderTextColor={colors.mutedForeground}
-            accessibilityLabel="Category name"
+            accessibilityLabel={t('cat.formNameLabel')}
             className={INPUT_CLASS}
           />
         </View>
 
         <View className="gap-2">
-          <Text className="text-sm font-medium">Icon</Text>
+          <Text className="text-sm font-medium">{t('cat.formIcon')}</Text>
           <View className="flex-row flex-wrap gap-2">
             {CATEGORY_ICONS.map((iconName) => {
               const selected = icon === iconName;
@@ -109,7 +115,7 @@ export function CategoryForm({
       <View className="border-border border-t bg-background px-4 py-3">
         <Button onPress={handleSubmit} disabled={submitting || !name.trim()}>
           <Text className="text-primary-foreground font-medium">
-            {submitting ? 'Saving…' : submitLabel}
+            {submitting ? t('common.saving') : submitLabel}
           </Text>
         </Button>
       </View>

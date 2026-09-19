@@ -4,13 +4,14 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import {
-  previousPeriodLabel,
   useAnalytics,
   type AnalyticsComparison,
   type AnalyticsPeriod,
   type CategoryMover,
 } from '@/hooks/use-analytics';
+import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
+import { categoryDisplayName, type DictionaryKey } from '@/lib/i18n';
 import { categoryIcon } from '@/lib/category-icons';
 import { formatAmount, formatAmountCompact } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -19,24 +20,32 @@ import { Minus, TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
-  { value: 'year', label: 'Year' },
-];
-
-const PERIOD_TITLES: Record<AnalyticsPeriod, string> = {
-  week: 'This week',
-  month: 'This month',
-  year: 'This year',
-};
+function usePeriodOptions(): {
+  options: { value: AnalyticsPeriod; label: string }[];
+  titles: Record<AnalyticsPeriod, string>;
+} {
+  const { t } = useI18n();
+  return {
+    options: [
+      { value: 'week', label: t('an.week') },
+      { value: 'month', label: t('an.month') },
+      { value: 'year', label: t('an.year') },
+    ],
+    titles: {
+      week: t('an.thisWeek'),
+      month: t('an.thisMonth'),
+      year: t('an.thisYear'),
+    },
+  };
+}
 
 export default function AnalyticsScreen() {
   const { settings } = useSettings();
+  const { t } = useI18n();
 
   return (
     <View className="bg-background flex-1">
-      <PageHeader title="Analytics" />
+      <PageHeader title={t('tabs.analytics')} />
       <AnalyticsContent currency={settings.currency} startOfWeek={settings.startOfWeek} />
     </View>
   );
@@ -44,6 +53,7 @@ export default function AnalyticsScreen() {
 
 function AnalyticsContent({ currency, startOfWeek }: { currency: string; startOfWeek: number }) {
   const [period, setPeriod] = useState<AnalyticsPeriod>('month');
+  const { options: PERIOD_OPTIONS } = usePeriodOptions();
   const { summary, comparison, movers, categories, trend, loading, refresh } = useAnalytics(
     period,
     startOfWeek
@@ -105,10 +115,12 @@ function PeriodCards({
   currentRangeLabel: string | undefined;
   loading: boolean;
 }) {
+  const { t: tcards } = useI18n();
+  const { titles: cardTitles } = usePeriodOptions();
   if (loading && summary.income === 0 && summary.expense === 0) {
     return (
       <View className="border-border rounded-xl border bg-card p-5">
-        <Text variant="muted">Loading…</Text>
+        <Text variant="muted">{tcards('common.loading')}</Text>
       </View>
     );
   }
@@ -124,7 +136,7 @@ function PeriodCards({
     <View className="border-border rounded-xl border bg-card p-5">
       <View className="flex-row items-baseline justify-between">
         <Text variant="muted" className="text-xs font-semibold uppercase">
-          {PERIOD_TITLES[period]}
+          {cardTitles[period]}
         </Text>
         {currentRangeLabel ? (
           <Text variant="muted" className="text-xs">
@@ -136,7 +148,7 @@ function PeriodCards({
       <View className="mt-4 flex-row justify-between">
         <View>
           <Text variant="muted" className="text-xs">
-            Income
+            {tcards('an.income')}
           </Text>
           <Text className="text-positive mt-1 text-lg font-semibold">
             {formatAmount(summary.income, currency)}
@@ -144,7 +156,7 @@ function PeriodCards({
         </View>
         <View>
           <Text variant="muted" className="text-right text-xs">
-            Expenses
+            {tcards('an.expenses')}
           </Text>
           <Text className="text-destructive mt-1 text-right text-lg font-semibold">
             {formatAmount(summary.expense, currency)}
@@ -156,7 +168,7 @@ function PeriodCards({
 
       <View className="flex-row items-center justify-between">
         <Text variant="muted" className="text-xs">
-          {overspent ? 'Overspent' : 'Saved'}
+          {overspent ? tcards('an.overspent') : tcards('an.saved')}
         </Text>
         <Text className={cn('text-base font-semibold', savedColor)}>
           {formatAmount(overspent ? Math.abs(summary.saved) : summary.saved, currency)}
@@ -166,39 +178,62 @@ function PeriodCards({
   );
 }
 
+type TFn = (key: DictionaryKey, params?: Record<string, string | number>) => string;
+
+const UNIT_KEYS: Record<AnalyticsPeriod, DictionaryKey> = {
+  week: 'an.lastWeek',
+  month: 'an.lastMonth',
+  year: 'an.lastYear',
+};
+
+const PREV_KEYS: Record<AnalyticsPeriod, DictionaryKey> = {
+  week: 'an.prevWeek',
+  month: 'an.prevMonth',
+  year: 'an.prevYear',
+};
+
 function buildInsight(
+  t: TFn,
   period: AnalyticsPeriod,
   comparison: AnalyticsComparison,
   currency: string
 ): string {
-  const unit = previousPeriodLabel(period).toLowerCase();
+  const unit = t(UNIT_KEYS[period]);
   const prev = comparison.previous;
 
   if (prev.income === 0 && prev.expense === 0) {
-    return 'No data from ' + unit + ' to compare yet.';
+    return t('an.insightNoData', { unit });
   }
 
   const parts: string[] = [];
   if (comparison.expense.diff !== 0 && comparison.expense.pct !== null) {
-    const direction = comparison.expense.diff < 0 ? 'less' : 'more';
+    const less = comparison.expense.diff < 0;
     parts.push(
-      `You spent ${Math.abs(Math.round(comparison.expense.pct))}% ${direction} than ${unit} (${formatAmount(Math.abs(comparison.expense.diff), currency)} ${comparison.expense.diff < 0 ? 'less' : 'more'}).`
+      t('an.insightSpent', {
+        pct: Math.abs(Math.round(comparison.expense.pct)),
+        direction: t(less ? 'an.less' : 'an.more'),
+        unit,
+        amount: formatAmount(Math.abs(comparison.expense.diff), currency),
+        moreLess: t(less ? 'an.less' : 'an.more'),
+      })
     );
   } else if (comparison.expense.diff !== 0) {
     parts.push(
-      `Spending is new this period (${formatAmount(Math.abs(comparison.expense.diff), currency)}).`
+      t('an.insightNew', {
+        amount: formatAmount(Math.abs(comparison.expense.diff), currency),
+      })
     );
   }
 
   if (comparison.saved.diff !== 0) {
     parts.push(
-      comparison.saved.diff > 0
-        ? `You kept ${formatAmount(comparison.saved.diff, currency)} more.`
-        : `You kept ${formatAmount(Math.abs(comparison.saved.diff), currency)} less.`
+      t(comparison.saved.diff > 0 ? 'an.insightKeptMore' : 'an.insightKeptLess', {
+        amount: formatAmount(Math.abs(comparison.saved.diff), currency),
+      })
     );
   }
 
-  return parts.length > 0 ? parts.join(' ') : `Same as ${unit}.`;
+  return parts.length > 0 ? parts.join(' ') : t('an.insightSame', { unit });
 }
 
 function ComparisonCard({
@@ -212,23 +247,25 @@ function ComparisonCard({
   comparison: AnalyticsComparison | null;
   loading: boolean;
 }) {
+  const { t } = useI18n();
   if (loading && !comparison) {
     return (
       <View className="border-border rounded-xl border bg-card p-5">
-        <Text variant="muted">Loading…</Text>
+        <Text variant="muted">{t('common.loading')}</Text>
       </View>
     );
   }
   if (!comparison) return null;
 
+  const prevLabel = t(PREV_KEYS[period]);
   const hasHistory =
     comparison.previous.income !== 0 || comparison.previous.expense !== 0;
   if (!hasHistory) {
     return (
       <View className="border-border rounded-xl border bg-card p-5">
-        <Text className="text-base font-semibold">vs {comparison.previousLabel}</Text>
+        <Text className="text-base font-semibold">{t('an.vs', { label: prevLabel })}</Text>
         <Text variant="muted" className="mt-2 text-sm">
-          {buildInsight(period, comparison, currency)}
+          {buildInsight(t, period, comparison, currency)}
         </Text>
       </View>
     );
@@ -237,17 +274,17 @@ function ComparisonCard({
   return (
     <View className="border-border rounded-xl border bg-card p-5">
       <View className="flex-row items-baseline justify-between">
-        <Text className="text-base font-semibold">vs {comparison.previousLabel}</Text>
+        <Text className="text-base font-semibold">{t('an.vs', { label: prevLabel })}</Text>
         <Text variant="muted" className="text-xs">
           {comparison.previousRangeLabel}
         </Text>
       </View>
 
-      <Text className="mt-2 text-sm">{buildInsight(period, comparison, currency)}</Text>
+      <Text className="mt-2 text-sm">{buildInsight(t, period, comparison, currency)}</Text>
 
       <View className="mt-4 gap-4">
         <ComparisonRow
-          label="Spending"
+          label={t('an.expenses')}
           current={comparison.previous.expense + comparison.expense.diff}
           previous={comparison.previous.expense}
           delta={comparison.expense}
@@ -255,7 +292,7 @@ function ComparisonCard({
           currency={currency}
         />
         <ComparisonRow
-          label="Income"
+          label={t('an.income')}
           current={comparison.previous.income + comparison.income.diff}
           previous={comparison.previous.income}
           delta={comparison.income}
@@ -263,7 +300,11 @@ function ComparisonCard({
           currency={currency}
         />
         <ComparisonRow
-          label={comparison.previous.saved + comparison.saved.diff < 0 ? 'Overspent' : 'Saved'}
+          label={
+            comparison.previous.saved + comparison.saved.diff < 0
+              ? t('an.overspent')
+              : t('an.saved')
+          }
           current={Math.abs(comparison.previous.saved + comparison.saved.diff)}
           previous={Math.abs(comparison.previous.saved)}
           delta={comparison.saved}
@@ -290,6 +331,7 @@ function ComparisonRow({
   goodWhenDown: boolean;
   currency: string;
 }) {
+  const { t: trow } = useI18n();
   const up = delta.diff > 0;
   const flat = delta.diff === 0;
   const good = flat ? null : goodWhenDown ? !up : up;
@@ -299,7 +341,7 @@ function ComparisonRow({
       <View className="flex-1">
         <Text className="text-sm font-medium">{label}</Text>
         <Text variant="muted" className="mt-0.5 text-xs">
-          {formatAmount(current, currency)} · was {formatAmount(previous, currency)}
+          {formatAmount(current, currency)} · {trow('an.was', { amount: formatAmount(previous, currency) })}
         </Text>
       </View>
       <View
@@ -339,13 +381,14 @@ function MoversCard({
   movers: CategoryMover[];
   loading: boolean;
 }) {
+  const { t: tmovers, lang: mlang } = useI18n();
   const visible = movers.filter((mover) => mover.diff !== 0);
   if (loading && movers.length === 0) return null;
   if (visible.length === 0) return null;
 
   return (
     <View className="border-border rounded-xl border bg-card p-5">
-      <Text className="text-base font-semibold">Biggest changes</Text>
+      <Text className="text-base font-semibold">{tmovers('an.biggestChanges')}</Text>
       <View className="mt-2">
         {visible.map((mover) => {
           const IconComponent = categoryIcon(mover.icon);
@@ -358,10 +401,10 @@ function MoversCard({
               <Icon as={IconComponent} size={14} className="text-muted-foreground" />
               <View className="flex-1">
                 <Text className="text-sm font-medium" numberOfLines={1}>
-                  {mover.name}
+                  {categoryDisplayName(mover, mlang)}
                 </Text>
                 <Text variant="muted" className="text-xs">
-                  was {formatAmount(mover.previous, currency)}
+                  {tmovers('an.was', { amount: formatAmount(mover.previous, currency) })}
                 </Text>
               </View>
               <Text className={cn('text-sm font-semibold', up ? 'text-destructive' : 'text-positive')}>
@@ -387,23 +430,24 @@ function SpendingTrend({
   trend: ReturnType<typeof useAnalytics>['trend'];
   loading: boolean;
 }) {
+  const { t: ttrend } = useI18n();
+  const { titles: trendTitles } = usePeriodOptions();
   return (
     <View className="border-border rounded-xl border bg-card p-5">
       <View className="flex-row items-center justify-between">
-        <Text className="text-base font-semibold">Income vs Spending</Text>
+        <Text className="text-base font-semibold">{ttrend('an.incomeVsSpending')}</Text>
         <Text variant="muted" className="text-xs">
-          {PERIOD_TITLES[period]}
+          {trendTitles[period]}
         </Text>
       </View>
 
       {loading && trend.length === 0 ? (
         <Text variant="muted" className="mt-4">
-          Loading…
+          {ttrend('common.loading')}
         </Text>
       ) : trend.every((point) => point.income === 0 && point.expense === 0) ? (
         <Text variant="muted" className="mt-4">
-          No transactions recorded{' '}
-          {period === 'week' ? 'this week' : period === 'month' ? 'this month' : 'this year'}.
+          {ttrend(period === 'week' ? 'an.noTrendWeek' : period === 'month' ? 'an.noTrendMonth' : 'an.noTrendYear')}
         </Text>
       ) : (
         <View className="mt-4">
@@ -428,18 +472,18 @@ function CategoryBreakdown({
   categories: ReturnType<typeof useAnalytics>['categories'];
   loading: boolean;
 }) {
+  const { t: tcat, lang: clang } = useI18n();
   return (
     <View className="border-border rounded-xl border bg-card p-5">
-      <Text className="text-base font-semibold">By category</Text>
+      <Text className="text-base font-semibold">{tcat('an.byCategory')}</Text>
 
       {loading && categories.length === 0 ? (
         <Text variant="muted" className="mt-4">
-          Loading…
+          {tcat('common.loading')}
         </Text>
       ) : categories.length === 0 ? (
         <Text variant="muted" className="mt-4">
-          No expenses recorded{' '}
-          {period === 'week' ? 'this week' : period === 'month' ? 'this month' : 'this year'}.
+          {tcat(period === 'week' ? 'an.noCatWeek' : period === 'month' ? 'an.noCatMonth' : 'an.noCatYear')}
         </Text>
       ) : (
         <View className="mt-2">
@@ -453,7 +497,7 @@ function CategoryBreakdown({
                 <View className="flex-row items-center gap-2">
                   <Icon as={IconComponent} size={14} className="text-muted-foreground" />
                   <Text className="flex-1 text-sm font-medium" numberOfLines={1}>
-                    {category.name}
+                    {categoryDisplayName(category, clang)}
                   </Text>
                   <Text className="text-sm">{formatAmount(category.amount, currency)}</Text>
                   <Text variant="muted" className="w-10 text-right text-xs">

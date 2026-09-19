@@ -1,6 +1,7 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_SETTINGS, getSettings, setSetting } from '@/lib/db/settings';
+import { setDefaultFormatLocale } from '@/lib/format-locale';
 import type { Settings } from '@/types';
 
 interface SettingsContextValue {
@@ -24,6 +25,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     getSettings(db)
       .then((settings) => {
         if (active) {
+          setDefaultFormatLocale({ lang: settings.language, numerals: settings.numerals });
           setState({ settings, loading: false });
         }
       })
@@ -40,6 +42,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const settings = await getSettings(db);
+      setDefaultFormatLocale({ lang: settings.language, numerals: settings.numerals });
       setState({ settings, loading: false });
     } catch {
       setState((prev) => ({ ...prev, loading: false }));
@@ -51,7 +54,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const stored = String(value);
       await setSetting(db, key, stored);
       const parsed = key === 'startOfWeek' ? Number(stored) : stored;
-      setState((prev) => ({ ...prev, settings: { ...prev.settings, [key]: parsed as never } }));
+      setState((prev) => {
+        const settings = { ...prev.settings, [key]: parsed as never };
+        if (key === 'language' || key === 'numerals') {
+          setDefaultFormatLocale({ lang: settings.language, numerals: settings.numerals });
+        }
+        return { ...prev, settings };
+      });
     },
     [db]
   );

@@ -6,6 +6,7 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { useCategories } from '@/hooks/use-categories';
+import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { getTransactionById, createTransaction, updateTransaction } from '@/lib/db/transactions';
 import { ensureDefaultAccount } from '@/lib/db/accounts';
@@ -35,6 +36,7 @@ export default function NewTransactionScreen() {
   const { colorScheme } = useColorScheme();
   const colors = THEME[colorScheme ?? 'light'];
   const { settings } = useSettings();
+  const { t } = useI18n();
 
   const [type, setType] = useState<TransactionType>(settings.defaultTransactionType);
   const [amountInput, setAmountInput] = useState('');
@@ -91,15 +93,15 @@ export default function NewTransactionScreen() {
   const handleSave = async () => {
     const amount = parseAmountToMinorUnits(amountInput);
     if (amount === null || amount <= 0) {
-      setError('Enter an amount greater than zero.');
+      setError(t('add.errAmount'));
       return;
     }
     if (!categoryId) {
-      setError('Select a category.');
+      setError(t('add.errCategory'));
       return;
     }
     if (!accountId) {
-      setError('Could not load accounts. Please try again.');
+      setError(t('add.errAccounts'));
       return;
     }
 
@@ -122,7 +124,7 @@ export default function NewTransactionScreen() {
       }
       router.back();
     } catch {
-      setError('Could not save the transaction. Please try again.');
+      setError(t('add.errSave'));
       setSaving(false);
     }
   };
@@ -132,7 +134,7 @@ export default function NewTransactionScreen() {
       className="bg-background flex-1"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScreenHeader title={editingId ? 'Edit Transaction' : 'Add Transaction'} />
+      <ScreenHeader title={editingId ? t('add.editTitle') : t('add.addTitle')} />
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-5 px-4 pb-8"
@@ -140,8 +142,8 @@ export default function NewTransactionScreen() {
       >
         <SegmentedControl
           options={[
-            { value: 'expense', label: 'Expense' },
-            { value: 'income', label: 'Income' },
+            { value: 'expense', label: t('add.expense') },
+            { value: 'income', label: t('add.income') },
           ]}
           value={type}
           onChange={handleTypeChange}
@@ -155,55 +157,55 @@ export default function NewTransactionScreen() {
             onChangeText={handleAmountChange}
             placeholder="0.00"
             placeholderTextColor={colors.mutedForeground}
-            accessibilityLabel="Amount"
+            accessibilityLabel={t('add.amount')}
             className="text-foreground h-16 flex-1 text-3xl font-bold"
           />
         </View>
 
         {error ? <Text className="text-destructive text-sm">{error}</Text> : null}
 
-        <Field label="Category">
+        <Field label={t('add.category')}>
           {loadingEdit ? (
-            <Text variant="muted">Loading…</Text>
+            <Text variant="muted">{t('common.loading')}</Text>
           ) : (
             <CategoryPicker categories={categories} selectedId={categoryId} onSelect={setCategoryId} />
           )}
         </Field>
 
         <View className="flex-row gap-3">
-          <Field label="Date" className="flex-1">
+          <Field label={t('add.date')} className="flex-1">
             <DateTimeField mode="date" value={date} onChange={setDate} />
           </Field>
-          <Field label="Time" className="flex-1">
+          <Field label={t('add.time')} className="flex-1">
             <DateTimeField mode="time" value={date} onChange={setDate} />
           </Field>
         </View>
 
-        <Field label="Title (optional)">
+        <Field label={t('add.titleOpt')}>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="e.g. Lunch"
+            placeholder={t('add.titlePh')}
             placeholderTextColor={colors.mutedForeground}
-            accessibilityLabel="Title"
+            accessibilityLabel={t('add.titleLabel')}
             className={INPUT_CLASS}
           />
         </Field>
 
-        <Field label="Note (optional)">
+        <Field label={t('add.noteOpt')}>
           <TextInput
             value={note}
             onChangeText={setNote}
-            placeholder="e.g. Lunch with friends"
+            placeholder={t('add.notePh')}
             placeholderTextColor={colors.mutedForeground}
-            accessibilityLabel="Note"
+            accessibilityLabel={t('add.noteLabel')}
             className={INPUT_CLASS}
           />
         </Field>
 
         <Button onPress={handleSave} disabled={saving} className="mt-2">
           <Text className="text-primary-foreground font-medium">
-            {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Save Transaction'}
+            {saving ? t('common.saving') : editingId ? t('common.saveChanges') : t('add.save')}
           </Text>
         </Button>
       </ScrollView>

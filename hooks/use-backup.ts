@@ -18,6 +18,35 @@ import {
 
 export type BackupBusyState = 'export-json' | 'export-csv' | 'import' | null;
 
+export interface JsonImportSummary {
+  kind: 'json';
+  imported: number;
+  skipped: number;
+  categoriesAdded: number;
+  accountsAdded: number;
+}
+
+export interface CsvImportSummary {
+  kind: 'csv';
+  imported: number;
+  unmapped: number;
+  invalid: number;
+}
+
+export type ImportSummary = JsonImportSummary | CsvImportSummary;
+
+/**
+ * Typed import failures the UI maps to translated messages.
+ * Plain Errors carry validation text (already specific, shown as-is).
+ */
+export class BackupError extends Error {
+  readonly code: 'empty-csv' | 'invalid-json';
+  constructor(code: 'empty-csv' | 'invalid-json') {
+    super(code);
+    this.code = code;
+  }
+}
+
 /**
  * Screen-level backup actions. Follows Screen → Hook → Repository → SQLite:
  * this hook wires UI state to the backup repository and file helpers.
@@ -55,10 +84,11 @@ export function useBackup() {
   }, [db]);
 
   /**
-   * Pick a JSON/CSV file and merge it. Resolves to a summary message, or
-   * null when the user cancelled. Never deletes existing data.
+   * Pick a JSON/CSV file and merge it. Resolves to a summary, or null when
+   * the user cancelled. Never deletes existing data. Messages are composed
+   * by the caller (they need the UI language).
    */
-  const importFile = useCallback(async (): Promise<string | null> => {
+  const importFile = useCallback(async (): Promise<ImportSummary | null> => {
     setBusy('import');
     try {
       const picked = await pickBackupFile();
@@ -67,36 +97,35 @@ export function useBackup() {
       if (detectBackupKind(picked.name, picked.text) === 'csv') {
         const { rows, errors } = parseCsv(picked.text);
         if (rows.length === 0) {
-          throw new Error(errors[0] ?? 'No valid transactions found in this CSV file.');
+          throw new BackupError('empty-csv');
         }
         const result = await importCsvRows(db, rows);
-        let message = `Imported ${result.imported} transaction${result.imported === 1 ? '' : 's'}.`;
-        if (result.unmapped > 0) {
-          message += ` ${result.unmapped} row${result.unmapped === 1 ? '' : 's'} used the Other category (unknown name).`;
-        }
-        if (errors.length > 0) {
-          message += ` Skipped ${errors.length} invalid row${errors.length === 1 ? '' : 's'}.`;
-        }
-        return message;
+        return {
+          kind: 'csv',
+          imported: result.imported,
+          unmapped: result.unmapped,
+          invalid: errors.length,
+        };
       }
 
       let parsed: unknown;
       try {
         parsed = JSON.parse(picked.text);
       } catch {
-        throw new Error('This file is not valid JSON. Pick a Kharcha backup (.json) file.');
+        throw new BackupError('invalid-json');
       }
       const validated = validateBackup(parsed);
       if (!validated.ok) {
         throw new Error(validated.error);
       }
       const result = await importBackup(db, validated.data);
-      return (
-        `Imported ${result.imported} transaction${result.imported === 1 ? '' : 's'}. ` +
-        `Skipped ${result.skipped} duplicate${result.skipped === 1 ? '' : 's'}. ` +
-        `Added ${result.categoriesAdded} categor${result.categoriesAdded === 1 ? 'y' : 'ies'}` +
-        (result.accountsAdded > 0 ? ` and ${result.accountsAdded} account${result.accountsAdded === 1 ? '' : 's'}.` : '.')
-      );
+      return {
+        kind: 'json',
+        imported: result.imported,
+        skipped: result.skipped,
+        categoriesAdded: result.categoriesAdded,
+        accountsAdded: result.accountsAdded,
+      };
     } finally {
       setBusy(null);
     }

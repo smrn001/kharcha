@@ -1,3 +1,4 @@
+import { useI18n } from '@/hooks/use-i18n';
 import { Text } from '@/components/ui/text';
 import { View } from 'react-native';
 
@@ -24,6 +25,7 @@ export function BarChart({
   data: BarChartDatum[];
   formatValue?: (value: number) => string;
 }) {
+  const { t } = useI18n();
   const max = niceCeil(
     Math.max(...data.flatMap((d) => [d.income, d.expense]), 1)
   );
@@ -39,13 +41,13 @@ export function BarChart({
           <View className="flex-row items-center gap-1.5">
             <View className="bg-positive h-2.5 w-2.5 rounded-sm" />
             <Text variant="muted" className="text-xs">
-              Income
+              {t('an.income')}
             </Text>
           </View>
           <View className="flex-row items-center gap-1.5">
             <View className="bg-destructive h-2.5 w-2.5 rounded-sm" />
             <Text variant="muted" className="text-xs">
-              Spending
+              {t('an.expenses')}
             </Text>
           </View>
         </View>

@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Text } from '@/components/ui/text';
+import { useI18n } from '@/hooks/use-i18n';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -26,6 +27,7 @@ import type { Category, NewCategory } from '@/types';
 export default function EditCategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
+  const { t, plural } = useI18n();
 
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,9 +53,9 @@ export default function EditCategoryScreen() {
   if (loading) {
     return (
       <View className="bg-background flex-1">
-        <ScreenHeader title="Edit Category" />
+        <ScreenHeader title={t('cat.editTitle')} />
         <Text variant="muted" className="px-5 py-16 text-center">
-          Loading…
+          {t('common.loading')}
         </Text>
       </View>
     );
@@ -62,9 +64,9 @@ export default function EditCategoryScreen() {
   if (!category) {
     return (
       <View className="bg-background flex-1">
-        <ScreenHeader title="Edit Category" />
+        <ScreenHeader title={t('cat.editTitle')} />
         <Text variant="muted" className="px-5 py-16 text-center">
-          Category not found.
+          {t('cat.notFound')}
         </Text>
       </View>
     );
@@ -77,7 +79,7 @@ export default function EditCategoryScreen() {
       await updateCategory(db, id, input);
       router.back();
     } catch {
-      setError('Could not update the category. Please try again.');
+      setError(t('cat.errUpdate'));
       setSubmitting(false);
     }
   };
@@ -89,14 +91,14 @@ export default function EditCategoryScreen() {
       const usage = await countCategoryUsage(db, id);
       if (usage > 0) {
         setDeleteError(
-          `This category is used by ${usage} transaction${usage === 1 ? '' : 's'}. Delete or reassign those first.`
+          t('cat.usedMsg', { count: usage, plural: plural(usage) })
         );
         return;
       }
       await deleteCategory(db, id);
       router.back();
     } catch {
-      setDeleteError('Could not delete the category. Please try again.');
+      setDeleteError(t('cat.errDelete'));
     } finally {
       setBusy(false);
     }
@@ -104,17 +106,17 @@ export default function EditCategoryScreen() {
 
   return (
     <View className="bg-background flex-1">
-      <ScreenHeader title="Edit Category" />
+      <ScreenHeader title={t('cat.editTitle')} />
       <CategoryForm
         initial={{ name: category.name, icon: category.icon, type: category.type }}
-        submitLabel="Save Changes"
+        submitLabel={t('common.saveChanges')}
         submitting={submitting}
         error={error}
         onSubmit={handleSubmit}
         footer={
           <Pressable onPress={() => setDeleteOpen(true)} hitSlop={8}>
             <Text className="text-destructive py-2 text-center text-sm font-medium">
-              Delete Category
+              {t('cat.deleteBtn')}
             </Text>
           </Pressable>
         }
@@ -123,22 +125,22 @@ export default function EditCategoryScreen() {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete category?</AlertDialogTitle>
+            <AlertDialogTitle>{t('cat.delTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. Categories used by transactions cannot be deleted.
+              {t('cat.delDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deleteError ? <Text className="text-destructive text-sm">{deleteError}</Text> : null}
           <AlertDialogFooter>
             <AlertDialogCancel>
-              <Text>Cancel</Text>
+              <Text>{t('common.cancel')}</Text>
             </AlertDialogCancel>
             <AlertDialogAction
               onPress={handleDelete}
               disabled={busy}
               className="bg-destructive dark:bg-destructive/60"
             >
-              <Text className="text-white font-medium">Delete</Text>
+              <Text className="text-white font-medium">{t('common.delete')}</Text>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
