@@ -229,4 +229,54 @@ describe('transactions repository (v2)', () => {
     expect(await getTransactions(sql, { search: 'KHA' })).toHaveLength(1);
     expect(await getTransactions(sql, { search: 'zzz-no-match' })).toHaveLength(0);
   });
+
+  it('searches by amount', async () => {
+    const sql = await setup();
+    const accountId = await cashId(sql);
+    await createTransaction(sql, {
+      type: 'expense',
+      amount: 85000, // Rs 850.00
+      accountId,
+      categoryId: FOOD,
+      title: 'Grocery Store',
+      date: '2026-09-19T10:00:00.000Z',
+    });
+    await createTransaction(sql, {
+      type: 'expense',
+      amount: 420_00, // Rs 420.00
+      accountId,
+      categoryId: FOOD,
+      title: 'Pathao',
+      date: '2026-09-19T10:00:00.000Z',
+    });
+    expect(await getTransactions(sql, { search: '850' })).toHaveLength(1);
+    expect(await getTransactions(sql, { search: '850.00' })).toHaveLength(1);
+    expect(await getTransactions(sql, { search: '999' })).toHaveLength(0);
+    expect(await getTransactions(sql, { search: '420.5' })).toHaveLength(0);
+  });
+
+  it('filters by amount range', async () => {
+    const sql = await setup();
+    const accountId = await cashId(sql);
+    await createTransaction(sql, {
+      type: 'expense',
+      amount: 85000,
+      accountId,
+      categoryId: FOOD,
+      date: '2026-09-19T10:00:00.000Z',
+    });
+    await createTransaction(sql, {
+      type: 'expense',
+      amount: 420_00,
+      accountId,
+      categoryId: FOOD,
+      date: '2026-09-19T10:00:00.000Z',
+    });
+    expect(await getTransactions(sql, { minAmountMinor: 50_000 })).toHaveLength(1);
+    expect(await getTransactions(sql, { minAmountMinor: 40_000, maxAmountMinor: 50_000 })).toHaveLength(
+      1
+    );
+    expect(await getTransactions(sql, { maxAmountMinor: 45_000 })).toHaveLength(1);
+    expect(await getTransactions(sql, { minAmountMinor: 90_000 })).toHaveLength(0);
+  });
 });

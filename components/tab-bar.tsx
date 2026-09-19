@@ -9,7 +9,6 @@ import {
 } from '@expo/ui/jetpack-compose';
 import { router, usePathname } from 'expo-router';
 import { Platform, View, useColorScheme } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TAB_ITEMS: {
   name: 'index' | 'transactions' | 'analytics' | 'settings';
@@ -51,7 +50,6 @@ const TAB_ITEMS: {
 export function TabBar() {
   const { t } = useI18n();
   const pathname = usePathname();
-  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
 
   if (Platform.OS !== 'android') {
@@ -64,7 +62,10 @@ export function TabBar() {
   else if (pathname === '/settings') selectedName = 'settings';
 
   return (
-    <View style={{ paddingBottom: insets.bottom }}>
+    <View>
+      {/* The M3 NavigationBar already pads the bottom system-bar inset itself;
+          adding another bottom inset here made the bar ~40dp taller than the
+          slim Google-app style bar. */}
       <Host
         matchContents={{ vertical: true }}
         style={{ width: '100%' }}

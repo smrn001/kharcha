@@ -3,7 +3,7 @@ import { DateTimeField } from '@/components/date-time-field';
 import { LoadingView } from '@/components/loading-view';
 import { NativeBlock } from '@/components/native-block';
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
-import { Button, FieldGroup, Host, Text, TextInput } from '@expo/ui';
+import { Button, Text, TextInput } from '@expo/ui';
 import { useCategories } from '@/hooks/use-categories';
 import { hapticError, hapticSuccess } from '@/lib/haptics';
 import { useI18n } from '@/hooks/use-i18n';
@@ -15,7 +15,7 @@ import { useTheme } from '@/lib/theme';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text as RNText, TextInput as RNTextInput, View } from 'react-native';
 import type { TransactionType } from '@/types';
 
 export default function NewTransactionScreen() {
@@ -134,7 +134,7 @@ export default function NewTransactionScreen() {
       />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ gap: 20, paddingHorizontal: 16, paddingBottom: 32 }}
+        contentContainerStyle={{ gap: 16, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
       >
@@ -146,45 +146,99 @@ export default function NewTransactionScreen() {
           }}
         />
 
-        {/* Host must directly wrap FieldGroup (Android Compose contract). */}
         {loadingEdit ? (
           <LoadingView label={t('common.loading')} />
         ) : (
-          <Host>
-            <FieldGroup>
-              <FieldGroup.Section title={t('add.amount')}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <NativeBlock>
-                    <Text textStyle={{ fontSize: 24, fontWeight: '600', color: colors.primary }}>
-                      {settings.currency}
-                    </Text>
-                  </NativeBlock>
-                  <NativeBlock matchContents={false} style={{ flex: 1 }}>
-                    <TextInput
-                      keyboardType="decimal-pad"
-                      defaultValue={amountInput}
-                      onChangeText={handleAmountChange}
-                      placeholder="0.00"
-                      placeholderTextColor={colors.textSecondary}
-                      textStyle={{ fontSize: 28, fontWeight: 'bold', color: colors.text }}
-                      style={{ height: 64 }}
-                    />
-                  </NativeBlock>
-                </View>
-              </FieldGroup.Section>
+          <>
+            <View
+              style={{
+                backgroundColor: colors.surfaceContainer,
+                borderRadius: 16,
+                padding: 16,
+                gap: 12,
+              }}
+            >
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+                  {t('add.amount')}
+                </Text>
+              </NativeBlock>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <RNText style={{ fontSize: 24, fontWeight: '600', color: colors.primary }}>
+                  {settings.currency}
+                </RNText>
+                <RNTextInput
+                  keyboardType="decimal-pad"
+                  value={amountInput}
+                  onChangeText={handleAmountChange}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.textSecondary}
+                  textAlignVertical="center"
+                  style={{
+                    flex: 1,
+                    height: 64,
+                    paddingVertical: 0,
+                    fontSize: 28,
+                    fontWeight: 'bold',
+                    color: colors.text,
+                  }}
+                />
+              </View>
+            </View>
 
-              <FieldGroup.Section title={t('add.category')}>
-                <CategoryPicker categories={categories} selectedId={categoryId} onSelect={setCategoryId} />
-              </FieldGroup.Section>
+            <View
+              style={{
+                backgroundColor: colors.surfaceContainer,
+                borderRadius: 16,
+                padding: 16,
+                gap: 12,
+              }}
+            >
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+                  {t('add.category')}
+                </Text>
+              </NativeBlock>
+              <CategoryPicker
+                categories={categories}
+                selectedId={categoryId}
+                onSelect={setCategoryId}
+              />
+            </View>
 
-              <FieldGroup.Section title={t('add.dateTime')}>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <DateTimeField mode="date" value={date} onChange={setDate} style={{ flex: 1 }} />
-                  <DateTimeField mode="time" value={date} onChange={setDate} style={{ flex: 1 }} />
-                </View>
-              </FieldGroup.Section>
+            <View
+              style={{
+                backgroundColor: colors.surfaceContainer,
+                borderRadius: 16,
+                padding: 16,
+                gap: 12,
+              }}
+            >
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+                  {t('add.dateTime')}
+                </Text>
+              </NativeBlock>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <DateTimeField mode="date" value={date} onChange={setDate} style={{ flex: 1 }} />
+                <DateTimeField mode="time" value={date} onChange={setDate} style={{ flex: 1 }} />
+              </View>
+            </View>
 
-              <FieldGroup.Section title={t('add.details')}>
+            <View
+              style={{
+                backgroundColor: colors.surfaceContainer,
+                borderRadius: 16,
+                padding: 16,
+                gap: 12,
+              }}
+            >
+              <NativeBlock>
+                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+                  {t('add.details')}
+                </Text>
+              </NativeBlock>
+              <NativeBlock matchContents={false} style={{ flex: 1 }}>
                 <TextInput
                   defaultValue={title}
                   onChangeText={setTitle}
@@ -193,6 +247,8 @@ export default function NewTransactionScreen() {
                   textStyle={{ fontSize: 16, color: colors.text }}
                   style={{ height: 56 }}
                 />
+              </NativeBlock>
+              <NativeBlock matchContents={false} style={{ flex: 1 }}>
                 <TextInput
                   defaultValue={note}
                   onChangeText={setNote}
@@ -202,9 +258,9 @@ export default function NewTransactionScreen() {
                   textStyle={{ fontSize: 16, color: colors.text }}
                   style={{ height: 96 }}
                 />
-              </FieldGroup.Section>
-            </FieldGroup>
-          </Host>
+              </NativeBlock>
+            </View>
+          </>
         )}
 
         {error ? (

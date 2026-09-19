@@ -1,14 +1,15 @@
 import { DateTimeField } from '@/components/date-time-field';
+import { FilterChips } from '@/components/filter-chips';
 import { NativeBlock } from '@/components/native-block';
-import { BottomSheet, Button, Column, Icon, Row, ScrollView, Spacer, Text, TextInput } from '@expo/ui';
+import { BottomSheet, Button, Column, Icon, Row, ScrollView, Spacer, Text } from '@expo/ui';
 import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
 import { useI18n } from '@/hooks/use-i18n';
 import { categoryDisplayName } from '@/lib/i18n';
 import { hapticSelection } from '@/lib/haptics';
 import { useTheme } from '@/lib/theme';
-import type { Category, TransactionType } from '@/types';
+import type { Account, Category } from '@/types';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 
 const SEARCH_ICON = Icon.select({
   ios: 'magnifyingglass',
@@ -20,17 +21,12 @@ const X_ICON = Icon.select({
   android: import('@expo/material-symbols/close.xml'),
 });
 
-const FUNNEL_ICON = Icon.select({
-  ios: 'line.3.horizontal.decrease',
-  android: import('@expo/material-symbols/filter_alt.xml'),
-});
-
 const CHECK_ICON = Icon.select({
   ios: 'checkmark',
   android: import('@expo/material-symbols/check.xml'),
 });
 
-export type TypeFilter = 'all' | TransactionType;
+export type TypeFilter = 'all' | 'expense' | 'income';
 export type DateFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
 
 interface TransactionFiltersProps {
@@ -48,6 +44,13 @@ interface TransactionFiltersProps {
   onToggleCategory: (id: string) => void;
   onClearCategories: () => void;
   categories: Category[];
+  accountId: string | null;
+  onAccountChange: (id: string | null) => void;
+  accounts: Account[];
+  minAmount: string;
+  maxAmount: string;
+  onMinAmountChange: (value: string) => void;
+  onMaxAmountChange: (value: string) => void;
   resultCount: number;
   hasActiveFilters: boolean;
   onClearAll: () => void;
@@ -87,9 +90,10 @@ function SelectableRow({
 }
 
 /**
- * Transaction list header: an improved search field (icon + clear) and a
- * Filters button that opens a bottom sheet grouping type/period/category
- * filters (instead of unbounded horizontal chip rows).
+ * Transactions header: a pill search field (search + clear) and a horizontally
+ * scrollable row of quick Material 3 filter chips (All / Income / Expenses /
+ * Today / Filters). Filters opens a bottom sheet with date, category, account
+ * and amount-range filters.
  *
  * The toolbar lives in RN layout, so every universal component is bridged via
  * `NativeBlock` (a `Host`) to keep the Compose composition intact.
@@ -109,6 +113,13 @@ export function TransactionFilters({
   onToggleCategory,
   onClearCategories,
   categories,
+  accountId,
+  onAccountChange,
+  accounts,
+  minAmount,
+  maxAmount,
+  onMinAmountChange,
+  onMaxAmountChange,
   resultCount,
   hasActiveFilters,
   onClearAll,
@@ -116,12 +127,6 @@ export function TransactionFilters({
   const { t, lang } = useI18n();
   const colors = useTheme();
   const [open, setOpen] = useState(false);
-
-  const typeOptions: { value: TypeFilter; label: string }[] = [
-    { value: 'all', label: t('txns.all') },
-    { value: 'expense', label: t('txns.expense') },
-    { value: 'income', label: t('txns.income') },
-  ];
 
   const dateOptions: { value: DateFilter; label: string }[] = [
     { value: 'all', label: t('txns.all') },
@@ -131,37 +136,45 @@ export function TransactionFilters({
     { value: 'custom', label: t('txns.custom') },
   ];
 
-  const activeFilterCount =
-    (type !== 'all' ? 1 : 0) +
-    (dateFilter !== 'all' || customFrom || customTo ? 1 : 0) +
-    (categoryIds.length > 0 ? 1 : 0);
+  const dateAdvanced = dateFilter === 'week' || dateFilter === 'month' || dateFilter === 'custom';
+  const amountActive = minAmount.trim().length > 0 || maxAmount.trim().length > 0;
+  const advancedCount =
+    (dateAdvanced ? 1 : 0) +
+    (categoryIds.length > 0 ? 1 : 0) +
+    (accountId != null ? 1 : 0) +
+    (amountActive ? 1 : 0);
 
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 12 }}>
       <View
         style={{
           height: 44,
           flexDirection: 'row',
           alignItems: 'center',
           gap: 10,
-          borderRadius: 12,
-          backgroundColor: colors.surface,
-          paddingHorizontal: 14,
+          borderRadius: 22,
+          backgroundColor: colors.surfaceContainer,
+          paddingHorizontal: 16,
         }}
       >
         <NativeBlock>
           <Icon name={SEARCH_ICON} size={16} color={colors.textSecondary} />
         </NativeBlock>
-        <NativeBlock matchContents={false} style={{ flex: 1 }}>
-          <TextInput
-            onChangeText={onQueryChange}
-            placeholder={t('txns.searchPh')}
-            placeholderTextColor={colors.textSecondary}
-            autoCapitalize="none"
-            textStyle={{ fontSize: 15, color: colors.text }}
-            style={{ height: 44 }}
-          />
-        </NativeBlock>
+        <TextInput
+          value={query}
+          onChangeText={onQueryChange}
+          placeholder={t('txns.searchPh')}
+          placeholderTextColor={colors.textSecondary}
+          autoCapitalize="none"
+          textAlignVertical="center"
+          style={{
+            flex: 1,
+            height: 44,
+            paddingVertical: 0,
+            fontSize: 15,
+            color: colors.text,
+          }}
+        />
         {query ? (
           <Pressable onPress={() => onQueryChange('')} hitSlop={8}>
             <NativeBlock>
@@ -171,32 +184,57 @@ export function TransactionFilters({
         ) : null}
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <NativeBlock>
-          <Button
-            variant={activeFilterCount > 0 ? 'filled' : 'outlined'}
-            onPress={() => setOpen(true)}
-            style={{ borderRadius: 999, paddingHorizontal: 16, paddingVertical: 7 }}
-          >
-            <Icon name={FUNNEL_ICON} size={16} />
-            <Text textStyle={{ fontSize: 14, fontWeight: '500' }}>{t('txns.filters')}</Text>
-            {activeFilterCount > 0 ? (
-              <Text textStyle={{ fontSize: 14, fontWeight: '700' }}>
-                {` (${activeFilterCount})`}
-              </Text>
-            ) : null}
-          </Button>
-        </NativeBlock>
-        {hasActiveFilters ? (
-          <Pressable onPress={onClearAll} hitSlop={8}>
-            <NativeBlock>
-              <Text textStyle={{ fontSize: 14, color: colors.destructive }}>
-                {t('txns.clearFilters')}
-              </Text>
-            </NativeBlock>
-          </Pressable>
-        ) : null}
-      </View>
+      <FilterChips
+        chips={[
+          {
+            key: 'all',
+            label: t('txns.all'),
+            selected: type === 'all' && dateFilter === 'all',
+            onPress: () => {
+              void hapticSelection();
+              onTypeChange('all');
+              onDateFilterChange('all');
+            },
+          },
+          {
+            key: 'income',
+            label: t('txns.income'),
+            selected: type === 'income',
+            onPress: () => {
+              void hapticSelection();
+              onTypeChange('income');
+            },
+          },
+          {
+            key: 'expense',
+            label: t('txns.expense'),
+            selected: type === 'expense',
+            onPress: () => {
+              void hapticSelection();
+              onTypeChange('expense');
+            },
+          },
+          {
+            key: 'today',
+            label: t('txns.today'),
+            selected: dateFilter === 'today',
+            onPress: () => {
+              void hapticSelection();
+              onDateFilterChange('today');
+            },
+          },
+          {
+            key: 'filters',
+            label: t('txns.filters'),
+            selected: advancedCount > 0,
+            badgeCount: advancedCount,
+            onPress: () => {
+              void hapticSelection();
+              setOpen(true);
+            },
+          },
+        ]}
+      />
 
       <BottomSheet
         isPresented={open}
@@ -204,35 +242,12 @@ export function TransactionFilters({
         contentPadding={{ left: 24, right: 24, top: 8, bottom: 20 }}
       >
         <Column spacing={16}>
-          <Row alignment="center" spacing={8}>
-            <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>
-              {t('txns.filters')}
-            </Text>
-            <Spacer flexible />
-            {hasActiveFilters ? (
-              <Button variant="text" label={t('txns.clearFilters')} onPress={onClearAll} />
-            ) : null}
-          </Row>
+          <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>
+            {t('txns.filters')}
+          </Text>
 
           <ScrollView>
             <Column spacing={20}>
-              <Column spacing={8}>
-                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-                  {t('txns.type')}
-                </Text>
-                {typeOptions.map((option) => (
-                  <SelectableRow
-                    key={option.value}
-                    label={option.label}
-                    selected={type === option.value}
-                    onPress={() => {
-                      void hapticSelection();
-                      onTypeChange(option.value);
-                    }}
-                  />
-                ))}
-              </Column>
-
               <Column spacing={8}>
                 <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
                   {t('txns.period')}
@@ -294,16 +309,90 @@ export function TransactionFilters({
                   />
                 ))}
               </Column>
+
+              <Column spacing={8}>
+                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+                  {t('txns.account')}
+                </Text>
+                <SelectableRow
+                  label={t('txns.allAccounts')}
+                  selected={accountId == null}
+                  onPress={() => {
+                    void hapticSelection();
+                    onAccountChange(null);
+                  }}
+                />
+                {accounts.map((account) => (
+                  <SelectableRow
+                    key={account.id}
+                    label={account.name}
+                    selected={accountId === account.id}
+                    onPress={() => {
+                      void hapticSelection();
+                      onAccountChange(account.id);
+                    }}
+                  />
+                ))}
+              </Column>
+
+              <Column spacing={8}>
+                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+                  {t('txns.amount')}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <NativeBlock matchContents={false} style={{ flex: 1 }}>
+                    <TextInput
+                      value={minAmount}
+                      onChangeText={onMinAmountChange}
+                      placeholder={t('txns.min')}
+                      placeholderTextColor={colors.textSecondary}
+                      keyboardType="decimal-pad"
+                      textAlignVertical="center"
+                      style={{
+                        height: 48,
+                        borderRadius: 10,
+                        backgroundColor: colors.surfaceContainer,
+                        paddingVertical: 0,
+                        fontSize: 15,
+                        color: colors.text,
+                      }}
+                    />
+                  </NativeBlock>
+                  <NativeBlock matchContents={false} style={{ flex: 1 }}>
+                    <TextInput
+                      value={maxAmount}
+                      onChangeText={onMaxAmountChange}
+                      placeholder={t('txns.max')}
+                      placeholderTextColor={colors.textSecondary}
+                      keyboardType="decimal-pad"
+                      textAlignVertical="center"
+                      style={{
+                        height: 48,
+                        borderRadius: 10,
+                        backgroundColor: colors.surfaceContainer,
+                        paddingVertical: 0,
+                        fontSize: 15,
+                        color: colors.text,
+                      }}
+                    />
+                  </NativeBlock>
+                </View>
+              </Column>
             </Column>
           </ScrollView>
 
-          <Button
-            variant="filled"
-            label={t('txns.showResults', { count: String(resultCount) })}
-            onPress={() => setOpen(false)}
-            modifiers={[fillMaxWidth()]}
-            style={{ height: 52, borderRadius: 12 }}
-          />
+          <Row alignment="center" spacing={8}>
+            {hasActiveFilters ? (
+              <Button variant="text" label={t('txns.reset')} onPress={onClearAll} />
+            ) : null}
+            <Spacer flexible />
+            <Button
+              variant="filled"
+              label={t('txns.showResults', { count: String(resultCount) })}
+              onPress={() => setOpen(false)}
+              style={{ height: 48, borderRadius: 12 }}
+            />
+          </Row>
         </Column>
       </BottomSheet>
     </View>

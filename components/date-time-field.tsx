@@ -1,7 +1,7 @@
 import { BottomSheet, Button, Column, Text } from '@expo/ui';
+import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { NativeBlock } from '@/components/native-block';
 import { formatFullDate, formatTime } from '@/lib/dates';
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useTheme } from '@/lib/theme';
 import { useState } from 'react';
 import { Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -32,19 +32,7 @@ export function DateTimeField({
       : formatTime(value.toISOString())
     : (placeholder ?? 'Select');
 
-  const openPicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: value ?? new Date(),
-        mode,
-        onValueChange: (_event, selected) => {
-          if (selected) onChange(selected);
-        },
-      });
-    } else {
-      setShowPicker(true);
-    }
-  };
+  const openPicker = () => setShowPicker(true);
 
   return (
     <View style={style}>
@@ -77,21 +65,39 @@ export function DateTimeField({
         </NativeBlock>
       </Pressable>
 
-      <BottomSheet isPresented={showPicker} onDismiss={() => setShowPicker(false)}>
-        <View style={{ gap: 16 }}>
-          <DateTimePicker
-            value={value ?? new Date()}
-            mode={mode}
-            display="spinner"
-            onChange={(_event, selected) => {
-              if (selected) onChange(selected);
-            }}
-          />
-          <NativeBlock>
-            <Button label="Done" onPress={() => setShowPicker(false)} />
-          </NativeBlock>
-        </View>
-      </BottomSheet>
+      {/* Android: a declarative M3 dialog that opens on mount (unmount in
+          response to select or dismiss). iOS ignores `presentation` and always
+          renders inline, so it lives inside the sheet. */}
+      {Platform.OS === 'android' && showPicker ? (
+        <DateTimePicker
+          value={value ?? new Date()}
+          mode={mode}
+          presentation="dialog"
+          onValueChange={(_event, selected) => {
+            setShowPicker(false);
+            onChange(selected);
+          }}
+          onDismiss={() => setShowPicker(false)}
+        />
+      ) : null}
+
+      {Platform.OS !== 'android' ? (
+        <BottomSheet isPresented={showPicker} onDismiss={() => setShowPicker(false)}>
+          <View style={{ gap: 16 }}>
+            <DateTimePicker
+              value={value ?? new Date()}
+              mode={mode}
+              display="spinner"
+              onValueChange={(_event, selected) => {
+                onChange(selected);
+              }}
+            />
+            <NativeBlock>
+              <Button label="Done" onPress={() => setShowPicker(false)} />
+            </NativeBlock>
+          </View>
+        </BottomSheet>
+      ) : null}
     </View>
   );
 }

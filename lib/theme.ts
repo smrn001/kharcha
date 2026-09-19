@@ -16,6 +16,14 @@ import { getMaterialColors } from '@expo/ui/jetpack-compose';
 export interface ThemeTokens {
   background: string;
   surface: string;
+  /** Container used for toned elements (filter chips, tonal buttons, shell fills). */
+  surfaceContainer: string;
+  /** High-contrast boundary role (Material `outline`). */
+  outline: string;
+  /** Tinted container for the selected (filled) filter-chip state. */
+  secondaryContainer: string;
+  /** Content color on top of `secondaryContainer`. */
+  onSecondaryContainer: string;
   text: string;
   textSecondary: string;
   border: string;
@@ -50,9 +58,25 @@ export const fontSizes = {
   display: 34,
 } as const;
 
+/** Blend `foreground` over `background` at `alpha` (0–1). Inputs are #RRGGBB. */
+function blend(foreground: string, background: string, alpha: number): string {
+  const parse = (hex: string) =>
+    [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const [fr, fg, fb] = parse(foreground);
+  const [br, bg, bb] = parse(background);
+  const mix = (f: number, b: number) => Math.round(f * alpha + b * (1 - alpha));
+  return `#${[mix(fr, br), mix(fg, bg), mix(fb, bb)]
+    .map((v) => v.toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
 const iosLight: ThemeTokens = {
   background: '#FFFFFF',
   surface: '#F2F2F7',
+  surfaceContainer: '#F2F2F7',
+  outline: '#C6C6C8',
+  secondaryContainer: blend('#007AFF', '#FFFFFF', 0.16),
+  onSecondaryContainer: '#000000',
   text: '#000000',
   textSecondary: '#6E6E73',
   border: '#C6C6C8',
@@ -65,6 +89,10 @@ const iosLight: ThemeTokens = {
 const iosDark: ThemeTokens = {
   background: '#000000',
   surface: '#1C1C1E',
+  surfaceContainer: '#1C1C1E',
+  outline: '#48484A',
+  secondaryContainer: blend('#0A84FF', '#000000', 0.3),
+  onSecondaryContainer: '#FFFFFF',
   text: '#FFFFFF',
   textSecondary: '#98989D',
   border: '#3A3A3C',
@@ -77,6 +105,10 @@ const iosDark: ThemeTokens = {
 const androidLight: ThemeTokens = {
   background: '#FFFFFF',
   surface: '#F2F2F7',
+  surfaceContainer: '#F3F0F5',
+  outline: '#79747E',
+  secondaryContainer: '#E8DEF8',
+  onSecondaryContainer: '#4F378B',
   text: '#1C1C1E',
   textSecondary: '#6B7280',
   border: '#E5E7EB',
@@ -89,6 +121,10 @@ const androidLight: ThemeTokens = {
 const androidDark: ThemeTokens = {
   background: '#000000',
   surface: '#1C1C1E',
+  surfaceContainer: '#211F26',
+  outline: '#938F99',
+  secondaryContainer: '#4A4458',
+  onSecondaryContainer: '#E8DEF8',
   text: '#FFFFFF',
   textSecondary: '#9CA3AF',
   border: '#3A3A3C',
@@ -114,6 +150,10 @@ export function useTheme(): ThemeTokens {
     return {
       background: m3.background,
       surface: m3.surfaceVariant,
+      surfaceContainer: m3.surfaceContainer,
+      outline: m3.outline,
+      secondaryContainer: m3.secondaryContainer,
+      onSecondaryContainer: m3.onSecondaryContainer,
       text: m3.onSurface,
       textSecondary: m3.onSurfaceVariant,
       border: m3.outlineVariant,

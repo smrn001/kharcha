@@ -1,12 +1,12 @@
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
-import { Button, FieldGroup, Host, Icon, Text, TextInput } from '@expo/ui';
+import { Button, Icon, Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
 import { CATEGORY_ICONS, categoryIcon } from '@/lib/category-icons';
 import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/hooks/use-i18n';
 import type { NewCategory, TransactionType } from '@/types';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
 function useTypeOptions(): { value: TransactionType; label: string }[] {
   const { t } = useI18n();
@@ -53,7 +53,7 @@ export function CategoryForm({
     <View style={{ flex: 1 }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ gap: 20, paddingHorizontal: 16, paddingBottom: 32 }}
+        contentContainerStyle={{ gap: 16, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
       >
@@ -66,38 +66,81 @@ export function CategoryForm({
           }}
         />
 
-        <Host>
-          <FieldGroup>
-            <FieldGroup.Section title={t('cat.formName')}>
-              <TextInput
-                defaultValue={initial?.name ?? ''}
-                onChangeText={setName}
-                placeholder={t('cat.formNamePh')}
-                autoCapitalize="words"
-                textStyle={{ fontSize: 16 }}
-              />
-            </FieldGroup.Section>
+        <View
+          style={{
+            backgroundColor: colors.surfaceContainer,
+            borderRadius: 16,
+            padding: 16,
+            gap: 12,
+          }}
+        >
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+              {t('cat.formName')}
+            </Text>
+          </NativeBlock>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder={t('cat.formNamePh')}
+            placeholderTextColor={colors.textSecondary}
+            autoCapitalize="words"
+            textAlignVertical="center"
+            style={{
+              height: 56,
+              paddingVertical: 0,
+              fontSize: 16,
+              color: colors.text,
+            }}
+          />
+        </View>
 
-            <FieldGroup.Section title={t('cat.formIcon')}>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 4 }}>
-                {CATEGORY_ICONS.map((iconName) => {
-                  const selected = icon === iconName;
-                  return (
-                    <NativeBlock key={iconName}>
-                      <Button
-                        variant={selected ? 'filled' : 'text'}
-                        onPress={() => setIcon(selected ? undefined : iconName)}
-                        style={{ width: 44, height: 44, borderRadius: 22, padding: 0 }}
-                      >
-                        <Icon name={categoryIcon(iconName)} size={18} />
-                      </Button>
-                    </NativeBlock>
-                  );
-                })}
-              </View>
-            </FieldGroup.Section>
-          </FieldGroup>
-        </Host>
+        <View
+          style={{
+            backgroundColor: colors.surfaceContainer,
+            borderRadius: 16,
+            padding: 16,
+            gap: 12,
+          }}
+        >
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+              {t('cat.formIcon')}
+            </Text>
+          </NativeBlock>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {CATEGORY_ICONS.map((iconName) => {
+              const selected = icon === iconName;
+              return (
+                <Pressable
+                  key={iconName}
+                  onPress={() => setIcon(selected ? undefined : iconName)}
+                  style={({ pressed }) => [
+                    {
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: 1,
+                      backgroundColor: selected ? colors.secondaryContainer : colors.surfaceContainer,
+                      borderColor: selected ? colors.secondaryContainer : colors.outline,
+                    },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <NativeBlock>
+                    <Icon
+                      name={categoryIcon(iconName)}
+                      size={18}
+                      color={selected ? colors.onSecondaryContainer : colors.textSecondary}
+                    />
+                  </NativeBlock>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {error ? (
           <NativeBlock>

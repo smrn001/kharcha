@@ -54,6 +54,10 @@ export interface TransactionFilters {
   type?: TransactionType;
   categoryIds?: string[];
   accountIds?: string[];
+  /** Amount lower bound in minor units (inclusive). */
+  minAmountMinor?: number;
+  /** Amount upper bound in minor units (inclusive). */
+  maxAmountMinor?: number;
   /** Local-date keys ('YYYY-MM-DD'). */
   from?: string;
   /** Local-date keys ('YYYY-MM-DD'). */
@@ -63,6 +67,19 @@ export interface TransactionFilters {
   /** Keyset cursor for pagination (exclusive). */
   before?: TransactionCursor;
   includeDeleted?: boolean;
+}
+
+/** Amounts are stored in minor units (major × 100, mirroring the input UIs). */
+const MINOR_UNITS = 100;
+
+/**
+ * When the search term is a plain decimal amount (e.g. `850` or `12.50`), also
+ * match transactions by amount. Returns `null` for non-numeric terms.
+ */
+function parseAmountSearchTerm(term: string): number | null {
+  const normalized = term.trim().replace(/,/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
+  return Math.round(Number.parseFloat(normalized) * MINOR_UNITS);
 }
 
 export async function getTransactions(
@@ -111,19 +128,31 @@ export async function getTransactions(
       filters.before.id
     );
   }
+  if (filters.minAmountMinor != null) {
+    conditions.push('t.amount_minor >= ?');
+    params.push(filters.minAmountMinor);
+  }
+  if (filters.maxAmountMinor != null) {
+    conditions.push('t.amount_minor <= ?');
+    params.push(filters.maxAmountMinor);
+  }
   if (filters.search) {
     const term = filters.search.normalize('NFC');
+    const orConditions: string[] = ['t.title LIKE ?', 't.note LIKE ?', 'c.name LIKE ?'];
+    const orParams: (string | number)[] = [`%${term}%`, `%${term}%`, `%${term}%`];
     const aliasIds = await resolveCategoryIdsForSearch(db, term);
     if (aliasIds.length > 0) {
       const placeholders = aliasIds.map(() => '?').join(', ');
-      conditions.push(
-        `(t.title LIKE ? OR t.note LIKE ? OR c.name LIKE ? OR t.category_id IN (${placeholders}))`
-      );
-      params.push(`%${term}%`, `%${term}%`, `%${term}%`, ...aliasIds);
-    } else {
-      conditions.push('(t.title LIKE ? OR t.note LIKE ? OR c.name LIKE ?)');
-      params.push(`%${term}%`, `%${term}%`, `%${term}%`);
+      orConditions.push(`t.category_id IN (${placeholders})`);
+      orParams.push(...aliasIds);
     }
+    const amountMinor = parseAmountSearchTerm(term);
+    if (amountMinor != null) {
+      orConditions.push('t.amount_minor = ?');
+      orParams.push(amountMinor);
+    }
+    conditions.push(`(${orConditions.join(' OR ')})`);
+    params.push(...orParams);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

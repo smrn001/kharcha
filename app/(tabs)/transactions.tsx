@@ -9,6 +9,7 @@ import {
 } from '@/components/transaction-filters';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button, Icon, Text } from '@expo/ui';
+import { useAccounts } from '@/hooks/use-accounts';
 import { useCategories } from '@/hooks/use-categories';
 import { useDayHeading } from '@/hooks/use-day-heading';
 import { useI18n } from '@/hooks/use-i18n';
@@ -27,6 +28,15 @@ const SEARCH_ICON = Icon.select({
   android: import('@expo/material-symbols/search.xml'),
 });
 
+/** Parse a user-typed amount ("850", "12.50") into minor units, or null. */
+function parseAmountMinor(input: string): number | null {
+  const normalized = input.trim().replace(',', '.');
+  if (!normalized) return null;
+  const value = Number(normalized);
+  if (!Number.isFinite(value) || value < 0) return null;
+  return Math.round(value * 100);
+}
+
 interface Section {
   key: string;
   title: string;
@@ -43,10 +53,15 @@ export default function TransactionsScreen() {
   const [customFrom, setCustomFrom] = useState<Date | null>(null);
   const [customTo, setCustomTo] = useState<Date | null>(null);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
 
   const { t } = useI18n();
   const dayHeading = useDayHeading();
   const { categories } = useCategories(type === 'all' ? undefined : type);
+  const { accounts } = useAccounts();
+
   const filters = useMemo<QueryFilters>(() => {
     const next: QueryFilters = {};
     const trimmed = query.trim();
@@ -63,8 +78,24 @@ export default function TransactionsScreen() {
       if (customTo) next.to = toDateKey(endOfDay(customTo));
     }
     if (categoryIds.length > 0) next.categoryIds = categoryIds;
+    if (accountId) next.accountIds = [accountId];
+    const minMinor = parseAmountMinor(minAmount);
+    if (minMinor != null) next.minAmountMinor = minMinor;
+    const maxMinor = parseAmountMinor(maxAmount);
+    if (maxMinor != null) next.maxAmountMinor = maxMinor;
     return next;
-  }, [query, type, dateFilter, customFrom, customTo, categoryIds, settings.startOfWeek]);
+  }, [
+    query,
+    type,
+    dateFilter,
+    customFrom,
+    customTo,
+    categoryIds,
+    accountId,
+    minAmount,
+    maxAmount,
+    settings.startOfWeek,
+  ]);
 
   const { transactions, loading, refresh } = useTransactions(filters);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,7 +110,13 @@ export default function TransactionsScreen() {
   }, [refresh]);
 
   const hasActiveFilters =
-    !!query.trim() || type !== 'all' || dateFilter !== 'all' || categoryIds.length > 0;
+    !!query.trim() ||
+    type !== 'all' ||
+    dateFilter !== 'all' ||
+    categoryIds.length > 0 ||
+    accountId != null ||
+    minAmount.trim().length > 0 ||
+    maxAmount.trim().length > 0;
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
@@ -123,6 +160,9 @@ export default function TransactionsScreen() {
     setCustomFrom(null);
     setCustomTo(null);
     setCategoryIds([]);
+    setAccountId(null);
+    setMinAmount('');
+    setMaxAmount('');
   };
 
   return (
@@ -145,6 +185,13 @@ export default function TransactionsScreen() {
           onToggleCategory={toggleCategory}
           onClearCategories={() => setCategoryIds([])}
           categories={categories}
+          accountId={accountId}
+          onAccountChange={setAccountId}
+          accounts={accounts}
+          minAmount={minAmount}
+          maxAmount={maxAmount}
+          onMinAmountChange={setMinAmount}
+          onMaxAmountChange={setMaxAmount}
           resultCount={transactions.length}
           hasActiveFilters={hasActiveFilters}
           onClearAll={clearFilters}

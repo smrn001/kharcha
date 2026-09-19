@@ -35,7 +35,6 @@
       ],
       "expo-status-bar",
       "expo-sqlite",
-      "@react-native-community/datetimepicker",
       [
         "expo-navigation-bar",
         {
