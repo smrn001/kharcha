@@ -6,6 +6,7 @@ import { useColorScheme } from 'react-native';
  * is left to the device-adaptive `@expo/ui` defaults.
  */
 export interface AppColors {
+  background: string;
   positive: string;
   destructiveError: string;
   mutedForeground: string;
@@ -14,6 +15,7 @@ export interface AppColors {
 }
 
 const light: AppColors = {
+  background: '#FFFFFF',
   positive: '#16A34A',
   destructiveError: '#DC2626',
   mutedForeground: '#6B7280',
@@ -22,6 +24,7 @@ const light: AppColors = {
 };
 
 const dark: AppColors = {
+  background: '#0F0F12',
   positive: '#4ADE80',
   destructiveError: '#F87171',
   mutedForeground: '#9CA3AF',
