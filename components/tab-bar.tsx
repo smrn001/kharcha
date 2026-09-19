@@ -1,56 +1,55 @@
+import { NativeBlock } from '@/components/native-block';
 import { useI18n } from '@/hooks/use-i18n';
+import { hapticSelection } from '@/lib/haptics';
 import type { DictionaryKey } from '@/lib/i18n/en';
-import {
-  Host,
-  Icon,
-  NavigationBar,
-  NavigationBarItem,
-  Text,
-} from '@expo/ui/jetpack-compose';
+import { Icon } from '@expo/ui';
+import { useTheme } from '@/lib/theme';
 import { router, usePathname } from 'expo-router';
-import { Platform, View, useColorScheme } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const TAB_ICONS = {
+  home: Icon.select({
+    ios: 'house.fill',
+    android: import('@expo/material-symbols/home.xml'),
+  }),
+  transactions: Icon.select({
+    ios: 'receipt',
+    android: import('@expo/material-symbols/receipt_long.xml'),
+  }),
+  analytics: Icon.select({
+    ios: 'chart.pie',
+    android: import('@expo/material-symbols/pie_chart.xml'),
+  }),
+  settings: Icon.select({
+    ios: 'gear',
+    android: import('@expo/material-symbols/settings.xml'),
+  }),
+} as const;
 
 const TAB_ITEMS: {
   name: 'index' | 'transactions' | 'analytics' | 'settings';
   href: '/' | '/transactions' | '/analytics' | '/settings';
-  icon: number;
+  iconKey: keyof typeof TAB_ICONS;
   labelKey: DictionaryKey;
 }[] = [
-  {
-    name: 'index',
-    href: '/',
-    icon: require('@expo/material-symbols/home.xml'),
-    labelKey: 'tabs.home',
-  },
-  {
-    name: 'transactions',
-    href: '/transactions',
-    icon: require('@expo/material-symbols/receipt_long.xml'),
-    labelKey: 'tabs.transactions',
-  },
-  {
-    name: 'analytics',
-    href: '/analytics',
-    icon: require('@expo/material-symbols/pie_chart.xml'),
-    labelKey: 'tabs.analytics',
-  },
-  {
-    name: 'settings',
-    href: '/settings',
-    icon: require('@expo/material-symbols/settings.xml'),
-    labelKey: 'tabs.settings',
-  },
+  { name: 'index', href: '/', iconKey: 'home', labelKey: 'tabs.home' },
+  { name: 'transactions', href: '/transactions', iconKey: 'transactions', labelKey: 'tabs.transactions' },
+  { name: 'analytics', href: '/analytics', iconKey: 'analytics', labelKey: 'tabs.analytics' },
+  { name: 'settings', href: '/settings', iconKey: 'settings', labelKey: 'tabs.settings' },
 ];
 
 /**
- * Material 3 bottom navigation bar for Android (from `@expo/ui/jetpack-compose`).
- * Colours come from the Material 3 defaults (device-adaptive); navigation goes
- * through `router.navigate`. iOS uses `NativeTabs`.
+ * Compact bottom navigation bar for Android. The Compose `NavigationBar` is
+ * fixed at 80dp (unshrinkable), so this custom React Native bar gives a slim,
+ * Google-app-style look: a ~56dp content row riding on the bottom inset, with
+ * the active tab wearing the Material 3 tonal pill. iOS keeps `NativeTabs`.
  */
 export function TabBar() {
   const { t } = useI18n();
+  const colors = useTheme();
+  const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const colorScheme = useColorScheme();
 
   if (Platform.OS !== 'android') {
     return null;
@@ -62,35 +61,53 @@ export function TabBar() {
   else if (pathname === '/settings') selectedName = 'settings';
 
   return (
-    <View>
-      {/* The M3 NavigationBar already pads the bottom system-bar inset itself;
-          adding another bottom inset here made the bar ~40dp taller than the
-          slim Google-app style bar. */}
-      <Host
-        matchContents={{ vertical: true }}
-        style={{ width: '100%' }}
-        colorScheme={colorScheme ?? undefined}
-      >
-        <NavigationBar tonalElevation={0}>
-          {TAB_ITEMS.map((tab) => {
-            const selected = selectedName === tab.name;
-            return (
-              <NavigationBarItem
-                key={tab.name}
-                selected={selected}
-                onClick={() => router.navigate(tab.href)}
+    <View
+      style={{
+        backgroundColor: colors.surfaceContainer,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      <View style={{ height: 64, flexDirection: 'row', alignItems: 'stretch' }}>
+        {TAB_ITEMS.map((tab) => {
+          const selected = selectedName === tab.name;
+          const color = selected ? colors.onSecondaryContainer : colors.textSecondary;
+          return (
+            <Pressable
+              key={tab.name}
+              onPress={() => {
+                void hapticSelection();
+                router.navigate(tab.href);
+              }}
+              style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            >
+              <View
+                style={{
+                  height: 34,
+                  width: 56,
+                  borderRadius: 17,
+                  overflow: 'hidden',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: selected ? colors.secondaryContainer : 'transparent',
+                }}
               >
-                <NavigationBarItem.Icon>
-                  <Icon source={tab.icon} />
-                </NavigationBarItem.Icon>
-                <NavigationBarItem.Label>
-                  <Text>{t(tab.labelKey)}</Text>
-                </NavigationBarItem.Label>
-              </NavigationBarItem>
-            );
-          })}
-        </NavigationBar>
-      </Host>
+                <NativeBlock>
+                  <Icon name={TAB_ICONS[tab.iconKey]} size={21} color={color} />
+                </NativeBlock>
+              </View>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: selected ? '600' : '500',
+                  color,
+                }}
+              >
+                {t(tab.labelKey)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
