@@ -1,9 +1,7 @@
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { FieldRow } from '@/components/field-row';
 import { SelectionSheet } from '@/components/selection-sheet';
-import { FieldGroup, Host, Switch, Text } from '@expo/ui';
-import { AboutSection } from './components/about-section';
-import { DataSection } from './components/data-section';
+import { Column, FieldGroup, Host, Icon, Row, Switch, Text } from '@expo/ui';
 import { useSettingsSheet } from '@/hooks/use-settings-sheet';
 import { useSettingsBackup } from '@/hooks/use-settings-backup';
 import { useI18n } from '@/hooks/use-i18n';
@@ -21,12 +19,19 @@ import {
 import { resetAllTransactions } from '@/lib/db/transactions';
 import { SUPPORTED_CURRENCIES } from '@/lib/format';
 import { hapticMediumImpact } from '@/lib/haptics';
+import { REFRESH_ICON } from '@/lib/icons';
 import { useTheme } from '@/lib/theme';
+import Constants from 'expo-constants';
 import { useSQLiteContext } from 'expo-sqlite';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { View, useColorScheme } from 'react-native';
+import { Platform, View, useColorScheme } from 'react-native';
 
+// NOTE: every row below must stay a DIRECT child of its FieldGroup.Section.
+// On Android each row is wrapped in its own Material ListItem — an intermediate
+// custom component would collapse the whole group into a single ListItem and
+// only the first row would show. Keep row UI inline here; shared logic lives
+// in hooks/use-settings-sheet, hooks/use-settings-backup, lib/settings-options.
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const { settings, updateSetting } = useSettings();
@@ -120,23 +125,71 @@ export default function SettingsScreen() {
           </FieldGroup.Section>
 
           <FieldGroup.Section title={t('set.data')}>
-            <DataSection
-              busy={backup.busy}
-              message={backup.message}
+            <FieldRow
+              label={t('set.exportBackup')}
+              supporting={backup.busy === 'export-json' ? t('common.working') : t('set.jsonFile')}
+              onPress={backupDisabled ? undefined : backup.runExportJson}
               disabled={backupDisabled}
-              onExportJson={backup.runExportJson}
-              onExportCsv={backup.runExportCsv}
-              onImport={backup.runImport}
-              onReset={() => setResetOpen(true)}
             />
+            <FieldRow
+              label={t('set.exportTx')}
+              supporting={backup.busy === 'export-csv' ? t('common.working') : t('set.csvFile')}
+              onPress={backupDisabled ? undefined : backup.runExportCsv}
+              disabled={backupDisabled}
+            />
+            <FieldRow
+              label={t('set.importData')}
+              supporting={backup.busy === 'import' ? t('common.working') : t('set.jsonOrCsv')}
+              onPress={backupDisabled ? undefined : backup.runImport}
+              disabled={backupDisabled}
+            />
+            <FieldRow label={t('set.resetData')} onPress={() => setResetOpen(true)} />
+            {backup.message ? (
+              <Row alignment="center" spacing={8}>
+                <Text
+                  textStyle={{
+                    fontSize: 14,
+                    fontWeight: '500',
+                    color: backup.message.kind === 'success' ? colors.success : colors.destructive,
+                  }}
+                >
+                  {backup.message.text}
+                </Text>
+              </Row>
+            ) : null}
           </FieldGroup.Section>
 
           <FieldGroup.Section title={t('set.about')}>
-            <AboutSection
-              updateState={updateState}
-              isChecking={isChecking}
-              checkNow={checkNow}
-            />
+            <Row alignment="center" spacing={8}>
+              <Column spacing={2}>
+                <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
+                  {t('set.aboutName')}
+                </Text>
+                <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
+                  {t('set.aboutDesc')}
+                </Text>
+                <Text textStyle={{ fontSize: 12, color: colors.textSecondary }}>
+                  {t('set.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
+                </Text>
+              </Column>
+            </Row>
+            {Platform.OS === 'android' ? (
+              <FieldRow
+                label={t('set.checkUpdates')}
+                supporting={
+                  isChecking
+                    ? t('set.checking')
+                    : updateState.status === 'available'
+                      ? t('set.available', { version: updateState.latestVersion })
+                      : updateState.status === 'error'
+                        ? t('set.checkFailed')
+                        : t('set.upToDate')
+                }
+                trailing={<Icon name={REFRESH_ICON} size={16} color={colors.textSecondary} />}
+                onPress={checkNow}
+                disabled={isChecking}
+              />
+            ) : null}
           </FieldGroup.Section>
         </FieldGroup>
       </Host>

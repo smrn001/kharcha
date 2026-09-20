@@ -1,4 +1,5 @@
-import { Button, Icon, ListItem, Text } from '@expo/ui';
+import { Button, Icon, ListItem } from '@expo/ui';
+import { LoadingView } from '@/components/loading-view';
 import { NativeBlock } from '@/components/native-block';
 import { SectionLabel } from '@/components/section-label';
 import { useCategories } from '@/hooks/use-categories';
@@ -51,7 +52,7 @@ export default function CategoriesScreen() {
   ];
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack.Screen
         options={{
           title: t('cat.title'),
@@ -72,11 +73,7 @@ export default function CategoriesScreen() {
       />
 
       {loading && categories.length === 0 ? (
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
-            {t('common.loading')}
-          </Text>
-        </NativeBlock>
+        <LoadingView label={t('common.loading')} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
           {sections.map((section) => (
