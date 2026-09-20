@@ -38,7 +38,7 @@ function DetailRow({
         <Text textStyle={{ fontSize: 15, color: colors.textSecondary }}>{label}</Text>
       </NativeBlock>
       <NativeBlock>
-        <Text textStyle={{ fontSize: 15, fontWeight: '500', textAlign: 'right' }}>
+        <Text textStyle={{ fontSize: 15, fontWeight: '500', textAlign: 'right', color: colors.text }}>
           {value}
         </Text>
       </NativeBlock>
@@ -78,7 +78,7 @@ export default function TransactionDetailScreen() {
 
   if (loading || !transaction) {
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Stack.Screen
           options={{
             title: t('det.title'),
@@ -110,7 +110,7 @@ export default function TransactionDetailScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack.Screen
         options={{
           title: t('det.title'),
@@ -124,7 +124,7 @@ export default function TransactionDetailScreen() {
           <Icon name={categoryIcon(category?.icon)} size={40} color={colors.textSecondary} />
         </NativeBlock>
         <NativeBlock>
-          <Text textStyle={{ fontSize: 36, fontWeight: 'bold' }}>
+          <Text textStyle={{ fontSize: 36, fontWeight: 'bold', color: colors.text }}>
             {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, settings.currency)}`}
           </Text>
         </NativeBlock>

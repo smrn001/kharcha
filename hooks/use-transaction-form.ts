@@ -18,7 +18,6 @@ export function useTransactionForm(editingId: string | null) {
   const db = useSQLiteContext();
   const { settings } = useSettings();
   const { t } = useI18n();
-  const { categories } = useCategories();
 
   const [type, setType] = useState<TransactionType>(settings.defaultTransactionType);
   const [amountInput, setAmountInput] = useState('');
@@ -30,6 +29,9 @@ export function useTransactionForm(editingId: string | null) {
   const [loadingEdit, setLoadingEdit] = useState(Boolean(editingId));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Refetches whenever `type` changes so the picker only shows matching categories.
+  const { categories } = useCategories(type);
 
   useEffect(() => {
     if (!editingId) {

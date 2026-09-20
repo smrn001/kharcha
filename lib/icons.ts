@@ -41,3 +41,13 @@ export const REFRESH_ICON = Icon.select({
   ios: 'arrow.clockwise',
   android: import('@expo/material-symbols/refresh.xml'),
 });
+
+export const CHEVRON_DOWN_ICON = Icon.select({
+  ios: 'chevron.down',
+  android: import('@expo/material-symbols/keyboard_arrow_down.xml'),
+});
+
+export const CHEVRON_UP_ICON = Icon.select({
+  ios: 'chevron.up',
+  android: import('@expo/material-symbols/keyboard_arrow_up.xml'),
+});

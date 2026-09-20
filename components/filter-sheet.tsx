@@ -1,4 +1,5 @@
-import { BottomSheet, Button, Column, Row, ScrollView, Spacer, Text } from '@expo/ui';
+import { BottomSheet, Button, Column, Icon, Row, ScrollView, Spacer, Text } from '@expo/ui';
+import { X_ICON } from '@/lib/icons';
 import { useTheme } from '@/lib/theme';
 import type { ReactNode } from 'react';
 
@@ -28,7 +29,13 @@ export function FilterSheet({
       contentPadding={{ left: 24, right: 24, top: 8, bottom: 20 }}
     >
       <Column spacing={16}>
-        <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>{title}</Text>
+        <Row alignment="center" spacing={12}>
+          <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>{title}</Text>
+          <Spacer flexible />
+          <Button variant="text" onPress={onDismiss} style={{ paddingHorizontal: 0 }}>
+            <Icon name={X_ICON} size={20} color={colors.textSecondary} />
+          </Button>
+        </Row>
         <ScrollView>
           <Column spacing={20}>{children}</Column>
         </ScrollView>

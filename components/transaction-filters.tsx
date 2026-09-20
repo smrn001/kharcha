@@ -4,10 +4,11 @@ import { FilterSheet, FilterSheetFooter } from '@/components/filter-sheet';
 import { FilterSheetRow } from '@/components/filter-sheet-row';
 import { NativeBlock } from '@/components/native-block';
 import { SearchField } from '@/components/search-field';
-import { Column, Text } from '@expo/ui';
+import { Button, Column, Icon, Row, Spacer, Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
 import { categoryDisplayName } from '@/lib/i18n';
 import { hapticSelection } from '@/lib/haptics';
+import { CHEVRON_DOWN_ICON, CHEVRON_UP_ICON } from '@/lib/icons';
 import { useTheme } from '@/lib/theme';
 import type { Account, Category } from '@/types';
 import { useState } from 'react';
@@ -43,14 +44,42 @@ interface TransactionFiltersProps {
   onClearAll: () => void;
 }
 
-function SheetSection({ title, children }: { title: string; children: React.ReactNode }) {
+function SheetSection({
+  title,
+  onClear,
+  clearLabel,
+  children,
+}: {
+  title: string;
+  onClear?: () => void;
+  clearLabel?: string;
+  children: React.ReactNode;
+}) {
   const colors = useTheme();
+  const [collapsed, setCollapsed] = useState(false);
+  const toggle = () => {
+    void hapticSelection();
+    setCollapsed((prev) => !prev);
+  };
   return (
     <Column spacing={8}>
-      <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-        {title}
-      </Text>
-      {children}
+      <Row alignment="center" spacing={8}>
+        <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+          {title}
+        </Text>
+        <Spacer flexible />
+        {onClear ? (
+          <Button variant="text" label={clearLabel} onPress={onClear} style={{ paddingHorizontal: 0 }} />
+        ) : null}
+        <Button variant="text" onPress={toggle} style={{ paddingHorizontal: 0 }}>
+          <Icon
+            name={collapsed ? CHEVRON_DOWN_ICON : CHEVRON_UP_ICON}
+            size={18}
+            color={colors.textSecondary}
+          />
+        </Button>
+      </Row>
+      {collapsed ? null : children}
     </Column>
   );
 }
@@ -210,7 +239,11 @@ export function TransactionFilters({
           />
         }
       >
-        <SheetSection title={t('txns.period')}>
+        <SheetSection
+          title={t('txns.period')}
+          clearLabel={t('txns.reset')}
+          onClear={dateFilter === 'all' ? undefined : () => onDateFilterChange('all')}
+        >
           {dateOptions.map((option) => (
             <FilterSheetRow
               key={option.value}
@@ -241,7 +274,11 @@ export function TransactionFilters({
           ) : null}
         </SheetSection>
 
-        <SheetSection title={t('txns.categories')}>
+        <SheetSection
+          title={t('txns.categories')}
+          clearLabel={t('txns.reset')}
+          onClear={categoryIds.length === 0 ? undefined : onClearCategories}
+        >
           <FilterSheetRow
             label={t('txns.allCategories')}
             selected={categoryIds.length === 0}
@@ -257,7 +294,11 @@ export function TransactionFilters({
           ))}
         </SheetSection>
 
-        <SheetSection title={t('txns.account')}>
+        <SheetSection
+          title={t('txns.account')}
+          clearLabel={t('txns.reset')}
+          onClear={accountId == null ? undefined : () => onAccountChange(null)}
+        >
           <FilterSheetRow
             label={t('txns.allAccounts')}
             selected={accountId == null}
@@ -273,7 +314,18 @@ export function TransactionFilters({
           ))}
         </SheetSection>
 
-        <SheetSection title={t('txns.amount')}>
+        <SheetSection
+          title={t('txns.amount')}
+          clearLabel={t('txns.reset')}
+          onClear={
+            amountActive
+              ? () => {
+                  onMinAmountChange('');
+                  onMaxAmountChange('');
+                }
+              : undefined
+          }
+        >
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <AmountBound value={minAmount} onChange={onMinAmountChange} placeholder={t('txns.min')} />
             <AmountBound value={maxAmount} onChange={onMaxAmountChange} placeholder={t('txns.max')} />
