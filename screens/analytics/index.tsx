@@ -1,8 +1,8 @@
 import { NativeBlock } from '@/components/native-block';
-import { RecentTransactions } from '@/components/recent-transactions';
+import { ConnectedRow, RecentTransactions } from '@/components/recent-transactions';
 import { SelectionSheet } from '@/components/selection-sheet';
 import { SpendingTrend } from './components/spending-trend';
-import { Button, Icon, Text } from '@expo/ui';
+import { Button, Column, Icon, ListItem, Row, Spacer, Text } from '@expo/ui';
 import {
   useAnalytics,
   type AnalyticsComparison,
@@ -14,11 +14,12 @@ import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { categoryDisplayName, type DictionaryKey } from '@/lib/i18n';
 import { ARROW_RIGHT_ICON, CALENDAR_ICON, CHEVRON_DOWN_ICON, EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
+import { categoryIcon } from '@/lib/category-icons';
 import { formatAmount } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState, type ComponentProps } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 type IconName = ComponentProps<typeof Icon>['name'];
 
@@ -215,52 +216,6 @@ function TrendModeToggle({
   );
 }
 
-function LegendRow({
-  color,
-  name,
-  amount,
-  pct,
-  showDivider,
-}: {
-  color: string;
-  name: string;
-  amount: string;
-  pct: string;
-  showDivider: boolean;
-}) {
-  const colors = useTheme();
-  return (
-    <View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 }}>
-        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
-        <View style={{ flex: 1 }}>
-          <NativeBlock>
-            <Text
-              textStyle={{ fontSize: 14, fontWeight: '500', color: colors.text }}
-              numberOfLines={1}
-            >
-              {name}
-            </Text>
-          </NativeBlock>
-        </View>
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
-            {amount}
-          </Text>
-        </NativeBlock>
-        <View style={{ width: 44, alignItems: 'flex-end' }}>
-          <NativeBlock>
-            <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{pct}</Text>
-          </NativeBlock>
-        </View>
-      </View>
-      {showDivider ? (
-        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border }} />
-      ) : null}
-    </View>
-  );
-}
-
 function CompareBar({
   label,
   amount,
@@ -394,37 +349,24 @@ function AnalyticsContent({
       : t('an.txnCount', { count: totalTxns, plural: plural(totalTxns) });
 
   const totalExpense = categories.reduce((sum, c) => sum + c.amount, 0);
-  // Theme-driven categorical colors (dynamic Material palette on device);
-  // custom categories without a stored color fall back in listed order.
-  const fallbackSlices = [
-    colors.primary,
-    colors.secondaryContainer,
-    colors.warning,
-    colors.success,
-  ];
-  const topSlices = categories.slice(0, 4).map((category, index) => ({
-    category,
-    color:
-      categoryById.get(category.categoryId)?.color ??
-      fallbackSlices[index % fallbackSlices.length],
-  }));
-  const restAmount = totalExpense - topSlices.reduce((sum, s) => sum + s.category.amount, 0);
+  const topCategories = categories.slice(0, 4);
+  const restAmount = totalExpense - topCategories.reduce((sum, c) => sum + c.amount, 0);
   const legendRows = [
-    ...topSlices.map((slice) => ({
-      key: slice.category.categoryId,
-      color: slice.color,
+    ...topCategories.map((category) => ({
+      key: category.categoryId,
+      icon: categoryIcon(category.icon),
       name: categoryDisplayName(
-        { name: slice.category.name, slug: slice.category.slug },
+        { name: category.name, slug: category.slug },
         lang
       ),
-      amount: formatAmount(slice.category.amount, currency),
-      pct: `${slice.category.percentage}%`,
+      amount: formatAmount(category.amount, currency),
+      pct: `${category.percentage}%`,
     })),
     ...(restAmount > 0
       ? [
           {
             key: '__others',
-            color: colors.outline,
+            icon: categoryIcon(undefined),
             name: t('an.others'),
             amount: formatAmount(restAmount, currency),
             pct: `${Math.round((restAmount / (totalExpense || 1)) * 100)}%`,
@@ -567,7 +509,7 @@ function AnalyticsContent({
             />
           </Card>
 
-          <Card>
+          <View>
             <CardHeader
               title={t('an.byCategoryTitle')}
               subtitle={t('an.byCategorySub')}
@@ -580,18 +522,37 @@ function AnalyticsContent({
                 </Text>
               </NativeBlock>
             ) : (
-              legendRows.map((row, index) => (
-                <LegendRow
-                  key={row.key}
-                  color={row.color}
-                  name={row.name}
-                  amount={row.amount}
-                  pct={row.pct}
-                  showDivider={index < legendRows.length - 1}
-                />
-              ))
+              <View style={{ gap: 2 }}>
+                {legendRows.map((row, index) => (
+                  <ConnectedRow
+                    key={row.key}
+                    first={index === 0}
+                    last={index === legendRows.length - 1}
+                  >
+                    <NativeBlock matchContents={false}>
+                      <ListItem colors={{ containerColor: colors.surfaceContainer }}>
+                        <Row alignment="center" spacing={12}>
+                          <Icon name={row.icon} size={18} />
+                          <Column spacing={2}>
+                            <Text textStyle={{ fontSize: 16, color: colors.text }}>
+                              {row.name}
+                            </Text>
+                            <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
+                              {row.pct}
+                            </Text>
+                          </Column>
+                          <Spacer flexible />
+                          <Text textStyle={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+                            {row.amount}
+                          </Text>
+                        </Row>
+                      </ListItem>
+                    </NativeBlock>
+                  </ConnectedRow>
+                ))}
+              </View>
             )}
-          </Card>
+          </View>
 
           <Card>
             <CardHeader title={t('an.compareTitle')} subtitle={rangeLabel || undefined} />

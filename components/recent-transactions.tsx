@@ -9,12 +9,44 @@ import type { Category, Transaction } from '@/types';
 
 /**
  * Recent-transactions section shared by Home (grouped FieldGroup list) and
- * Analytics (divided flat list inside a card). Header, rows, and empty state
- * are identical; only the list container differs.
+ * Analytics (manually composed rows). Header, rows, and empty state are
+ * identical; only the list container differs.
  *
  * NOTE (Android): the grouped variant's rows must stay direct Section
- * children — a wrapper returning several rows would collapse into one ListItem.
+ * children — a wrapper returning several rows would collapse into a single
+ * ListItem. Single-row components are safe direct children.
  */
+
+/**
+ * Outer shell reproducing a FieldGroup row: surfaceContainer paint is applied
+ * by the inner `ListItem`, this only provides the per-position corner clip.
+ * Use for one row's content; siblings are spaced by the parent's gap.
+ */
+export function ConnectedRow({
+  first,
+  last,
+  children,
+}: {
+  first: boolean;
+  last: boolean;
+  children: React.ReactNode;
+}) {
+  const full = 20;
+  const small = 4;
+  return (
+    <View
+      style={{
+        borderTopLeftRadius: first ? full : small,
+        borderTopRightRadius: first ? full : small,
+        borderBottomLeftRadius: last ? full : small,
+        borderBottomRightRadius: last ? full : small,
+        overflow: 'hidden',
+      }}
+    >
+      {children}
+    </View>
+  );
+}
 export function RecentTransactions({
   title,
   subtitle,
@@ -137,39 +169,28 @@ export function RecentTransactions({
       ) : (
         // Same native tree as the grouped variant's rows: an M3 ListItem
         // painted surfaceContainer holding the row in its headline slot. The
-        // outer RN view only reproduces the section's per-position corner clip.
+        // outer shell only reproduces the section's per-position corner clip.
         <View style={{ gap: 2 }}>
-          {transactions.map((transaction, index) => {
-            const first = index === 0;
-            const last = index === transactions.length - 1;
-            const full = 20;
-            const small = 4;
-            return (
-              <View
-                key={transaction.id}
-                style={{
-                  borderTopLeftRadius: first ? full : small,
-                  borderTopRightRadius: first ? full : small,
-                  borderBottomLeftRadius: last ? full : small,
-                  borderBottomRightRadius: last ? full : small,
-                  overflow: 'hidden',
-                }}
-              >
-                <NativeBlock matchContents={false}>
-                  <ListItem colors={{ containerColor: colors.surfaceContainer }}>
-                    <TransactionFieldRow
-                      transaction={transaction}
-                      category={
-                        transaction.categoryId ? categoryById.get(transaction.categoryId) : undefined
-                      }
-                      currency={currency}
-                      onPress={() => onTransactionPress(transaction.id)}
-                    />
-                  </ListItem>
-                </NativeBlock>
-              </View>
-            );
-          })}
+          {transactions.map((transaction, index) => (
+            <ConnectedRow
+              key={transaction.id}
+              first={index === 0}
+              last={index === transactions.length - 1}
+            >
+              <NativeBlock matchContents={false}>
+                <ListItem colors={{ containerColor: colors.surfaceContainer }}>
+                  <TransactionFieldRow
+                    transaction={transaction}
+                    category={
+                      transaction.categoryId ? categoryById.get(transaction.categoryId) : undefined
+                    }
+                    currency={currency}
+                    onPress={() => onTransactionPress(transaction.id)}
+                  />
+                </ListItem>
+              </NativeBlock>
+            </ConnectedRow>
+          ))}
         </View>
       )}
     </>
