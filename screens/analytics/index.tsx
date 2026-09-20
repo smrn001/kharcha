@@ -375,7 +375,9 @@ function AnalyticsContent({
       : []),
   ];
 
-  const incomeFraction = summary.income > 0 ? summary.expense / summary.income : 0;
+  const totalFlow = summary.income + summary.expense;
+  const incomeFraction = totalFlow > 0 ? summary.income / totalFlow : 0;
+  const expenseFraction = totalFlow > 0 ? summary.expense / totalFlow : 0;
 
   const showLoading =
     loading && summary.income === 0 && summary.expense === 0 && trend.length === 0;
@@ -560,13 +562,13 @@ function AnalyticsContent({
               <CompareBar
                 label={t('an.income')}
                 amount={formatAmount(summary.income, currency)}
-                fraction={1}
+                fraction={incomeFraction}
                 barColor={colors.success}
               />
               <CompareBar
                 label={t('an.expenses')}
                 amount={formatAmount(summary.expense, currency)}
-                fraction={incomeFraction}
+                fraction={expenseFraction}
                 barColor={colors.destructive}
               />
             </View>
