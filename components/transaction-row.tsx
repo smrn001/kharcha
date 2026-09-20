@@ -46,7 +46,7 @@ export function TransactionRow({
             textStyle={{
               fontSize: 14,
               fontWeight: '600',
-              color: isIncome ? colors.success : undefined,
+              color: isIncome ? colors.success : colors.destructive,
             }}
           >
             {`${isIncome ? '+' : '-'}${formatAmount(transaction.amount, currency)}`}

@@ -1,11 +1,9 @@
-import { NativeBlock } from '@/components/native-block';
 import { ListItem, Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/lib/theme';
 import { formatAmount } from '@/lib/format';
 import type { AnalyticsComparison, AnalyticsPeriod, PeriodDelta } from '@/lib/analytics';
 import type { DictionaryKey } from '@/lib/i18n';
-import { View } from 'react-native';
 
 const UNIT_KEYS: Record<AnalyticsPeriod, DictionaryKey> = {
   week: 'an.lastWeek',
@@ -15,7 +13,7 @@ const UNIT_KEYS: Record<AnalyticsPeriod, DictionaryKey> = {
 
 type TFn = (key: DictionaryKey, params?: Record<string, string | number>) => string;
 
-function buildInsight(
+export function comparisonInsight(
   t: TFn,
   period: AnalyticsPeriod,
   comparison: AnalyticsComparison,
@@ -59,6 +57,10 @@ function buildInsight(
   return parts.length > 0 ? parts.join(' ') : t('an.insightSame', { unit });
 }
 
+export function unitLabelKey(period: AnalyticsPeriod): DictionaryKey {
+  return UNIT_KEYS[period];
+}
+
 function DeltaBadge({ delta, goodWhenDown }: { delta: PeriodDelta; goodWhenDown: boolean }) {
   const colors = useTheme();
   const up = delta.diff > 0;
@@ -70,7 +72,8 @@ function DeltaBadge({ delta, goodWhenDown }: { delta: PeriodDelta; goodWhenDown:
   return <Text textStyle={{ fontSize: 13, fontWeight: '600', color }}>{label}</Text>;
 }
 
-function ComparisonRow({
+// Single section row — use directly under FieldGroup.Section.
+export function ComparisonRow({
   label,
   current,
   previous,
@@ -87,72 +90,10 @@ function ComparisonRow({
 }) {
   const { t: trow } = useI18n();
   return (
-    <NativeBlock matchContents={false}>
-      <ListItem
-        children={label}
-        supportingText={`${formatAmount(current, currency)} · ${trow('an.was', { amount: formatAmount(previous, currency) })}`}
-        trailing={<DeltaBadge delta={delta} goodWhenDown={goodWhenDown} />}
-      />
-    </NativeBlock>
-  );
-}
-
-export function ComparisonCard({
-  period,
-  currency,
-  comparison,
-}: {
-  period: AnalyticsPeriod;
-  currency: string;
-  comparison: AnalyticsComparison;
-}) {
-  const { t } = useI18n();
-  const prevLabel = t(UNIT_KEYS[period]);
-  const hasHistory = comparison.previous.income !== 0 || comparison.previous.expense !== 0;
-  const insight = buildInsight(t, period, comparison, currency);
-
-  return (
-    <View>
-      <NativeBlock matchContents={false}>
-        <ListItem
-          children={t('an.vs', { label: prevLabel })}
-          supportingText={hasHistory ? insight : undefined}
-        />
-      </NativeBlock>
-      {hasHistory ? (
-        <ComparisonRow
-          label={t('an.expenses')}
-          current={comparison.previous.expense + comparison.expense.diff}
-          previous={comparison.previous.expense}
-          delta={comparison.expense}
-          goodWhenDown
-          currency={currency}
-        />
-      ) : null}
-      {hasHistory ? (
-        <ComparisonRow
-          label={t('an.income')}
-          current={comparison.previous.income + comparison.income.diff}
-          previous={comparison.previous.income}
-          delta={comparison.income}
-          goodWhenDown={false}
-          currency={currency}
-        />
-      ) : null}
-      {hasHistory ? (
-        <ComparisonRow
-          label={
-            comparison.previous.saved + comparison.saved.diff < 0
-              ? t('an.overspent')
-              : t('an.saved')
-          }
-          current={Math.abs(comparison.previous.saved + comparison.saved.diff)}
-          previous={Math.abs(comparison.previous.saved)}
-          delta={comparison.saved}
-          goodWhenDown={false}
-          currency={currency}
-        />
-      ) : null}
-    </View>
+    <ListItem
+      children={label}
+      supportingText={`${formatAmount(current, currency)} · ${trow('an.was', { amount: formatAmount(previous, currency) })}`}
+      trailing={<DeltaBadge delta={delta} goodWhenDown={goodWhenDown} />}
+    />
   );
 }
