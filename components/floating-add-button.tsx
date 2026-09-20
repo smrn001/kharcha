@@ -1,12 +1,8 @@
 import { Button, Icon } from '@expo/ui';
 import { FloatingActionButton, Host, Icon as ComposeIcon } from '@expo/ui/jetpack-compose';
+import { PLUS_ICON } from '@/lib/icons';
 import { router } from 'expo-router';
 import { Platform, View } from 'react-native';
-
-const PLUS_ICON = Icon.select({
-  ios: 'plus',
-  android: import('@expo/material-symbols/add.xml'),
-});
 
 /**
  * Floating "add transaction" button. Android renders the native Material 3

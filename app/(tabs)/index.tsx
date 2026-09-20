@@ -10,20 +10,11 @@ import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { useTheme } from '@/lib/theme';
 import { type TransactionFilters } from '@/lib/db/transactions';
+import { ARROW_RIGHT_ICON, RECEIPT_ICON } from '@/lib/icons';
 import { formatAmount } from '@/lib/format';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
-
-const ARROW_RIGHT_ICON = Icon.select({
-  ios: 'arrow.right',
-  android: import('@expo/material-symbols/arrow_forward.xml'),
-});
-
-const RECEIPT_ICON = Icon.select({
-  ios: 'receipt',
-  android: import('@expo/material-symbols/receipt_long.xml'),
-});
 
 const RECENT_FILTERS: TransactionFilters = { limit: 5 };
 

@@ -2,18 +2,10 @@ import { BottomSheet, Button, Icon, Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
 import { useTheme } from '@/lib/theme';
 import { useI18n } from '@/hooks/use-i18n';
+import { ARROW_RIGHT_ICON, CHECK_ICON } from '@/lib/icons';
+import { parseReleaseNotes } from '@/lib/releases';
 import type { UpdateState } from '@/hooks/use-update-checker';
 import { View } from 'react-native';
-
-const CHECK_ICON = Icon.select({
-  ios: 'checkmark',
-  android: import('@expo/material-symbols/check.xml'),
-});
-
-const ARROW_RIGHT_ICON = Icon.select({
-  ios: 'arrow.right',
-  android: import('@expo/material-symbols/arrow_forward.xml'),
-});
 
 type UpdateDialogProps = {
   state: Extract<UpdateState, { status: 'available' }>;
@@ -22,28 +14,6 @@ type UpdateDialogProps = {
   onLater: () => void;
   onSkip: () => void;
 };
-
-function parseReleaseNotes(notes: string): { bullets: string[]; changelogUrl: string | null } {
-  const bullets: string[] = [];
-  let changelogUrl: string | null = null;
-
-  for (const raw of notes.split('\n')) {
-    const line = raw.trim();
-    const url = line.match(/https?:\/\/\S+/)?.[0];
-    if (url && /compare|changelog|releases|pull/i.test(line)) {
-      changelogUrl = url;
-      continue;
-    }
-    if (/^[-*]\s/.test(line)) {
-      const text = line.replace(/^[-*]\s+/, '').replace(/\*\*/g, '');
-      if (text) {
-        bullets.push(text);
-      }
-    }
-  }
-
-  return { bullets, changelogUrl };
-}
 
 export function UpdateDialog({ state, onDownload, onOpenLink, onLater, onSkip }: UpdateDialogProps) {
   const { t } = useI18n();

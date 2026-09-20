@@ -1,5 +1,6 @@
 import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { Button, Icon, Text } from '@expo/ui';
+import { FormCard } from '@/components/form-card';
 import { NativeBlock } from '@/components/native-block';
 import { CATEGORY_ICONS, categoryIcon } from '@/lib/category-icons';
 import { useTheme } from '@/lib/theme';
@@ -66,19 +67,7 @@ export function CategoryForm({
           }}
         />
 
-        <View
-          style={{
-            backgroundColor: colors.surfaceContainer,
-            borderRadius: 16,
-            padding: 16,
-            gap: 12,
-          }}
-        >
-          <NativeBlock>
-            <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-              {t('cat.formName')}
-            </Text>
-          </NativeBlock>
+        <FormCard title={t('cat.formName')}>
           <TextInput
             value={name}
             onChangeText={setName}
@@ -93,21 +82,9 @@ export function CategoryForm({
               color: colors.text,
             }}
           />
-        </View>
+        </FormCard>
 
-        <View
-          style={{
-            backgroundColor: colors.surfaceContainer,
-            borderRadius: 16,
-            padding: 16,
-            gap: 12,
-          }}
-        >
-          <NativeBlock>
-            <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-              {t('cat.formIcon')}
-            </Text>
-          </NativeBlock>
+        <FormCard title={t('cat.formIcon')}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {CATEGORY_ICONS.map((iconName) => {
               const selected = icon === iconName;
@@ -140,7 +117,7 @@ export function CategoryForm({
               );
             })}
           </View>
-        </View>
+        </FormCard>
 
         {error ? (
           <NativeBlock>

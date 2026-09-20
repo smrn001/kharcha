@@ -1,30 +1,17 @@
 import { DateTimeField } from '@/components/date-time-field';
 import { FilterChips } from '@/components/filter-chips';
+import { FilterSheet, FilterSheetFooter } from '@/components/filter-sheet';
+import { FilterSheetRow } from '@/components/filter-sheet-row';
 import { NativeBlock } from '@/components/native-block';
-import { BottomSheet, Button, Column, Icon, Row, ScrollView, Spacer, Text } from '@expo/ui';
-import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
+import { SearchField } from '@/components/search-field';
+import { Column, Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
 import { categoryDisplayName } from '@/lib/i18n';
 import { hapticSelection } from '@/lib/haptics';
 import { useTheme } from '@/lib/theme';
 import type { Account, Category } from '@/types';
 import { useState } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
-
-const SEARCH_ICON = Icon.select({
-  ios: 'magnifyingglass',
-  android: import('@expo/material-symbols/search.xml'),
-});
-
-const X_ICON = Icon.select({
-  ios: 'xmark',
-  android: import('@expo/material-symbols/close.xml'),
-});
-
-const CHECK_ICON = Icon.select({
-  ios: 'checkmark',
-  android: import('@expo/material-symbols/check.xml'),
-});
+import { TextInput, View } from 'react-native';
 
 export type TypeFilter = 'all' | 'expense' | 'income';
 export type DateFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
@@ -56,44 +43,55 @@ interface TransactionFiltersProps {
   onClearAll: () => void;
 }
 
-/**
- * Option row rendered inside the filter sheet. A `Button` (universal/Compose)
- * kept as a direct child of the sheet's Compose content; `fillMaxWidth` makes
- * it span the sheet.
- */
-function SelectableRow({
-  label,
-  selected,
-  onPress,
+function SheetSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const colors = useTheme();
+  return (
+    <Column spacing={8}>
+      <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+        {title}
+      </Text>
+      {children}
+    </Column>
+  );
+}
+
+function AmountBound({
+  value,
+  onChange,
+  placeholder,
 }: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
 }) {
   const colors = useTheme();
   return (
-    <Button
-      variant="text"
-      onPress={onPress}
-      modifiers={[fillMaxWidth()]}
-      style={{ paddingHorizontal: 0, paddingVertical: 2, borderRadius: 12 }}
-    >
-      <Row alignment="center" spacing={12}>
-        <Text textStyle={{ fontSize: 16, fontWeight: selected ? '600' : '400', color: colors.text }}>
-          {label}
-        </Text>
-        <Spacer flexible />
-        {selected ? <Icon name={CHECK_ICON} size={20} color={colors.primary} /> : null}
-      </Row>
-    </Button>
+    <NativeBlock matchContents={false} style={{ flex: 1 }}>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textSecondary}
+        keyboardType="decimal-pad"
+        textAlignVertical="center"
+        style={{
+          height: 48,
+          borderRadius: 10,
+          backgroundColor: colors.surfaceContainer,
+          paddingVertical: 0,
+          fontSize: 15,
+          color: colors.text,
+        }}
+      />
+    </NativeBlock>
   );
 }
 
 /**
- * Transactions header: a pill search field (search + clear) and a horizontally
- * scrollable row of quick Material 3 filter chips (All / Income / Expenses /
- * Today / Filters). Filters opens a bottom sheet with date, category, account
- * and amount-range filters.
+ * Transactions header: a pill search field and a horizontally scrollable row
+ * of quick Material 3 filter chips (All / Income / Expenses / Today /
+ * Filters). Filters opens a bottom sheet with date, category, account and
+ * amount-range filters.
  *
  * The toolbar lives in RN layout, so every universal component is bridged via
  * `NativeBlock` (a `Host`) to keep the Compose composition intact.
@@ -125,7 +123,6 @@ export function TransactionFilters({
   onClearAll,
 }: TransactionFiltersProps) {
   const { t, lang } = useI18n();
-  const colors = useTheme();
   const [open, setOpen] = useState(false);
 
   const dateOptions: { value: DateFilter; label: string }[] = [
@@ -146,43 +143,7 @@ export function TransactionFilters({
 
   return (
     <View style={{ gap: 12 }}>
-      <View
-        style={{
-          height: 44,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 10,
-          borderRadius: 22,
-          backgroundColor: colors.surfaceContainer,
-          paddingHorizontal: 16,
-        }}
-      >
-        <NativeBlock>
-          <Icon name={SEARCH_ICON} size={16} color={colors.textSecondary} />
-        </NativeBlock>
-        <TextInput
-          value={query}
-          onChangeText={onQueryChange}
-          placeholder={t('txns.searchPh')}
-          placeholderTextColor={colors.textSecondary}
-          autoCapitalize="none"
-          textAlignVertical="center"
-          style={{
-            flex: 1,
-            height: 44,
-            paddingVertical: 0,
-            fontSize: 15,
-            color: colors.text,
-          }}
-        />
-        {query ? (
-          <Pressable onPress={() => onQueryChange('')} hitSlop={8}>
-            <NativeBlock>
-              <Icon name={X_ICON} size={16} color={colors.textSecondary} />
-            </NativeBlock>
-          </Pressable>
-        ) : null}
-      </View>
+      <SearchField value={query} onChangeText={onQueryChange} placeholder={t('txns.searchPh')} />
 
       <FilterChips
         chips={[
@@ -236,165 +197,89 @@ export function TransactionFilters({
         ]}
       />
 
-      <BottomSheet
-        isPresented={open}
+      <FilterSheet
+        title={t('txns.filters')}
+        open={open}
         onDismiss={() => setOpen(false)}
-        contentPadding={{ left: 24, right: 24, top: 8, bottom: 20 }}
+        footer={
+          <FilterSheetFooter
+            resetLabel={hasActiveFilters ? t('txns.reset') : undefined}
+            onReset={hasActiveFilters ? onClearAll : undefined}
+            actionLabel={t('txns.showResults', { count: String(resultCount) })}
+            onAction={() => setOpen(false)}
+          />
+        }
       >
-        <Column spacing={16}>
-          <Text textStyle={{ fontSize: 18, fontWeight: '600', color: colors.text }}>
-            {t('txns.filters')}
-          </Text>
-
-          <ScrollView>
-            <Column spacing={20}>
-              <Column spacing={8}>
-                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-                  {t('txns.period')}
-                </Text>
-                {dateOptions.map((option) => (
-                  <SelectableRow
-                    key={option.value}
-                    label={option.label}
-                    selected={dateFilter === option.value}
-                    onPress={() => {
-                      void hapticSelection();
-                      onDateFilterChange(option.value);
-                    }}
-                  />
-                ))}
-                {dateFilter === 'custom' ? (
-                  <View style={{ flexDirection: 'row', gap: 12 }}>
-                    <DateTimeField
-                      mode="date"
-                      value={customFrom}
-                      onChange={onCustomFrom}
-                      label={t('common.from')}
-                      placeholder={t('common.selectDate')}
-                      style={{ flex: 1 }}
-                    />
-                    <DateTimeField
-                      mode="date"
-                      value={customTo}
-                      onChange={onCustomTo}
-                      label={t('common.to')}
-                      placeholder={t('common.selectDate')}
-                      style={{ flex: 1 }}
-                    />
-                  </View>
-                ) : null}
-              </Column>
-
-              <Column spacing={8}>
-                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-                  {t('txns.categories')}
-                </Text>
-                <SelectableRow
-                  label={t('txns.allCategories')}
-                  selected={categoryIds.length === 0}
-                  onPress={() => {
-                    void hapticSelection();
-                    onClearCategories();
-                  }}
-                />
-                {categories.map((category) => (
-                  <SelectableRow
-                    key={category.id}
-                    label={categoryDisplayName(category, lang)}
-                    selected={categoryIds.includes(category.id)}
-                    onPress={() => {
-                      void hapticSelection();
-                      onToggleCategory(category.id);
-                    }}
-                  />
-                ))}
-              </Column>
-
-              <Column spacing={8}>
-                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-                  {t('txns.account')}
-                </Text>
-                <SelectableRow
-                  label={t('txns.allAccounts')}
-                  selected={accountId == null}
-                  onPress={() => {
-                    void hapticSelection();
-                    onAccountChange(null);
-                  }}
-                />
-                {accounts.map((account) => (
-                  <SelectableRow
-                    key={account.id}
-                    label={account.name}
-                    selected={accountId === account.id}
-                    onPress={() => {
-                      void hapticSelection();
-                      onAccountChange(account.id);
-                    }}
-                  />
-                ))}
-              </Column>
-
-              <Column spacing={8}>
-                <Text textStyle={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-                  {t('txns.amount')}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <NativeBlock matchContents={false} style={{ flex: 1 }}>
-                    <TextInput
-                      value={minAmount}
-                      onChangeText={onMinAmountChange}
-                      placeholder={t('txns.min')}
-                      placeholderTextColor={colors.textSecondary}
-                      keyboardType="decimal-pad"
-                      textAlignVertical="center"
-                      style={{
-                        height: 48,
-                        borderRadius: 10,
-                        backgroundColor: colors.surfaceContainer,
-                        paddingVertical: 0,
-                        fontSize: 15,
-                        color: colors.text,
-                      }}
-                    />
-                  </NativeBlock>
-                  <NativeBlock matchContents={false} style={{ flex: 1 }}>
-                    <TextInput
-                      value={maxAmount}
-                      onChangeText={onMaxAmountChange}
-                      placeholder={t('txns.max')}
-                      placeholderTextColor={colors.textSecondary}
-                      keyboardType="decimal-pad"
-                      textAlignVertical="center"
-                      style={{
-                        height: 48,
-                        borderRadius: 10,
-                        backgroundColor: colors.surfaceContainer,
-                        paddingVertical: 0,
-                        fontSize: 15,
-                        color: colors.text,
-                      }}
-                    />
-                  </NativeBlock>
-                </View>
-              </Column>
-            </Column>
-          </ScrollView>
-
-          <Row alignment="center" spacing={8}>
-            {hasActiveFilters ? (
-              <Button variant="text" label={t('txns.reset')} onPress={onClearAll} />
-            ) : null}
-            <Spacer flexible />
-            <Button
-              variant="filled"
-              label={t('txns.showResults', { count: String(resultCount) })}
-              onPress={() => setOpen(false)}
-              style={{ height: 48, borderRadius: 12 }}
+        <SheetSection title={t('txns.period')}>
+          {dateOptions.map((option) => (
+            <FilterSheetRow
+              key={option.value}
+              label={option.label}
+              selected={dateFilter === option.value}
+              onPress={() => onDateFilterChange(option.value)}
             />
-          </Row>
-        </Column>
-      </BottomSheet>
+          ))}
+          {dateFilter === 'custom' ? (
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <DateTimeField
+                mode="date"
+                value={customFrom}
+                onChange={onCustomFrom}
+                label={t('common.from')}
+                placeholder={t('common.selectDate')}
+                style={{ flex: 1 }}
+              />
+              <DateTimeField
+                mode="date"
+                value={customTo}
+                onChange={onCustomTo}
+                label={t('common.to')}
+                placeholder={t('common.selectDate')}
+                style={{ flex: 1 }}
+              />
+            </View>
+          ) : null}
+        </SheetSection>
+
+        <SheetSection title={t('txns.categories')}>
+          <FilterSheetRow
+            label={t('txns.allCategories')}
+            selected={categoryIds.length === 0}
+            onPress={onClearCategories}
+          />
+          {categories.map((category) => (
+            <FilterSheetRow
+              key={category.id}
+              label={categoryDisplayName(category, lang)}
+              selected={categoryIds.includes(category.id)}
+              onPress={() => onToggleCategory(category.id)}
+            />
+          ))}
+        </SheetSection>
+
+        <SheetSection title={t('txns.account')}>
+          <FilterSheetRow
+            label={t('txns.allAccounts')}
+            selected={accountId == null}
+            onPress={() => onAccountChange(null)}
+          />
+          {accounts.map((account) => (
+            <FilterSheetRow
+              key={account.id}
+              label={account.name}
+              selected={accountId === account.id}
+              onPress={() => onAccountChange(account.id)}
+            />
+          ))}
+        </SheetSection>
+
+        <SheetSection title={t('txns.amount')}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <AmountBound value={minAmount} onChange={onMinAmountChange} placeholder={t('txns.min')} />
+            <AmountBound value={maxAmount} onChange={onMaxAmountChange} placeholder={t('txns.max')} />
+          </View>
+        </SheetSection>
+      </FilterSheet>
     </View>
   );
 }

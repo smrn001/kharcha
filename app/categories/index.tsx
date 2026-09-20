@@ -1,7 +1,9 @@
 import { Button, Icon, ListItem, Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
+import { SectionLabel } from '@/components/section-label';
 import { useCategories } from '@/hooks/use-categories';
 import { useI18n } from '@/hooks/use-i18n';
+import { CHEVRON_ICON, PLUS_ICON } from '@/lib/icons';
 import { categoryIcon } from '@/lib/category-icons';
 import { categoryDisplayName } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
@@ -10,11 +12,6 @@ import { useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
 import type { Category, TransactionType } from '@/types';
 import type { SupportedLang } from '@/lib/i18n';
-
-const PLUS_ICON = Icon.select({
-  ios: 'plus',
-  android: import('@expo/material-symbols/add.xml'),
-});
 
 function CategoryRow({
   category,
@@ -30,34 +27,10 @@ function CategoryRow({
       <ListItem
         leading={<Icon name={categoryIcon(category.icon)} size={18} />}
         children={categoryDisplayName(category, lang)}
-        trailing={<Icon name={CHEVRON_ICON_SYM} size={16} />}
+        trailing={<Icon name={CHEVRON_ICON} size={16} />}
         onPress={onPress}
       />
     </NativeBlock>
-  );
-}
-
-const CHEVRON_ICON_SYM = Icon.select({
-  ios: 'chevron.right',
-  android: import('@expo/material-symbols/chevron_right.xml'),
-});
-
-function SectionLabel({ children }: { children: string }) {
-  const colors = useTheme();
-  return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 4 }}>
-      <NativeBlock>
-        <Text
-          textStyle={{
-            fontSize: 12,
-            fontWeight: '600',
-            color: colors.textSecondary,
-          }}
-        >
-          {children}
-        </Text>
-      </NativeBlock>
-    </View>
   );
 }
 

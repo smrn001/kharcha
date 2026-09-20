@@ -1,13 +1,9 @@
 import { BottomSheet, Button, Column, Icon, Row, ScrollView, Spacer, Text } from '@expo/ui';
 import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
+import { CHECK_ICON } from '@/lib/icons';
 import { hapticSelection } from '@/lib/haptics';
 import { useTheme } from '@/lib/theme';
 import type { ReactNode } from 'react';
-
-const CHECK_ICON = Icon.select({
-  ios: 'checkmark',
-  android: import('@expo/material-symbols/check.xml'),
-});
 
 export interface SelectionOption<T extends string | number> {
   value: T;

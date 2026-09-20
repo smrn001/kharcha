@@ -1,6 +1,5 @@
 import { FloatingAddButton } from '@/components/floating-add-button';
 import { LoadingView } from '@/components/loading-view';
-import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
 import {
   TransactionFilters,
@@ -8,7 +7,8 @@ import {
   type TypeFilter,
 } from '@/components/transaction-filters';
 import { TransactionFieldRow } from '@/components/transaction-row';
-import { Button, FieldGroup, Host, Icon, Text } from '@expo/ui';
+import { TransactionListEmpty } from '@/components/transaction-list-empty';
+import { FieldGroup, Host } from '@expo/ui';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useCategories } from '@/hooks/use-categories';
 import { useDayHeading } from '@/hooks/use-day-heading';
@@ -22,11 +22,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { View, useColorScheme } from 'react-native';
 import type { Transaction } from '@/types';
 import type { TransactionFilters as QueryFilters } from '@/lib/db/transactions';
-
-const SEARCH_ICON = Icon.select({
-  ios: 'magnifyingglass',
-  android: import('@expo/material-symbols/search.xml'),
-});
 
 /** Parse a user-typed amount ("850", "12.50") into minor units, or null. */
 function parseAmountMinor(input: string): number | null {
@@ -194,44 +189,13 @@ export default function TransactionsScreen() {
           <LoadingView label={t('common.loading')} />
         </View>
       ) : transactions.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', gap: 12, paddingVertical: 64, paddingHorizontal: 20 }}>
-          <View
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              backgroundColor: colors.surface,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <NativeBlock>
-              <Icon name={SEARCH_ICON} size={24} color={colors.textSecondary} />
-            </NativeBlock>
-          </View>
-          <NativeBlock>
-            <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
-              {hasActiveFilters ? t('txns.noMatchTitle') : t('txns.emptyTitle')}
-            </Text>
-          </NativeBlock>
-          <NativeBlock>
-            <Text textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
-              {hasActiveFilters ? t('txns.noMatchMsg') : t('txns.emptyMsg')}
-            </Text>
-          </NativeBlock>
-          {query.trim() && !loading ? (
-            <NativeBlock>
-              <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
-                {t('txns.found', { count: String(transactions.length) })}
-              </Text>
-            </NativeBlock>
-          ) : null}
-          {hasActiveFilters ? (
-            <NativeBlock>
-              <Button label={t('txns.clearFilters')} variant="text" onPress={clearFilters} />
-            </NativeBlock>
-          ) : null}
-        </View>
+        <TransactionListEmpty
+          hasActiveFilters={hasActiveFilters}
+          hasQuery={!!query.trim()}
+          resultCount={transactions.length}
+          loading={loading}
+          onClearFilters={clearFilters}
+        />
       ) : (
         <Host style={{ flex: 1 }} colorScheme={scheme ?? undefined}>
           <FieldGroup>
