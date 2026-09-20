@@ -178,6 +178,7 @@ function TrendModeToggle({
     <View
       style={{
         flexDirection: 'row',
+        alignSelf: 'flex-start',
         backgroundColor: colors.surface,
         borderRadius: 999,
         padding: 3,
@@ -191,15 +192,15 @@ function TrendModeToggle({
             onPress={() => onChange(option.value)}
             style={{
               borderRadius: 999,
-              paddingVertical: 6,
-              paddingHorizontal: 14,
+              paddingVertical: 9,
+              paddingHorizontal: 16,
               backgroundColor: selected ? colors.secondaryContainer : 'transparent',
             }}
           >
             <NativeBlock>
               <Text
                 textStyle={{
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: '500',
                   color: selected ? colors.onSecondaryContainer : colors.textSecondary,
                 }}
@@ -610,19 +611,17 @@ function AnalyticsContent({
             </View>
           </Card>
 
-          <Card>
-            <RecentTransactions
-              title={t('an.recentTitle')}
-              subtitle={t('an.recentSub', { count: String(RECENT_LIMIT) })}
-              seeAllLabel={t('an.seeAll')}
-              transactions={recent}
-              categoryById={categoryById}
-              currency={currency}
-              onSeeAll={() => router.push('/transactions')}
-              onTransactionPress={(id) => router.push(`/transaction/${id}`)}
-              variant="divided"
-            />
-          </Card>
+          <RecentTransactions
+            title={t('an.recentTitle')}
+            subtitle={t('an.recentSub', { count: String(RECENT_LIMIT) })}
+            seeAllLabel={t('an.seeAll')}
+            transactions={recent}
+            categoryById={categoryById}
+            currency={currency}
+            onSeeAll={() => router.push('/transactions')}
+            onTransactionPress={(id) => router.push(`/transaction/${id}`)}
+            variant="divided"
+          />
         </>
       )}
     </ScrollView>

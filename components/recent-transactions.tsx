@@ -1,10 +1,10 @@
 import { NativeBlock } from '@/components/native-block';
 import { TransactionFieldRow } from '@/components/transaction-row';
-import { Button, Column, FieldGroup, Host, Icon, Text } from '@expo/ui';
+import { Button, Column, FieldGroup, Host, Icon, ListItem, Text } from '@expo/ui';
 import { ARROW_RIGHT_ICON } from '@/lib/icons';
 import { useI18n } from '@/hooks/use-i18n';
 import { useTheme } from '@/lib/theme';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { View, useColorScheme } from 'react-native';
 import type { Category, Transaction } from '@/types';
 
 /**
@@ -113,7 +113,16 @@ export function RecentTransactions({
           </FieldGroup>
         </Host>
       ) : transactions.length === 0 ? (
-        <View style={{ alignItems: 'center', gap: 8, paddingVertical: 32 }}>
+        <View
+          style={{
+            backgroundColor: colors.surfaceContainer,
+            borderRadius: 20,
+            paddingVertical: 24,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
           <NativeBlock>
             <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text }}>
               {t('home.emptyTitle')}
@@ -126,24 +135,41 @@ export function RecentTransactions({
           </NativeBlock>
         </View>
       ) : (
-        <View>
-          {transactions.map((transaction, index) => (
-            <View key={transaction.id}>
-              <NativeBlock matchContents={false}>
-                <TransactionFieldRow
-                  transaction={transaction}
-                  category={
-                    transaction.categoryId ? categoryById.get(transaction.categoryId) : undefined
-                  }
-                  currency={currency}
-                  onPress={() => onTransactionPress(transaction.id)}
-                />
-              </NativeBlock>
-              {index < transactions.length - 1 ? (
-                <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border }} />
-              ) : null}
-            </View>
-          ))}
+        // Same native tree as the grouped variant's rows: an M3 ListItem
+        // painted surfaceContainer holding the row in its headline slot. The
+        // outer RN view only reproduces the section's per-position corner clip.
+        <View style={{ gap: 2 }}>
+          {transactions.map((transaction, index) => {
+            const first = index === 0;
+            const last = index === transactions.length - 1;
+            const full = 20;
+            const small = 4;
+            return (
+              <View
+                key={transaction.id}
+                style={{
+                  borderTopLeftRadius: first ? full : small,
+                  borderTopRightRadius: first ? full : small,
+                  borderBottomLeftRadius: last ? full : small,
+                  borderBottomRightRadius: last ? full : small,
+                  overflow: 'hidden',
+                }}
+              >
+                <NativeBlock matchContents={false}>
+                  <ListItem colors={{ containerColor: colors.surfaceContainer }}>
+                    <TransactionFieldRow
+                      transaction={transaction}
+                      category={
+                        transaction.categoryId ? categoryById.get(transaction.categoryId) : undefined
+                      }
+                      currency={currency}
+                      onPress={() => onTransactionPress(transaction.id)}
+                    />
+                  </ListItem>
+                </NativeBlock>
+              </View>
+            );
+          })}
         </View>
       )}
     </>
