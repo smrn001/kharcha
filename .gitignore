@@ -45,3 +45,4 @@ expo-env.d.ts
 kharcha.apk
 Kharcha-v*.apk
 .agents/skills/
+temp/

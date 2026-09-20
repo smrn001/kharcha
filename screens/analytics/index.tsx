@@ -1,229 +1,631 @@
-import { LoadingView } from '@/components/loading-view';
-import { PageHeader } from '@/components/page-header';
-import { ComparisonRow, comparisonInsight, unitLabelKey } from './components/comparison-rows';
-import { MoverRow } from './components/mover-row';
+import { NativeBlock } from '@/components/native-block';
+import { RecentTransactions } from '@/components/recent-transactions';
+import { SelectionSheet } from '@/components/selection-sheet';
 import { SpendingTrend } from './components/spending-trend';
-import { CategoryBreakdownRow } from './components/category-breakdown-row';
-import { SegmentedControl } from '@expo/ui/community/segmented-control';
-import { Column, FieldGroup, Host, ListItem, Text } from '@expo/ui';
+import { Button, Icon, Text } from '@expo/ui';
 import {
   useAnalytics,
   type AnalyticsComparison,
   type AnalyticsPeriod,
 } from '@/hooks/use-analytics';
+import { useCategories } from '@/hooks/use-categories';
 import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
-import { useTheme } from '@/lib/theme';
+import { useTransactions } from '@/hooks/use-transactions';
+import { categoryDisplayName, type DictionaryKey } from '@/lib/i18n';
+import { ARROW_RIGHT_ICON, CALENDAR_ICON, CHEVRON_DOWN_ICON, EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
 import { formatAmount } from '@/lib/format';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { View, useColorScheme } from 'react-native';
+import { useTheme } from '@/lib/theme';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState, type ComponentProps } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-const PERIOD_OPTIONS: { value: AnalyticsPeriod; labelKey: 'an.week' | 'an.month' | 'an.year' }[] = [
+type IconName = ComponentProps<typeof Icon>['name'];
+
+const RECENT_LIMIT = 5;
+
+const PERIOD_OPTIONS: { value: AnalyticsPeriod; labelKey: DictionaryKey }[] = [
   { value: 'week', labelKey: 'an.week' },
   { value: 'month', labelKey: 'an.month' },
   { value: 'year', labelKey: 'an.year' },
 ];
+
+/** Append a hex alpha suffix when the color is a 6-digit hex string. */
+function tint(hex: string, alpha: string): string {
+  return hex.length === 7 ? `${hex}${alpha}` : hex;
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  const colors = useTheme();
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surfaceContainer,
+        borderRadius: 20,
+        padding: 20,
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+function CardHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}) {
+  const colors = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 16,
+      }}
+    >
+      <View style={{ flex: 1, gap: 2 }}>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 17, fontWeight: '700', color: colors.text }}>
+            {title}
+          </Text>
+        </NativeBlock>
+        {subtitle ? (
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{subtitle}</Text>
+          </NativeBlock>
+        ) : null}
+      </View>
+      {action}
+    </View>
+  );
+}
+
+function SeeAllAction({ onPress }: { onPress: () => void }) {
+  const { t } = useI18n();
+  const colors = useTheme();
+  return (
+    <NativeBlock>
+      <Button variant="text" onPress={onPress} style={{ paddingVertical: 0, paddingHorizontal: 0 }}>
+        <Text textStyle={{ fontSize: 14, fontWeight: '500', color: colors.primary }}>
+          {t('an.seeAll')}
+        </Text>
+        <Icon name={ARROW_RIGHT_ICON} size={14} color={colors.primary} />
+      </Button>
+    </NativeBlock>
+  );
+}
+
+function SummaryCard({
+  icon,
+  tintColor,
+  label,
+  amount,
+  sub,
+  subColor,
+}: {
+  icon: IconName;
+  tintColor: string;
+  label: string;
+  amount: string;
+  sub: string;
+  subColor?: string;
+}) {
+  const colors = useTheme();
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: tint(tintColor, '1A'),
+        borderRadius: 20,
+        padding: 14,
+        gap: 8,
+      }}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: tint(tintColor, '33'),
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <NativeBlock>
+          <Icon name={icon} size={20} color={tintColor} />
+        </NativeBlock>
+      </View>
+      <View style={{ gap: 2 }}>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{label}</Text>
+        </NativeBlock>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 20, fontWeight: '700', color: tintColor }}>
+            {amount}
+          </Text>
+        </NativeBlock>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 12, color: subColor ?? colors.textSecondary }}>
+            {sub}
+          </Text>
+        </NativeBlock>
+      </View>
+    </View>
+  );
+}
+
+function TrendModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: 'expense' | 'income';
+  onChange: (mode: 'expense' | 'income') => void;
+}) {
+  const { t } = useI18n();
+  const colors = useTheme();
+  const options: { value: 'expense' | 'income'; label: string }[] = [
+    { value: 'expense', label: t('an.expenses') },
+    { value: 'income', label: t('an.income') },
+  ];
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        backgroundColor: colors.surface,
+        borderRadius: 999,
+        padding: 3,
+      }}
+    >
+      {options.map((option) => {
+        const selected = option.value === mode;
+        return (
+          <Pressable
+            key={option.value}
+            onPress={() => onChange(option.value)}
+            style={{
+              borderRadius: 999,
+              paddingVertical: 6,
+              paddingHorizontal: 14,
+              backgroundColor: selected ? colors.secondaryContainer : 'transparent',
+            }}
+          >
+            <NativeBlock>
+              <Text
+                textStyle={{
+                  fontSize: 13,
+                  fontWeight: '500',
+                  color: selected ? colors.onSecondaryContainer : colors.textSecondary,
+                }}
+              >
+                {option.label}
+              </Text>
+            </NativeBlock>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function LegendRow({
+  color,
+  name,
+  amount,
+  pct,
+  showDivider,
+}: {
+  color: string;
+  name: string;
+  amount: string;
+  pct: string;
+  showDivider: boolean;
+}) {
+  const colors = useTheme();
+  return (
+    <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 }}>
+        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
+        <View style={{ flex: 1 }}>
+          <NativeBlock>
+            <Text
+              textStyle={{ fontSize: 14, fontWeight: '500', color: colors.text }}
+              numberOfLines={1}
+            >
+              {name}
+            </Text>
+          </NativeBlock>
+        </View>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+            {amount}
+          </Text>
+        </NativeBlock>
+        <View style={{ width: 44, alignItems: 'flex-end' }}>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{pct}</Text>
+          </NativeBlock>
+        </View>
+      </View>
+      {showDivider ? (
+        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border }} />
+      ) : null}
+    </View>
+  );
+}
+
+function CompareBar({
+  label,
+  amount,
+  fraction,
+  barColor,
+}: {
+  label: string;
+  amount: string;
+  fraction: number;
+  barColor: string;
+}) {
+  const colors = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ width: 64 }}>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 14, color: colors.text }}>{label}</Text>
+        </NativeBlock>
+      </View>
+      <View
+        style={{
+          flex: 1,
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: colors.border,
+          overflow: 'hidden',
+        }}
+      >
+        <View
+          style={{
+            height: 10,
+            borderRadius: 5,
+            width: `${Math.round(Math.min(Math.max(fraction, 0), 1) * 100)}%`,
+            backgroundColor: barColor,
+          }}
+        />
+      </View>
+      <View style={{ minWidth: 88, alignItems: 'flex-end' }}>
+        <NativeBlock>
+          <Text textStyle={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+            {amount}
+          </Text>
+        </NativeBlock>
+      </View>
+    </View>
+  );
+}
 
 export default function AnalyticsScreen() {
   const colors = useTheme();
   const { settings } = useSettings();
   const { t } = useI18n();
   const [period, setPeriod] = useState<AnalyticsPeriod>('month');
+  const [trendMode, setTrendMode] = useState<'expense' | 'income'>('expense');
+  const [periodOpen, setPeriodOpen] = useState(false);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <PageHeader title={t('tabs.analytics')} />
-      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-        <SegmentedControl
-          values={PERIOD_OPTIONS.map((o) => t(o.labelKey))}
-          selectedIndex={PERIOD_OPTIONS.findIndex((o) => o.value === period)}
-          onValueChange={(label) => {
-            const next = PERIOD_OPTIONS.find((o) => t(o.labelKey) === label)?.value;
-            if (next) setPeriod(next);
-          }}
-        />
-      </View>
       <AnalyticsContent
         period={period}
+        trendMode={trendMode}
         currency={settings.currency}
         startOfWeek={settings.startOfWeek}
+        onPeriodOpenChange={setPeriodOpen}
+        onTrendModeChange={setTrendMode}
+      />
+      <SelectionSheet
+        open={periodOpen}
+        onOpenChange={setPeriodOpen}
+        title={t('an.choosePeriod')}
+        options={PERIOD_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+        selected={period}
+        onSelect={(value) => setPeriod(value)}
       />
     </View>
   );
 }
 
-// NOTE: rows live in each Section's FOOTER slot, not as direct row children.
-// Reason: on Android the library wraps every direct row in a Material ListItem
-// tinted surfaceContainer, and that tint has no opt-out. The footer slot
-// renders as a plain unstyled column, so rows sit flat on the group
-// background. If a future @expo/ui version styles footers, move the rows back
-// to direct Section children (and accept the tinted cards).
 function AnalyticsContent({
   period,
+  trendMode,
   currency,
   startOfWeek,
+  onPeriodOpenChange,
+  onTrendModeChange,
 }: {
   period: AnalyticsPeriod;
+  trendMode: 'expense' | 'income';
   currency: string;
   startOfWeek: number;
+  onPeriodOpenChange: (open: boolean) => void;
+  onTrendModeChange: (mode: 'expense' | 'income') => void;
 }) {
-  const { summary, comparison, movers, categories, trend, loading, refresh } = useAnalytics(
+  const { summary, counts, comparison, categories, trend, loading, refresh } = useAnalytics(
     period,
     startOfWeek
   );
   const colors = useTheme();
-  const scheme = useColorScheme();
-  const { t } = useI18n();
+  const { t, lang, plural } = useI18n();
+  const { categories: allCategories } = useCategories();
+  const { transactions: recent, refresh: refreshRecent } = useTransactions({
+    limit: RECENT_LIMIT,
+  });
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+      refreshRecent();
+    }, [refresh, refreshRecent])
   );
 
-  const saved = summary.income - summary.expense;
-  const overspent = saved < 0;
-  const savedColor = overspent ? colors.destructive : saved > 0 ? colors.success : undefined;
-  const periodKey =
-    period === 'week' ? 'an.thisWeek' : period === 'month' ? 'an.thisMonth' : 'an.thisYear';
-  const visibleMovers = movers.filter((mover) => mover.diff !== 0);
+  const categoryById = useMemo(
+    () => new Map(allCategories.map((category) => [category.id, category])),
+    [allCategories]
+  );
+
+  const periodTitle =
+    period === 'week' ? t('an.thisWeek') : period === 'month' ? t('an.thisMonth') : t('an.thisYear');
+  const rangeLabel = comparison?.currentRangeLabel ?? '';
+
+  const savedPct = comparison?.saved.pct ?? null;
   const hasHistory =
-    comparison != null &&
-    (comparison.previous.income !== 0 || comparison.previous.expense !== 0);
-  const prevLabel = t(unitLabelKey(period));
-  const insight = comparison ? comparisonInsight(t, period, comparison, currency) : '';
+    comparison != null && (comparison.previous.income !== 0 || comparison.previous.expense !== 0);
+  const netUp = (comparison?.saved.diff ?? 0) >= 0;
+  const lastKey =
+    period === 'week' ? 'an.lastWeek' : period === 'month' ? 'an.lastMonth' : 'an.lastYear';
+  const totalTxns = counts.income + counts.expense;
+  const netDelta =
+    hasHistory && savedPct !== null
+      ? `${netUp ? '↑' : '↓'} ${Math.abs(Math.round(savedPct))}% ${t('an.vs', { label: t(lastKey as DictionaryKey) })}`
+      : t('an.txnCount', { count: totalTxns, plural: plural(totalTxns) });
+
+  const totalExpense = categories.reduce((sum, c) => sum + c.amount, 0);
+  // Theme-driven categorical colors (dynamic Material palette on device);
+  // custom categories without a stored color fall back in listed order.
+  const fallbackSlices = [
+    colors.primary,
+    colors.secondaryContainer,
+    colors.warning,
+    colors.success,
+  ];
+  const topSlices = categories.slice(0, 4).map((category, index) => ({
+    category,
+    color:
+      categoryById.get(category.categoryId)?.color ??
+      fallbackSlices[index % fallbackSlices.length],
+  }));
+  const restAmount = totalExpense - topSlices.reduce((sum, s) => sum + s.category.amount, 0);
+  const legendRows = [
+    ...topSlices.map((slice) => ({
+      key: slice.category.categoryId,
+      color: slice.color,
+      name: categoryDisplayName(
+        { name: slice.category.name, slug: slice.category.slug },
+        lang
+      ),
+      amount: formatAmount(slice.category.amount, currency),
+      pct: `${slice.category.percentage}%`,
+    })),
+    ...(restAmount > 0
+      ? [
+          {
+            key: '__others',
+            color: colors.outline,
+            name: t('an.others'),
+            amount: formatAmount(restAmount, currency),
+            pct: `${Math.round((restAmount / (totalExpense || 1)) * 100)}%`,
+          },
+        ]
+      : []),
+  ];
+
+  const incomeFraction = summary.income > 0 ? summary.expense / summary.income : 0;
+
+  const showLoading =
+    loading && summary.income === 0 && summary.expense === 0 && trend.length === 0;
 
   return (
-    <Host style={{ flex: 1 }} colorScheme={scheme ?? undefined}>
-      <FieldGroup>
-        <FieldGroup.Section title={t(periodKey)}>
-          <FieldGroup.SectionFooter>
-            <Column spacing={0}>
-              {loading && summary.income === 0 && summary.expense === 0 ? (
-                <LoadingView label={t('common.loading')} />
-              ) : (
-                <>
-                  <ListItem
-                    children={t('an.income')}
-                    supportingText={comparison?.currentRangeLabel}
-                    trailing={
-                      <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.success }}>
-                        {formatAmount(summary.income, currency)}
-                      </Text>
-                    }
-                  />
-                  <ListItem
-                    children={t('an.expenses')}
-                    supportingText={comparison?.currentRangeLabel}
-                    trailing={
-                      <Text textStyle={{ fontSize: 16, fontWeight: '600', color: colors.destructive }}>
-                        {formatAmount(summary.expense, currency)}
-                      </Text>
-                    }
-                  />
-                  <ListItem
-                    children={overspent ? t('an.overspent') : t('an.saved')}
-                    trailing={
-                      <Text textStyle={{ fontSize: 16, fontWeight: '600', color: savedColor }}>
-                        {formatAmount(Math.abs(saved), currency)}
-                      </Text>
-                    }
-                  />
-                </>
-              )}
-            </Column>
-          </FieldGroup.SectionFooter>
-        </FieldGroup.Section>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ gap: 16, paddingHorizontal: 16, paddingBottom: 112 }}
+      showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic"
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+          paddingTop: 8,
+        }}
+      >
+        <View style={{ flex: 1, gap: 2 }}>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 26, fontWeight: '700', color: colors.text }}>
+              {t('tabs.analytics')}
+            </Text>
+          </NativeBlock>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
+              {t('an.subtitle')}
+            </Text>
+          </NativeBlock>
+        </View>
+        <Pressable onPress={() => onPeriodOpenChange(true)}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              backgroundColor: colors.secondaryContainer,
+              borderRadius: 999,
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+            }}
+          >
+            <NativeBlock>
+              <Icon name={CALENDAR_ICON} size={16} color={colors.onSecondaryContainer} />
+            </NativeBlock>
+            <NativeBlock>
+              <Text
+                textStyle={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: colors.onSecondaryContainer,
+                }}
+              >
+                {periodTitle}
+              </Text>
+            </NativeBlock>
+            <NativeBlock>
+              <Icon name={CHEVRON_DOWN_ICON} size={16} color={colors.onSecondaryContainer} />
+            </NativeBlock>
+          </View>
+        </Pressable>
+      </View>
 
-        {comparison ? (
-          <FieldGroup.Section title={t('an.vs', { label: t(periodKey) })}>
-            <FieldGroup.SectionFooter>
-              <Column spacing={0}>
-                <ListItem
-                  children={t('an.vs', { label: prevLabel })}
-                  supportingText={hasHistory ? insight : undefined}
-                />
-                {hasHistory ? (
-                  <>
-                    <ComparisonRow
-                      label={t('an.expenses')}
-                      current={comparison.previous.expense + comparison.expense.diff}
-                      previous={comparison.previous.expense}
-                      delta={comparison.expense}
-                      goodWhenDown
-                      currency={currency}
-                    />
-                    <ComparisonRow
-                      label={t('an.income')}
-                      current={comparison.previous.income + comparison.income.diff}
-                      previous={comparison.previous.income}
-                      delta={comparison.income}
-                      goodWhenDown={false}
-                      currency={currency}
-                    />
-                    <ComparisonRow
-                      label={
-                        comparison.previous.saved + comparison.saved.diff < 0
-                          ? t('an.overspent')
-                          : t('an.saved')
-                      }
-                      current={Math.abs(comparison.previous.saved + comparison.saved.diff)}
-                      previous={Math.abs(comparison.previous.saved)}
-                      delta={comparison.saved}
-                      goodWhenDown={false}
-                      currency={currency}
-                    />
-                  </>
+      {showLoading ? (
+        <View style={{ paddingTop: 48, alignItems: 'center' }}>
+          <NativeBlock>
+            <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
+              {t('common.loading')}
+            </Text>
+          </NativeBlock>
+        </View>
+      ) : (
+        <>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <SummaryCard
+              icon={TREND_UP_ICON}
+              tintColor={colors.success}
+              label={t('an.totalIncome')}
+              amount={formatAmount(summary.income, currency)}
+              sub={t('an.txnCount', { count: counts.income, plural: plural(counts.income) })}
+            />
+            <SummaryCard
+              icon={TREND_DOWN_ICON}
+              tintColor={colors.destructive}
+              label={t('an.totalExpenses')}
+              amount={formatAmount(summary.expense, currency)}
+              sub={t('an.txnCount', { count: counts.expense, plural: plural(counts.expense) })}
+            />
+            <SummaryCard
+              icon={EQUAL_ICON}
+              tintColor={colors.primary}
+              label={t('an.netBalance')}
+              amount={formatAmount(summary.saved, currency)}
+              sub={netDelta}
+              subColor={
+                hasHistory && savedPct !== null
+                  ? netUp
+                    ? colors.success
+                    : colors.destructive
+                  : undefined
+              }
+            />
+          </View>
+
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <NativeBlock>
+                  <Text textStyle={{ fontSize: 17, fontWeight: '700', color: colors.text }}>
+                    {t('an.trendTitle')}
+                  </Text>
+                </NativeBlock>
+                {rangeLabel ? (
+                  <NativeBlock>
+                    <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>
+                      {rangeLabel}
+                    </Text>
+                  </NativeBlock>
                 ) : null}
-              </Column>
-            </FieldGroup.SectionFooter>
-          </FieldGroup.Section>
-        ) : null}
+              </View>
+              <TrendModeToggle mode={trendMode} onChange={onTrendModeChange} />
+            </View>
+            <SpendingTrend
+              period={period}
+              currency={currency}
+              trend={trend}
+              loading={loading}
+              mode={trendMode}
+            />
+          </Card>
 
-        <FieldGroup.Section title={t('an.incomeVsSpending')}>
-          <FieldGroup.SectionFooter>
-            <SpendingTrend period={period} currency={currency} trend={trend} loading={loading} />
-          </FieldGroup.SectionFooter>
-        </FieldGroup.Section>
-
-        <FieldGroup.Section title={t('an.biggestChanges')}>
-          <FieldGroup.SectionFooter>
-            <Column spacing={0}>
-              {loading && movers.length === 0
-                ? null
-                : visibleMovers.map((mover) => (
-                    <MoverRow key={mover.categoryId} currency={currency} mover={mover} />
-                  ))}
-            </Column>
-          </FieldGroup.SectionFooter>
-        </FieldGroup.Section>
-
-        <FieldGroup.Section title={t('an.byCategory')}>
-          <FieldGroup.SectionFooter>
-            <Column spacing={0}>
-              {loading && categories.length === 0 ? (
-                <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
-                  {t('common.loading')}
-                </Text>
-              ) : categories.length === 0 ? (
+          <Card>
+            <CardHeader
+              title={t('an.byCategoryTitle')}
+              subtitle={t('an.byCategorySub')}
+              action={<SeeAllAction onPress={() => router.push('/categories')} />}
+            />
+            {categories.length === 0 ? (
+              <NativeBlock>
                 <Text textStyle={{ fontSize: 14, color: colors.textSecondary }}>
                   {t(period === 'week' ? 'an.noCatWeek' : period === 'month' ? 'an.noCatMonth' : 'an.noCatYear')}
                 </Text>
-              ) : (
-                categories.map((category) => (
-                  <CategoryBreakdownRow
-                    key={category.categoryId}
-                    currency={currency}
-                    category={category}
-                  />
-                ))
-              )}
-            </Column>
-          </FieldGroup.SectionFooter>
-        </FieldGroup.Section>
-      </FieldGroup>
-    </Host>
+              </NativeBlock>
+            ) : (
+              legendRows.map((row, index) => (
+                <LegendRow
+                  key={row.key}
+                  color={row.color}
+                  name={row.name}
+                  amount={row.amount}
+                  pct={row.pct}
+                  showDivider={index < legendRows.length - 1}
+                />
+              ))
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader title={t('an.compareTitle')} subtitle={rangeLabel || undefined} />
+            <View style={{ gap: 14 }}>
+              <CompareBar
+                label={t('an.income')}
+                amount={formatAmount(summary.income, currency)}
+                fraction={1}
+                barColor={colors.success}
+              />
+              <CompareBar
+                label={t('an.expenses')}
+                amount={formatAmount(summary.expense, currency)}
+                fraction={incomeFraction}
+                barColor={colors.destructive}
+              />
+            </View>
+          </Card>
+
+          <Card>
+            <RecentTransactions
+              title={t('an.recentTitle')}
+              subtitle={t('an.recentSub', { count: String(RECENT_LIMIT) })}
+              seeAllLabel={t('an.seeAll')}
+              transactions={recent}
+              categoryById={categoryById}
+              currency={currency}
+              onSeeAll={() => router.push('/transactions')}
+              onTransactionPress={(id) => router.push(`/transaction/${id}`)}
+              variant="divided"
+            />
+          </Card>
+        </>
+      )}
+    </ScrollView>
   );
 }
 

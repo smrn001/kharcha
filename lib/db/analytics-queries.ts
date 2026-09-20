@@ -42,6 +42,29 @@ export async function getAnalyticsSummary(
   return { income: row.income, expense: row.expense, saved: row.income - row.expense };
 }
 
+export interface AnalyticsCounts {
+  income: number;
+  expense: number;
+}
+
+export async function getAnalyticsCounts(
+  db: SQLiteDatabase,
+  from: string,
+  to: string
+): Promise<AnalyticsCounts> {
+  const row =
+    (await db.getFirstAsync<{ income: number; expense: number }>(
+      `SELECT
+         COALESCE(SUM(CASE WHEN type = 'income' THEN 1 ELSE 0 END), 0) AS income,
+         COALESCE(SUM(CASE WHEN type = 'expense' THEN 1 ELSE 0 END), 0) AS expense
+       FROM transactions
+       WHERE ${NOT_DELETED} AND ${INCOME_EXPENSE_ONLY} AND local_date >= ? AND local_date <= ?`,
+      from,
+      to
+    )) ?? { income: 0, expense: 0 };
+  return { income: row.income, expense: row.expense };
+}
+
 export async function getCategorySpending(
   db: SQLiteDatabase,
   from: string,

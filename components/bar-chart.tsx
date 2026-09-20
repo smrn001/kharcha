@@ -23,17 +23,30 @@ const CHART_HEIGHT = 128;
 export function BarChart({
   data,
   formatValue,
+  mode = 'both',
 }: {
   data: BarChartDatum[];
   formatValue?: (value: number) => string;
+  /** Show one series full-width (mockup toggle) instead of grouped pairs. */
+  mode?: 'both' | 'income' | 'expense';
 }) {
   const { t } = useI18n();
   const colors = useTheme();
-  const max = niceCeil(Math.max(...data.flatMap((d) => [d.income, d.expense]), 1));
+  const showIncome = mode !== 'expense';
+  const showExpense = mode !== 'income';
+  const max = niceCeil(
+    Math.max(
+      ...data.flatMap((d) => [
+        showIncome ? d.income : 0,
+        showExpense ? d.expense : 0,
+      ]),
+      1
+    )
+  );
   const barHeight = (value: number) =>
     Math.max(Math.round((value / max) * CHART_HEIGHT), value > 0 ? 4 : 0);
   const ticks = [1, 0.5, 0];
-  const hasIncome = data.some((d) => d.income > 0);
+  const hasIncome = mode === 'both' && data.some((d) => d.income > 0);
 
   return (
     <View style={{ width: '100%' }}>
@@ -85,11 +98,11 @@ export function BarChart({
                     textStyle={{ fontSize: 9, color: colors.textSecondary, textAlign: 'center' }}
                     numberOfLines={1}
                   >
-                    {datum.expense > 0
+                    {datum.expense > 0 && showExpense
                       ? formatValue
                         ? formatValue(datum.expense)
                         : `${datum.expense}`
-                      : datum.income > 0
+                      : datum.income > 0 && showIncome
                         ? formatValue
                           ? formatValue(datum.income)
                           : `${datum.income}`
@@ -155,13 +168,23 @@ export function BarChart({
                         }}
                       />
                     </>
+                  ) : mode === 'income' ? (
+                    <View
+                      style={{
+                        width: '100%',
+                        borderTopLeftRadius: 2,
+                        borderTopRightRadius: 2,
+                        backgroundColor: colors.success,
+                        height: barHeight(datum.income),
+                      }}
+                    />
                   ) : (
                     <View
                       style={{
                         width: '100%',
                         borderTopLeftRadius: 2,
                         borderTopRightRadius: 2,
-                        backgroundColor: colors.destructive,
+                        backgroundColor: mode === 'both' ? colors.destructive : colors.primary,
                         height: barHeight(datum.expense),
                       }}
                     />

@@ -51,3 +51,23 @@ export const CHEVRON_UP_ICON = Icon.select({
   ios: 'chevron.up',
   android: import('@expo/material-symbols/keyboard_arrow_up.xml'),
 });
+
+export const CALENDAR_ICON = Icon.select({
+  ios: 'calendar',
+  android: import('@expo/material-symbols/calendar_month.xml'),
+});
+
+export const TREND_UP_ICON = Icon.select({
+  ios: 'arrow.up.right',
+  android: import('@expo/material-symbols/trending_up.xml'),
+});
+
+export const TREND_DOWN_ICON = Icon.select({
+  ios: 'arrow.down.right',
+  android: import('@expo/material-symbols/trending_down.xml'),
+});
+
+export const EQUAL_ICON = Icon.select({
+  ios: 'equal',
+  android: import('@expo/material-symbols/equal.xml'),
+});

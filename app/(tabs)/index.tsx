@@ -1,8 +1,8 @@
 import { FloatingAddButton } from '@/components/floating-add-button';
 import { NativeBlock } from '@/components/native-block';
 import { PageHeader } from '@/components/page-header';
-import { TransactionFieldRow } from '@/components/transaction-row';
-import { Button, Column, FieldGroup, Host, Icon, Text } from '@expo/ui';
+import { RecentTransactions } from '@/components/recent-transactions';
+import { Text } from '@expo/ui';
 import { useCategories } from '@/hooks/use-categories';
 import { useDashboardSummary } from '@/hooks/use-dashboard';
 import { useI18n } from '@/hooks/use-i18n';
@@ -10,11 +10,10 @@ import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { useTheme } from '@/lib/theme';
 import { type TransactionFilters } from '@/lib/db/transactions';
-import { ARROW_RIGHT_ICON } from '@/lib/icons';
 import { formatAmount } from '@/lib/format';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo } from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 const RECENT_FILTERS: TransactionFilters = { limit: 5 };
 
@@ -65,7 +64,6 @@ export default function HomeScreen() {
   const { settings } = useSettings();
   const { t } = useI18n();
   const colors = useTheme();
-  const scheme = useColorScheme();
   const { summary, refresh: refreshSummary } = useDashboardSummary(settings.startOfWeek);
   const { transactions, refresh: refreshTransactions } = useTransactions(RECENT_FILTERS);
   const { categories } = useCategories();
@@ -162,69 +160,19 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 20,
-          paddingTop: 24,
-          paddingBottom: 4,
-        }}
-      >
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 17, fontWeight: 'bold', color: colors.text }}>
-            {t('home.recent')}
-          </Text>
-        </NativeBlock>
-        <NativeBlock>
-          <Button
-            variant="text"
-            onPress={() => router.push('/transactions')}
-            style={{ paddingVertical: 0 }}
-          >
-            <Text textStyle={{ fontSize: 14, fontWeight: '500', color: colors.primary }}>
-              {t('home.viewAll')}
-            </Text>
-            <Icon name={ARROW_RIGHT_ICON} size={14} color={colors.primary} />
-          </Button>
-        </NativeBlock>
+      <View style={{ flex: 1, paddingTop: 24 }}>
+        <RecentTransactions
+          title={t('home.recent')}
+          seeAllLabel={t('home.viewAll')}
+          transactions={transactions}
+          categoryById={categoryMap}
+          currency={settings.currency}
+          onSeeAll={() => router.push('/transactions')}
+          onTransactionPress={(id) => router.push(`/transaction/${id}`)}
+          variant="grouped"
+          headerPaddingHorizontal={20}
+        />
       </View>
-
-      {/* Recent list is its own FieldGroup scroller (sibling — never nested
-          inside a ScrollView). Rows stay direct Section children. */}
-      <Host style={{ flex: 1 }} colorScheme={scheme ?? undefined}>
-        <FieldGroup>
-          <FieldGroup.Section>
-            {transactions.length === 0 ? (
-              <Column spacing={4}>
-                <Text
-                  textStyle={{ fontSize: 16, fontWeight: '600', color: colors.text, textAlign: 'center' }}
-                >
-                  {t('home.emptyTitle')}
-                </Text>
-                <Text
-                  textStyle={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}
-                >
-                  {t('home.emptyMsg')}
-                </Text>
-              </Column>
-            ) : (
-              transactions.map((transaction) => (
-                <TransactionFieldRow
-                  key={transaction.id}
-                  transaction={transaction}
-                  category={
-                    transaction.categoryId ? categoryMap.get(transaction.categoryId) : undefined
-                  }
-                  currency={settings.currency}
-                  onPress={() => router.push(`/transaction/${transaction.id}`)}
-                />
-              ))
-            )}
-          </FieldGroup.Section>
-        </FieldGroup>
-      </Host>
 
       <FloatingAddButton />
     </View>
