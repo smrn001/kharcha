@@ -1,4 +1,4 @@
-import { BarChart } from '@/components/bar-chart';
+import { BarChart, type BarChartSeries } from '@/components/bar-chart';
 import { NativeBlock } from '@/components/native-block';
 import { Text } from '@expo/ui';
 import { useI18n } from '@/hooks/use-i18n';
@@ -11,13 +11,13 @@ export function SpendingTrend({
   currency,
   trend,
   loading,
-  mode = 'both',
+  series,
 }: {
   period: AnalyticsPeriod;
   currency: string;
   trend: TrendPoint[];
   loading: boolean;
-  mode?: 'both' | 'income' | 'expense';
+  series: BarChartSeries;
 }) {
   const { t } = useI18n();
   const colors = useTheme();
@@ -44,6 +44,10 @@ export function SpendingTrend({
   }
 
   return (
-    <BarChart data={trend} formatValue={(value) => formatAmountCompact(value, currency)} mode={mode} />
+    <BarChart
+      data={trend}
+      series={series}
+      formatValue={(value) => formatAmountCompact(value, currency)}
+    />
   );
 }

@@ -1,9 +1,13 @@
 import { NativeBlock } from '@/components/native-block';
 import { ConnectedRow, RecentTransactions } from '@/components/recent-transactions';
 import { SelectionSheet } from '@/components/selection-sheet';
+import { Card, CardHeader, SeeAllAction } from './components/card';
+import { CompareBar } from './components/compare-bar';
+import { PeriodPicker } from './components/period-picker';
 import { SpendingTrend } from './components/spending-trend';
-import { SegmentedControl } from '@expo/ui/community/segmented-control';
-import { Button, Column, Icon, ListItem, Row, Spacer, Text } from '@expo/ui';
+import { SummaryCard } from './components/summary-card';
+import { TrendModeToggle } from './components/trend-mode-toggle';
+import { Column, Icon, ListItem, Row, Spacer, Text } from '@expo/ui';
 import {
   useAnalytics,
   type AnalyticsComparison,
@@ -14,15 +18,13 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { categoryDisplayName, type DictionaryKey } from '@/lib/i18n';
-import { ARROW_RIGHT_ICON, CALENDAR_ICON, CHEVRON_DOWN_ICON, EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
+import { EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
 import { categoryIcon } from '@/lib/category-icons';
 import { formatAmount } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState, type ComponentProps } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-
-type IconName = ComponentProps<typeof Icon>['name'];
+import { useCallback, useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 
 const RECENT_LIMIT = 5;
 
@@ -31,189 +33,6 @@ const PERIOD_OPTIONS: { value: AnalyticsPeriod; labelKey: DictionaryKey }[] = [
   { value: 'month', labelKey: 'an.month' },
   { value: 'year', labelKey: 'an.year' },
 ];
-
-function Card({ children }: { children: React.ReactNode }) {
-  const colors = useTheme();
-  return (
-    <View
-      style={{
-        backgroundColor: colors.surfaceContainer,
-        borderRadius: 20,
-        padding: 20,
-      }}
-    >
-      {children}
-    </View>
-  );
-}
-
-function CardHeader({
-  title,
-  subtitle,
-  action,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-}) {
-  const colors = useTheme();
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: 12,
-        marginBottom: 16,
-      }}
-    >
-      <View style={{ flex: 1, gap: 2 }}>
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 17, fontWeight: '700', color: colors.text }}>
-            {title}
-          </Text>
-        </NativeBlock>
-        {subtitle ? (
-          <NativeBlock>
-            <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{subtitle}</Text>
-          </NativeBlock>
-        ) : null}
-      </View>
-      {action}
-    </View>
-  );
-}
-
-function SeeAllAction({ onPress }: { onPress: () => void }) {
-  const { t } = useI18n();
-  const colors = useTheme();
-  return (
-    <NativeBlock>
-      <Button variant="text" onPress={onPress} style={{ paddingVertical: 0, paddingHorizontal: 0 }}>
-        <Text textStyle={{ fontSize: 14, fontWeight: '500', color: colors.primary }}>
-          {t('an.seeAll')}
-        </Text>
-        <Icon name={ARROW_RIGHT_ICON} size={14} color={colors.primary} />
-      </Button>
-    </NativeBlock>
-  );
-}
-
-function SummaryCard({
-  icon,
-  tintColor,
-  label,
-  amount,
-  sub,
-  subColor,
-}: {
-  icon: IconName;
-  tintColor: string;
-  label: string;
-  amount: string;
-  sub: string;
-  subColor?: string;
-}) {
-  const colors = useTheme();
-  return (
-    <View style={{ flex: 1, gap: 6 }}>
-      <NativeBlock>
-        <Icon name={icon} size={22} color={tintColor} />
-      </NativeBlock>
-      <View style={{ gap: 2 }}>
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{label}</Text>
-        </NativeBlock>
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 20, fontWeight: '700', color: tintColor }}>
-            {amount}
-          </Text>
-        </NativeBlock>
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 12, color: subColor ?? colors.textSecondary }}>
-            {sub}
-          </Text>
-        </NativeBlock>
-      </View>
-    </View>
-  );
-}
-
-function TrendModeToggle({
-  mode,
-  onChange,
-}: {
-  mode: 'expense' | 'income';
-  onChange: (mode: 'expense' | 'income') => void;
-}) {
-  const { t } = useI18n();
-  const options: { value: 'expense' | 'income'; label: string }[] = [
-    { value: 'expense', label: t('an.expenses') },
-    { value: 'income', label: t('an.income') },
-  ];
-  return (
-    <View style={{ maxWidth: 190 }}>
-      <NativeBlock matchContents={false}>
-        <SegmentedControl
-          values={options.map((o) => o.label)}
-          selectedIndex={options.findIndex((o) => o.value === mode)}
-          onValueChange={(label) => {
-            const next = options.find((o) => o.label === label)?.value;
-            if (next) onChange(next);
-          }}
-        />
-      </NativeBlock>
-    </View>
-  );
-}
-
-function CompareBar({
-  label,
-  amount,
-  fraction,
-  barColor,
-}: {
-  label: string;
-  amount: string;
-  fraction: number;
-  barColor: string;
-}) {
-  const colors = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <View style={{ width: 64 }}>
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 14, color: colors.text }}>{label}</Text>
-        </NativeBlock>
-      </View>
-      <View
-        style={{
-          flex: 1,
-          height: 10,
-          borderRadius: 5,
-          backgroundColor: colors.border,
-          overflow: 'hidden',
-        }}
-      >
-        <View
-          style={{
-            height: 10,
-            borderRadius: 5,
-            width: `${Math.round(Math.min(Math.max(fraction, 0), 1) * 100)}%`,
-            backgroundColor: barColor,
-          }}
-        />
-      </View>
-      <View style={{ minWidth: 88, alignItems: 'flex-end' }}>
-        <NativeBlock>
-          <Text textStyle={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
-            {amount}
-          </Text>
-        </NativeBlock>
-      </View>
-    </View>
-  );
-}
 
 export default function AnalyticsScreen() {
   const colors = useTheme();
@@ -361,37 +180,7 @@ function AnalyticsContent({
             </Text>
           </NativeBlock>
         </View>
-        <Pressable onPress={() => onPeriodOpenChange(true)} hitSlop={8}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              backgroundColor: colors.secondaryContainer,
-              borderRadius: 999,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-            }}
-          >
-            <NativeBlock>
-              <Icon name={CALENDAR_ICON} size={16} color={colors.onSecondaryContainer} />
-            </NativeBlock>
-            <NativeBlock>
-              <Text
-                textStyle={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: colors.onSecondaryContainer,
-                }}
-              >
-                {periodTitle}
-              </Text>
-            </NativeBlock>
-            <NativeBlock>
-              <Icon name={CHEVRON_DOWN_ICON} size={16} color={colors.onSecondaryContainer} />
-            </NativeBlock>
-          </View>
-        </Pressable>
+        <PeriodPicker periodTitle={periodTitle} onPress={() => onPeriodOpenChange(true)} />
       </View>
 
       {showLoading ? (
@@ -458,7 +247,7 @@ function AnalyticsContent({
               currency={currency}
               trend={trend}
               loading={loading}
-              mode={trendMode}
+              series={trendMode}
             />
           </Card>
 
