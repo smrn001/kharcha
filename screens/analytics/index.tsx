@@ -22,11 +22,19 @@ import { EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
 import { categoryIcon } from '@/lib/category-icons';
 import { formatAmount } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
+import type { TransactionFilters as QueryFilters } from '@/lib/db/transactions';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 const RECENT_LIMIT = 5;
+
+/**
+ * Module-level, not inline: an object literal created during render would give
+ * `useTransactions` a new identity every render, which re-triggers the query
+ * and refetches in a loop.
+ */
+const RECENT_FILTERS: QueryFilters = { limit: RECENT_LIMIT };
 
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; labelKey: DictionaryKey }[] = [
   { value: 'week', labelKey: 'an.week' },
@@ -86,9 +94,7 @@ function AnalyticsContent({
   const colors = useTheme();
   const { t, lang, plural } = useI18n();
   const { categories: allCategories } = useCategories();
-  const { transactions: recent, refresh: refreshRecent } = useTransactions({
-    limit: RECENT_LIMIT,
-  });
+  const { transactions: recent, refresh: refreshRecent } = useTransactions(RECENT_FILTERS);
 
   useFocusEffect(
     useCallback(() => {

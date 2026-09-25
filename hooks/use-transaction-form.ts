@@ -40,7 +40,11 @@ export function useTransactionForm(editingId: string | null) {
         .then((account) => {
           if (active) setAccountId(account.id);
         })
-        .catch(() => {});
+        .catch((error) => {
+          // Without this, `accountId` stays null and saving fails later with a
+          // generic "accounts" message that gives no clue about the cause.
+          console.warn('[kharcha] ensureDefaultAccount failed', error);
+        });
       return () => {
         active = false;
       };
