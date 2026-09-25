@@ -3,6 +3,7 @@ import { ConnectedRow, RecentTransactions } from '@/components/recent-transactio
 import { SelectionSheet } from '@/components/selection-sheet';
 import { Card, CardHeader, SeeAllAction } from './components/card';
 import { CompareBar } from './components/compare-bar';
+import { PeriodPicker } from './components/period-picker';
 import { SpendingTrend } from './components/spending-trend';
 import { SummaryCard } from './components/summary-card';
 import { TrendModeToggle } from './components/trend-mode-toggle';
@@ -17,13 +18,13 @@ import { useI18n } from '@/hooks/use-i18n';
 import { useSettings } from '@/hooks/use-settings';
 import { useTransactions } from '@/hooks/use-transactions';
 import { categoryDisplayName, type DictionaryKey } from '@/lib/i18n';
-import { CALENDAR_ICON, CHEVRON_DOWN_ICON, EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
+import { EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
 import { categoryIcon } from '@/lib/category-icons';
 import { formatAmount } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 const RECENT_LIMIT = 5;
 
@@ -179,37 +180,7 @@ function AnalyticsContent({
             </Text>
           </NativeBlock>
         </View>
-        <Pressable onPress={() => onPeriodOpenChange(true)} hitSlop={8}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              backgroundColor: colors.secondaryContainer,
-              borderRadius: 999,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-            }}
-          >
-            <NativeBlock>
-              <Icon name={CALENDAR_ICON} size={16} color={colors.onSecondaryContainer} />
-            </NativeBlock>
-            <NativeBlock>
-              <Text
-                textStyle={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: colors.onSecondaryContainer,
-                }}
-              >
-                {periodTitle}
-              </Text>
-            </NativeBlock>
-            <NativeBlock>
-              <Icon name={CHEVRON_DOWN_ICON} size={16} color={colors.onSecondaryContainer} />
-            </NativeBlock>
-          </View>
-        </Pressable>
+        <PeriodPicker periodTitle={periodTitle} onPress={() => onPeriodOpenChange(true)} />
       </View>
 
       {showLoading ? (
