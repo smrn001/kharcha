@@ -1,7 +1,6 @@
 import { Text } from '@expo/ui';
 import { NativeBlock } from '@/components/native-block';
 import { useTheme } from '@/lib/theme';
-import { useI18n } from '@/hooks/use-i18n';
 import { View } from 'react-native';
 
 export interface BarChartDatum {
@@ -30,7 +29,6 @@ export function BarChart({
   /** Show one series full-width (mockup toggle) instead of grouped pairs. */
   mode?: 'both' | 'income' | 'expense';
 }) {
-  const { t } = useI18n();
   const colors = useTheme();
   const showIncome = mode !== 'expense';
   const showExpense = mode !== 'income';
@@ -50,31 +48,6 @@ export function BarChart({
 
   return (
     <View style={{ width: '100%' }}>
-      {hasIncome ? (
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginBottom: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View
-              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.success }}
-            />
-            <NativeBlock>
-              <Text textStyle={{ fontSize: 12, color: colors.textSecondary }}>
-                {t('an.income')}
-              </Text>
-            </NativeBlock>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View
-              style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors.destructive }}
-            />
-            <NativeBlock>
-              <Text textStyle={{ fontSize: 12, color: colors.textSecondary }}>
-                {t('an.expenses')}
-              </Text>
-            </NativeBlock>
-          </View>
-        </View>
-      ) : null}
-
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ justifyContent: 'space-between', height: CHART_HEIGHT }}>
           {ticks.map((fraction) => (
@@ -90,29 +63,6 @@ export function BarChart({
         </View>
 
         <View style={{ flex: 1 }}>
-          <View style={{ height: 16, flexDirection: 'row', gap: 4 }}>
-            {data.map((datum, index) => (
-              <View key={`value-${datum.label}-${index}`} style={{ flex: 1, alignItems: 'center' }}>
-                <NativeBlock>
-                  <Text
-                    textStyle={{ fontSize: 9, color: colors.textSecondary, textAlign: 'center' }}
-                    numberOfLines={1}
-                  >
-                    {datum.expense > 0 && showExpense
-                      ? formatValue
-                        ? formatValue(datum.expense)
-                        : `${datum.expense}`
-                      : datum.income > 0 && showIncome
-                        ? formatValue
-                          ? formatValue(datum.income)
-                          : `${datum.income}`
-                        : ''}
-                  </Text>
-                </NativeBlock>
-              </View>
-            ))}
-          </View>
-
           <View style={{ height: CHART_HEIGHT }}>
             {ticks.map((fraction) => (
               <View

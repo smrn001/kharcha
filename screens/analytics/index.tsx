@@ -2,6 +2,7 @@ import { NativeBlock } from '@/components/native-block';
 import { ConnectedRow, RecentTransactions } from '@/components/recent-transactions';
 import { SelectionSheet } from '@/components/selection-sheet';
 import { SpendingTrend } from './components/spending-trend';
+import { SegmentedControl } from '@expo/ui/community/segmented-control';
 import { Button, Column, Icon, ListItem, Row, Spacer, Text } from '@expo/ui';
 import {
   useAnalytics,
@@ -30,11 +31,6 @@ const PERIOD_OPTIONS: { value: AnalyticsPeriod; labelKey: DictionaryKey }[] = [
   { value: 'month', labelKey: 'an.month' },
   { value: 'year', labelKey: 'an.year' },
 ];
-
-/** Append a hex alpha suffix when the color is a 6-digit hex string. */
-function tint(hex: string, alpha: string): string {
-  return hex.length === 7 ? `${hex}${alpha}` : hex;
-}
 
 function Card({ children }: { children: React.ReactNode }) {
   const colors = useTheme();
@@ -120,29 +116,10 @@ function SummaryCard({
 }) {
   const colors = useTheme();
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: tint(tintColor, '1A'),
-        borderRadius: 20,
-        padding: 14,
-        gap: 8,
-      }}
-    >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: tint(tintColor, '33'),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <NativeBlock>
-          <Icon name={icon} size={20} color={tintColor} />
-        </NativeBlock>
-      </View>
+    <View style={{ flex: 1, gap: 6 }}>
+      <NativeBlock>
+        <Icon name={icon} size={22} color={tintColor} />
+      </NativeBlock>
       <View style={{ gap: 2 }}>
         <NativeBlock>
           <Text textStyle={{ fontSize: 13, color: colors.textSecondary }}>{label}</Text>
@@ -170,48 +147,22 @@ function TrendModeToggle({
   onChange: (mode: 'expense' | 'income') => void;
 }) {
   const { t } = useI18n();
-  const colors = useTheme();
   const options: { value: 'expense' | 'income'; label: string }[] = [
     { value: 'expense', label: t('an.expenses') },
     { value: 'income', label: t('an.income') },
   ];
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignSelf: 'flex-start',
-        backgroundColor: colors.surface,
-        borderRadius: 999,
-        padding: 3,
-      }}
-    >
-      {options.map((option) => {
-        const selected = option.value === mode;
-        return (
-          <Pressable
-            key={option.value}
-            onPress={() => onChange(option.value)}
-            style={{
-              borderRadius: 999,
-              paddingVertical: 9,
-              paddingHorizontal: 16,
-              backgroundColor: selected ? colors.secondaryContainer : 'transparent',
-            }}
-          >
-            <NativeBlock>
-              <Text
-                textStyle={{
-                  fontSize: 12,
-                  fontWeight: '500',
-                  color: selected ? colors.onSecondaryContainer : colors.textSecondary,
-                }}
-              >
-                {option.label}
-              </Text>
-            </NativeBlock>
-          </Pressable>
-        );
-      })}
+    <View style={{ maxWidth: 190 }}>
+      <NativeBlock matchContents={false}>
+        <SegmentedControl
+          values={options.map((o) => o.label)}
+          selectedIndex={options.findIndex((o) => o.value === mode)}
+          onValueChange={(label) => {
+            const next = options.find((o) => o.label === label)?.value;
+            if (next) onChange(next);
+          }}
+        />
+      </NativeBlock>
     </View>
   );
 }
@@ -410,7 +361,7 @@ function AnalyticsContent({
             </Text>
           </NativeBlock>
         </View>
-        <Pressable onPress={() => onPeriodOpenChange(true)}>
+        <Pressable onPress={() => onPeriodOpenChange(true)} hitSlop={8}>
           <View
             style={{
               flexDirection: 'row',
@@ -418,8 +369,8 @@ function AnalyticsContent({
               gap: 6,
               backgroundColor: colors.secondaryContainer,
               borderRadius: 999,
-              paddingVertical: 8,
-              paddingHorizontal: 14,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
             }}
           >
             <NativeBlock>
