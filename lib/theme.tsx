@@ -1,5 +1,6 @@
-import { Platform, useColorScheme } from 'react-native';
+import { AppState, Platform, useColorScheme } from 'react-native';
 import { getMaterialColors } from '@expo/ui/jetpack-compose';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 /**
  * Centralized design tokens. Components consume these semantic tokens rather
@@ -134,19 +135,22 @@ const androidDark: ThemeTokens = {
   warning: '#FBBF24',
 };
 
-export function useTheme(): ThemeTokens {
-  const scheme = useColorScheme();
-
+/**
+ * Resolve the token set for a scheme. Pure apart from the Android
+ * `getMaterialColors()` bridge call — hence resolved once per scheme change by
+ * `ThemeTokensProvider` rather than per component per render.
+ */
+export function buildTokens(scheme: 'light' | 'dark'): ThemeTokens {
   if (Platform.OS === 'ios') {
     return scheme === 'dark' ? iosDark : iosLight;
   }
 
-  // Mirror the palette the Compose `Host`s are themed with: on Android 12+
-  // this is the wallpaper-derived (Material You) scheme, otherwise the Material
-  // 3 baseline. `scheme` is pushed into every `Host` too, so the React Native
+  // Mirror the palette the Compose `Host`s are themed with: on Android 12+ this
+  // is the wallpaper-derived (Material You) scheme, otherwise the Material 3
+  // baseline. The scheme is pushed into every `Host` too, so the React Native
   // canvas and the Compose components always agree.
   if (Platform.OS === 'android') {
-    const m3 = getMaterialColors({ scheme: scheme === 'dark' ? 'dark' : 'light' });
+    const m3 = getMaterialColors({ scheme });
     return {
       background: m3.background,
       surface: m3.surfaceVariant,
@@ -165,4 +169,49 @@ export function useTheme(): ThemeTokens {
   }
 
   return scheme === 'dark' ? androidDark : androidLight;
+}
+
+/**
+ * Light tokens as the default so a consumer rendered above the provider (should
+ * that ever happen) gets a sane palette instead of crashing.
+ */
+const ThemeTokensContext = createContext<ThemeTokens>(iosLight);
+
+/**
+ * Resolves the palette once per scheme and provides it, so `useTheme()` is a
+ * cheap `useContext` returning a **stable object**. Two things depend on that
+ * stability: memoised rows compare `colors` shallowly, and the native
+ * `getMaterialColors()` bridge call happens on scheme change instead of on
+ * every render of all ~36 consuming modules.
+ *
+ * `paletteEpoch` forces a recompute on foreground because `getMaterialColors`
+ * does not observe wallpaper/theme changes.
+ */
+export function ThemeTokensProvider({ children }: { children: ReactNode }) {
+  const scheme = useColorScheme();
+  const [paletteEpoch, setPaletteEpoch] = useState(0);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (status) => {
+      if (status === 'active') {
+        setPaletteEpoch((n) => n + 1);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  const tokens = useMemo(
+    () => buildTokens(scheme === 'dark' ? 'dark' : 'light'),
+    // `paletteEpoch` is not read in the body on purpose: it is a recompute
+    // signal, bumped on foreground because `getMaterialColors()` cannot observe
+    // wallpaper changes itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scheme, paletteEpoch]
+  );
+
+  return <ThemeTokensContext.Provider value={tokens}>{children}</ThemeTokensContext.Provider>;
+}
+
+export function useTheme(): ThemeTokens {
+  return useContext(ThemeTokensContext);
 }
