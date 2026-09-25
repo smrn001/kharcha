@@ -80,7 +80,16 @@ jobs:
           fi
 
       - name: Install EAS CLI
-        run: pnpm add -g eas-cli
+        run: |
+          set -euo pipefail
+          # pnpm's default global bin dir is not on PATH on GH runners, which
+          # makes `pnpm add -g` fail. Pin an explicit dir, expose it to later
+          # steps via GITHUB_PATH, and to this step via PATH.
+          pnpm config set global-bin-dir "$HOME/.local/share/pnpm"
+          echo "$HOME/.local/share/pnpm" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/share/pnpm:$PATH"
+          pnpm add -g eas-cli
+          eas --version
 
       - name: Authenticate with EAS
         env:
