@@ -45,6 +45,13 @@ jobs:
           wait "$p3" || fail=1
           exit "$fail"
 
+      # Gradle's :app:createBundleReleaseJsAndAssets runs Metro in a context
+      # that resolves babel from the project root only, so a preset hoisted by
+      # npm but undeclared here fails there and nowhere else. Bundling here
+      # turns a ~50 minute EAS round-trip into a ~1 minute check.
+      - name: Verify release bundle (Metro)
+        run: npx expo export --platform android --output-dir /tmp/bundle-check --clear
+
   build:
     name: Build release APK
     needs: verify
