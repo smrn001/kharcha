@@ -102,6 +102,9 @@ importers:
       prettier:
         specifier: ^3.8.3
         version: 3.9.6
+      sf-symbols-typescript:
+        specifier: 2.2.0
+        version: 2.2.0
       typescript:
         specifier: ~6.0.3
         version: 6.0.3
