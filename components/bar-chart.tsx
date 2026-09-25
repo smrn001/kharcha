@@ -9,6 +9,8 @@ export interface BarChartDatum {
   expense: number;
 }
 
+export type BarChartSeries = 'income' | 'expense';
+
 function niceCeil(value: number): number {
   const magnitude = 10 ** Math.floor(Math.log10(Math.max(value, 1)));
   for (const mult of [1, 2, 5, 10]) {
@@ -19,32 +21,28 @@ function niceCeil(value: number): number {
 
 const CHART_HEIGHT = 128;
 
+/**
+ * Minimal single-series bar chart: y-axis ticks, faint gridlines, one bar per
+ * period. The series is chosen by the caller's `series` prop; the other series
+ * is not drawn and does not affect the scale.
+ */
 export function BarChart({
   data,
+  series,
   formatValue,
-  mode = 'both',
 }: {
   data: BarChartDatum[];
+  series: BarChartSeries;
   formatValue?: (value: number) => string;
-  /** Show one series full-width (mockup toggle) instead of grouped pairs. */
-  mode?: 'both' | 'income' | 'expense';
 }) {
   const colors = useTheme();
-  const showIncome = mode !== 'expense';
-  const showExpense = mode !== 'income';
-  const max = niceCeil(
-    Math.max(
-      ...data.flatMap((d) => [
-        showIncome ? d.income : 0,
-        showExpense ? d.expense : 0,
-      ]),
-      1
-    )
-  );
+  const valueOf = (datum: BarChartDatum): number =>
+    series === 'income' ? datum.income : datum.expense;
+  const max = niceCeil(Math.max(...data.map(valueOf), 1));
   const barHeight = (value: number) =>
     Math.max(Math.round((value / max) * CHART_HEIGHT), value > 0 ? 4 : 0);
   const ticks = [1, 0.5, 0];
-  const hasIncome = mode === 'both' && data.some((d) => d.income > 0);
+  const barColor = series === 'income' ? colors.success : colors.primary;
 
   return (
     <View style={{ width: '100%' }}>
@@ -56,7 +54,9 @@ export function BarChart({
                 textStyle={{ fontSize: 9, color: colors.textSecondary, textAlign: 'right' }}
                 numberOfLines={1}
               >
-                {formatValue ? formatValue(Math.round(max * fraction)) : `${Math.round(max * fraction)}`}
+                {formatValue
+                  ? formatValue(Math.round(max * fraction))
+                  : `${Math.round(max * fraction)}`}
               </Text>
             </NativeBlock>
           ))}
@@ -91,54 +91,20 @@ export function BarChart({
                   key={`bar-${datum.label}-${index}`}
                   style={{
                     flex: 1,
-                    flexDirection: 'row',
-                    alignItems: 'flex-end',
-                    justifyContent: 'center',
-                    gap: 1,
                     height: CHART_HEIGHT,
+                    justifyContent: 'flex-end',
                   }}
-                  accessibilityLabel={`${datum.label} — income: ${datum.income}, spending: ${datum.expense}`}
+                  accessibilityLabel={`${datum.label}: ${valueOf(datum)}`}
                 >
-                  {hasIncome ? (
-                    <>
-                      <View
-                        style={{
-                          width: '50%',
-                          borderTopLeftRadius: 2,
-                          backgroundColor: colors.success,
-                          height: barHeight(datum.income),
-                        }}
-                      />
-                      <View
-                        style={{
-                          width: '50%',
-                          borderTopRightRadius: 2,
-                          backgroundColor: colors.destructive,
-                          height: barHeight(datum.expense),
-                        }}
-                      />
-                    </>
-                  ) : mode === 'income' ? (
-                    <View
-                      style={{
-                        width: '100%',
-                        borderTopLeftRadius: 2,
-                        borderTopRightRadius: 2,
-                        backgroundColor: colors.success,
-                        height: barHeight(datum.income),
-                      }}
-                    />
-                  ) : (
-                    <View
-                      style={{
-                        width: '100%',
-                        borderTopLeftRadius: 2,
-                        borderTopRightRadius: 2,
-                        backgroundColor: mode === 'both' ? colors.destructive : colors.primary,
-                        height: barHeight(datum.expense),
-                      }}
-                    />
-                  )}
+                  <View
+                    style={{
+                      width: '100%',
+                      borderTopLeftRadius: 2,
+                      borderTopRightRadius: 2,
+                      backgroundColor: barColor,
+                      height: barHeight(valueOf(datum)),
+                    }}
+                  />
                 </View>
               ))}
             </View>
