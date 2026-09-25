@@ -3,13 +3,12 @@ import { useAppliedColorScheme, useAppliedTheme } from '@/hooks/use-applied-them
 import { SettingsProvider } from '@/hooks/use-settings';
 import { UpdateCheckerProvider, useUpdateChecker } from '@/hooks/use-update-checker';
 import { DatabaseProvider } from '@/lib/db/database';
-import { useTheme } from '@/lib/theme';
+import { useTheme, ThemeTokensProvider } from '@/lib/theme';
 import { Host } from '@expo/ui';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Linking, Platform, View, AppState } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect, useState } from 'react';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -31,25 +30,22 @@ export default function RootLayout() {
 }
 
 function ThemedRoot() {
+  // Let the persisted theme preference (if any) drive the resolved scheme. This
+  // must run before `ThemeTokensProvider` reads `useColorScheme()`, so it stays
+  // here rather than inside the provider.
+  useAppliedTheme();
+
+  return (
+    <ThemeTokensProvider>
+      <ThemedContent />
+    </ThemeTokensProvider>
+  );
+}
+
+function ThemedContent() {
   const insets = useSafeAreaInsets();
   const colors = useTheme();
   const scheme = useAppliedColorScheme();
-  const [, resyncPalette] = useState(0);
-
-  // Let the persisted theme preference (if any) drive the resolved scheme.
-  useAppliedTheme();
-
-  // `getMaterialColors` reads the palette per render but never subscribes to
-  // system changes, so forcing a re-render on foreground keeps the JS-side
-  // tokens in sync after a wallpaper/theme change.
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (status) => {
-      if (status === 'active') {
-        resyncPalette((n) => n + 1);
-      }
-    });
-    return () => sub.remove();
-  }, []);
 
   // react-navigation paints each native screen with the navigation theme's
   // background; without a themed ThemeProvider every screen renders opaque
