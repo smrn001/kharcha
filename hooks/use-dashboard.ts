@@ -1,6 +1,7 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { getDashboardSummary, type DashboardSummary } from '@/lib/db/transactions';
+import { useQuery } from '@/hooks/use-query';
 
 const EMPTY_SUMMARY: DashboardSummary = {
   balance: 0,
@@ -13,37 +14,14 @@ const EMPTY_SUMMARY: DashboardSummary = {
 
 export function useDashboardSummary(startOfWeekDay = 1) {
   const db = useSQLiteContext();
-  const [state, setState] = useState<{ summary: DashboardSummary; loading: boolean }>({
-    summary: EMPTY_SUMMARY,
-    loading: true,
-  });
-
-  useEffect(() => {
-    let active = true;
-    getDashboardSummary(db, startOfWeekDay)
-      .then((summary) => {
-        if (active) {
-          setState({ summary, loading: false });
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setState((prev) => ({ ...prev, loading: false }));
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [db, startOfWeekDay]);
-
-  const refresh = useCallback(async () => {
-    try {
-      const summary = await getDashboardSummary(db, startOfWeekDay);
-      setState({ summary, loading: false });
-    } catch {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  }, [db, startOfWeekDay]);
-
-  return { ...state, refresh };
+  const fetchSummary = useCallback(
+    () => getDashboardSummary(db, startOfWeekDay),
+    [db, startOfWeekDay]
+  );
+  const { data: summary, loading, refresh } = useQuery<DashboardSummary>(
+    fetchSummary,
+    [fetchSummary],
+    EMPTY_SUMMARY
+  );
+  return { summary, loading, refresh };
 }

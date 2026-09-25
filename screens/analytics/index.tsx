@@ -5,7 +5,7 @@ import { Card, CardHeader, SeeAllAction } from './components/card';
 import { CompareBar } from './components/compare-bar';
 import { PeriodPicker } from './components/period-picker';
 import { SpendingTrend } from './components/spending-trend';
-import { SummaryCard } from './components/summary-card';
+import { SummaryRows } from './components/summary-rows';
 import { TrendModeToggle } from './components/trend-mode-toggle';
 import { Column, Icon, ListItem, Row, Spacer, Text } from '@expo/ui';
 import {
@@ -22,11 +22,19 @@ import { EQUAL_ICON, TREND_DOWN_ICON, TREND_UP_ICON } from '@/lib/icons';
 import { categoryIcon } from '@/lib/category-icons';
 import { formatAmount } from '@/lib/format';
 import { useTheme } from '@/lib/theme';
+import type { TransactionFilters as QueryFilters } from '@/lib/db/transactions';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 const RECENT_LIMIT = 5;
+
+/**
+ * Module-level, not inline: an object literal created during render would give
+ * `useTransactions` a new identity every render, which re-triggers the query
+ * and refetches in a loop.
+ */
+const RECENT_FILTERS: QueryFilters = { limit: RECENT_LIMIT };
 
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; labelKey: DictionaryKey }[] = [
   { value: 'week', labelKey: 'an.week' },
@@ -86,9 +94,7 @@ function AnalyticsContent({
   const colors = useTheme();
   const { t, lang, plural } = useI18n();
   const { categories: allCategories } = useCategories();
-  const { transactions: recent, refresh: refreshRecent } = useTransactions({
-    limit: RECENT_LIMIT,
-  });
+  const { transactions: recent, refresh: refreshRecent } = useTransactions(RECENT_FILTERS);
 
   useFocusEffect(
     useCallback(() => {
@@ -193,36 +199,40 @@ function AnalyticsContent({
         </View>
       ) : (
         <>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <SummaryCard
-              icon={TREND_UP_ICON}
-              tintColor={colors.success}
-              label={t('an.totalIncome')}
-              amount={formatAmount(summary.income, currency)}
-              sub={t('an.txnCount', { count: counts.income, plural: plural(counts.income) })}
-            />
-            <SummaryCard
-              icon={TREND_DOWN_ICON}
-              tintColor={colors.destructive}
-              label={t('an.totalExpenses')}
-              amount={formatAmount(summary.expense, currency)}
-              sub={t('an.txnCount', { count: counts.expense, plural: plural(counts.expense) })}
-            />
-            <SummaryCard
-              icon={EQUAL_ICON}
-              tintColor={colors.primary}
-              label={t('an.netBalance')}
-              amount={formatAmount(summary.saved, currency)}
-              sub={netDelta}
-              subColor={
-                hasHistory && savedPct !== null
-                  ? netUp
-                    ? colors.success
-                    : colors.destructive
-                  : undefined
-              }
-            />
-          </View>
+          <SummaryRows
+            stats={[
+              {
+                key: 'income',
+                icon: TREND_UP_ICON,
+                label: t('an.totalIncome'),
+                amount: formatAmount(summary.income, currency),
+                sub: t('an.txnCount', { count: counts.income, plural: plural(counts.income) }),
+                accent: colors.success,
+              },
+              {
+                key: 'expense',
+                icon: TREND_DOWN_ICON,
+                label: t('an.totalExpenses'),
+                amount: formatAmount(summary.expense, currency),
+                sub: t('an.txnCount', { count: counts.expense, plural: plural(counts.expense) }),
+                accent: colors.destructive,
+              },
+              {
+                key: 'net',
+                icon: EQUAL_ICON,
+                label: t('an.netBalance'),
+                amount: formatAmount(summary.saved, currency),
+                sub: netDelta,
+                accent: colors.primary,
+                subColor:
+                  hasHistory && savedPct !== null
+                    ? netUp
+                      ? colors.success
+                      : colors.destructive
+                    : undefined,
+              },
+            ]}
+          />
 
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>

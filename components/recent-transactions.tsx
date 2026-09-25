@@ -18,6 +18,15 @@ import type { Category, Transaction } from '@/types';
  */
 
 /**
+ * Corner radii mirroring `@expo/ui`'s internal `FieldSection` corner math
+ * (20dp at a group's outer corners, 4dp between rows) so `ConnectedRow` rows
+ * are visually indistinguishable from real `FieldGroup` section rows. If a
+ * future `@expo/ui` release changes those values, update them here.
+ */
+const CORNER_FULL = 20;
+const CORNER_SMALL = 4;
+
+/**
  * Outer shell reproducing a FieldGroup row: surfaceContainer paint is applied
  * by the inner `ListItem`, this only provides the per-position corner clip.
  * Use for one row's content; siblings are spaced by the parent's gap.
@@ -31,15 +40,13 @@ export function ConnectedRow({
   last: boolean;
   children: React.ReactNode;
 }) {
-  const full = 20;
-  const small = 4;
   return (
     <View
       style={{
-        borderTopLeftRadius: first ? full : small,
-        borderTopRightRadius: first ? full : small,
-        borderBottomLeftRadius: last ? full : small,
-        borderBottomRightRadius: last ? full : small,
+        borderTopLeftRadius: first ? CORNER_FULL : CORNER_SMALL,
+        borderTopRightRadius: first ? CORNER_FULL : CORNER_SMALL,
+        borderBottomLeftRadius: last ? CORNER_FULL : CORNER_SMALL,
+        borderBottomRightRadius: last ? CORNER_FULL : CORNER_SMALL,
         overflow: 'hidden',
       }}
     >
